@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+/frontend/node_modules/
+
+# Production builds
+dist/
+/frontend/dist/
+/frontend/dist-ssr/
+
+# Python virtual environment and caching
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+.pytest_cache/
+/backend/.pytest_cache/
+/backend/venv/
+/backend/.venv/
+
+# Environment configurations and logs
+*.log
+*.local
+.env
+.env.*
+
+# Editor files
+.vscode/
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.sln
+
+# Project Specific Exclusions
+/docs/
+/presentation/
+/models/
+/datasets/
+/.pytest_cache/
+/.github/workflows/
