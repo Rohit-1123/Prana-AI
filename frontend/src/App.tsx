@@ -1900,29 +1900,6 @@ const buildMetroMapPoints = () => {
                     </div>
                   )}
 
-                  {/* City Selector Header Selector */}
-                  <div className="flex justify-between items-center bg-card border border-border p-4.5 rounded-2xl flex-wrap gap-4 shadow-sm">
-                    <div>
-                      <h3 className="text-sm font-black text-foreground">AQI.in Metro Strip</h3>
-                      <p className="text-[10px] text-muted">Single-line live city markers for Bangalore, Chennai, Delhi, and Mumbai.</p>
-                    </div>
-                    <div className="flex gap-2 flex-nowrap overflow-x-auto pb-1 w-full lg:w-auto">
-                      {AQI_IN_METRO_CITIES.map((c) => (
-                        <button
-                          key={c.name}
-                          onClick={() => handleCitySelect(c.name)}
-                          className={cn(
-                            "px-4 py-2 text-xs font-bold rounded-xl border transition-all cursor-pointer min-w-[11rem] shrink-0",
-                            selectedCity === c.name 
-                              ? "bg-primary border-primary text-white shadow-md shadow-primary/10" 
-                              : "bg-card border-border text-muted hover:text-foreground hover:bg-muted/10"
-                          )}
-                        >
-                          {c.name} (AQI {c.aqi})
-                        </button>
-                      ))}
-                    </div>
-                  </div>
 
                   <div className="glass-card p-5 flex flex-col gap-4">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
