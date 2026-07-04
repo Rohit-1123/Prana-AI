@@ -1,0 +1,31 @@
+export const lightTheme = {
+  background: "#F6F8FC",
+  surface: "#FFFFFF",
+  sidebar: "#FFFFFF",
+  navbar: "#FFFFFF",
+  primary: "#2563EB",
+  secondary: "#14B8A6",
+  accent: "#0EA5E9",
+  success: "#22C55E",
+  warning: "#F59E0B",
+  danger: "#EF4444",
+  border: "#E5E7EB",
+  textPrimary: "#111827",
+  textSecondary: "#6B7280",
+};
+
+export const darkTheme = {
+  background: "#08111F",
+  surface: "#111827",
+  sidebar: "#0D1726",
+  navbar: "#091524",
+  primary: "#3B82F6",
+  secondary: "#22D3EE",
+  accent: "#06B6D4",
+  success: "#22C55E",
+  warning: "#FACC15",
+  danger: "#EF4444",
+  border: "#1F2937",
+  textPrimary: "#F9FAFB",
+  textSecondary: "#9CA3AF",
+};
