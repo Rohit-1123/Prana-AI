@@ -85,7 +85,7 @@ import {
 
 
 // API Server URL configuration
-const API_URL = "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const getWeatherShellClass = (aqi: number) => {
   return aqi <= 50 ? "bg-weather-good" : aqi <= 100 ? "bg-weather-moderate" : aqi <= 170 ? "bg-weather-poor" : "bg-weather-severe";
@@ -209,10 +209,7 @@ const buildMetroMapPoints = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const [flow, setFlow] = useState<string>(() => {
-      const f = localStorage.getItem("flow") || "landing";
-      return f === "auth" ? "landing" : f;
-    });
+    const [flow, setFlow] = useState<string>("landing");
 
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [authModalReason, setAuthModalReason] = useState("");
@@ -224,9 +221,7 @@ const buildMetroMapPoints = () => {
     const [liveDataSource, setLiveDataSource] = useState<string>("mock fallback");
     const [liveDataLastUpdated, setLiveDataLastUpdated] = useState<string>("");
 
-    const [isAuthenticated] = useState<boolean>(() => {
-      return localStorage.getItem("isAuthenticated") === "true";
-    });
+    const [isAuthenticated] = useState<boolean>(true);
 
     // Scroll-aware landing viewport state
     const [scrollY, setScrollY] = useState<number>(0);
