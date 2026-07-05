@@ -8,7 +8,7 @@ Standard environmental dashboards simply show reactive, historical AQI levels. P
 
 ---
 
-## 🚀 Key Features
+##  Key Features
 
 *   **Interactive GIS Map (Leaflet + OpenStreetMap):** Live ward boundary polygons colored by local AQI levels, overlaying toggleable points of interest representing schools, hospitals, industrial plants, and construction zones.
 *   **Hourly Predictions Engine (24h/48h/72h Forecasts):** Core gradient-boosted tree (XGBoost) regression models forecasting AQI horizons with confidence intervals.
@@ -20,7 +20,7 @@ Standard environmental dashboards simply show reactive, historical AQI levels. P
 
 ---
 
-## 🛠 Technology Stack
+##  Technology Stack
 
 *   **Frontend:** React, Vite, TypeScript, TailwindCSS, Recharts, React Leaflet, Framer Motion.
 *   **Backend:** FastAPI, Python, SQLAlchemy, JWT Security, Uvicorn, PyTest.
@@ -30,7 +30,7 @@ Standard environmental dashboards simply show reactive, historical AQI levels. P
 
 ---
 
-## 📁 Repository Structure
+##  Repository Structure
 
 ```
 PranaAI/
@@ -55,7 +55,7 @@ PranaAI/
 
 ---
 
-## ⚙️ Setting Up Locally
+##  Setting Up Locally
 
 ### Prerequisites
 *   Python 3.11+
