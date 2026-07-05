@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import { uiTranslations } from "../../../utils/i18n";
+import { translateActionTitle, translateActionDesc } from "../../../utils/i18n_extra";
 
 interface DigitalTwinProps {
   wards: any[];
@@ -176,8 +177,8 @@ export function DigitalTwin({
               <div key={rec.id} className="bg-muted/5 border border-border p-3 rounded-xl flex flex-col gap-2.5">
                 <div className="flex justify-between items-start gap-3">
                   <div>
-                    <span className="font-extrabold text-[10.5px] text-foreground leading-snug block">{rec.title}</span>
-                    <span className="text-[9.5px] text-muted mt-1 leading-normal block">{rec.desc.slice(0, 70)}...</span>
+                    <span className="font-extrabold text-[10.5px] text-foreground leading-snug block">{translateActionTitle(rec.id, rec.title, activeLanguage)}</span>
+                    <span className="text-[9.5px] text-muted mt-1 leading-normal block">{translateActionDesc(rec.id, rec.desc, activeLanguage, selectedWard.name).slice(0, 70)}...</span>
                   </div>
                   <span className="text-[9px] text-success font-extrabold shrink-0">{rec.impact}</span>
                 </div>

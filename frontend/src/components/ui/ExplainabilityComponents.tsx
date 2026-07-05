@@ -11,6 +11,7 @@ import {
   X
 } from "lucide-react";
 import { cn } from "../../utils/cn";
+import { translateFeedItem, translateFeedTime, translateFeedCategory } from "../../utils/i18n_extra";
 
 // ==========================================
 // 1. AI CONFIDENCE RING
@@ -20,6 +21,7 @@ interface AIConfidenceRingProps {
   size?: "sm" | "md" | "lg";
   showLabel?: boolean;
 }
+
 
 export function AIConfidenceRing({
   confidence,
@@ -276,13 +278,27 @@ interface InsightTimelineProps {
 }
 
 export function InsightTimeline({ feedItems }: InsightTimelineProps) {
+  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+
   return (
     <div className="glass-card p-6 flex flex-col gap-6 h-full text-left">
       <div>
         <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-          <Activity className="w-4 h-4 text-primary animate-pulse" /> Environmental Insights Feed
+          <Activity className="w-4 h-4 text-primary animate-pulse" /> {
+            activeLanguage === "hi" ? "पर्यावरण अंतर्दृष्टि फ़ीड" :
+            activeLanguage === "te" ? "పర్యావరణ అంతర్దృష్టుల ఫీడ్" :
+            activeLanguage === "ta" ? "சுற்றுச்சூழல் நுண்ணறிவு ஊட்டம்" :
+            activeLanguage === "kn" ? "ಪರಿಸರ ಒಳನೋಟಗಳ ಫೀಡ್" :
+            "Environmental Insights Feed"
+          }
         </h4>
-        <span className="text-[10px] text-muted mt-1 block">Live chronological explainability events</span>
+        <span className="text-[10px] text-muted mt-1 block">
+          {activeLanguage === "hi" ? "लाइव कालानुक्रमिक व्याख्यात्मक घटनाएं" :
+           activeLanguage === "te" ? "లైవ్ క్రమానుగత వివరణాత్మక సంఘటనలు" :
+           activeLanguage === "ta" ? "நிகழ்நேர காலவரிசை விளக்க நிகழ்வுகள்" :
+           activeLanguage === "kn" ? "ನೈಜ-ಸಮಯದ ಕಾಲಾನುಕ್ರಮದ ಘಟನೆಗಳು" :
+           "Live chronological explainability events"}
+        </span>
       </div>
 
       <div className="relative pl-4 border-l border-border flex flex-col gap-5.5 overflow-y-auto max-h-[380px] pr-1.5">
@@ -314,7 +330,7 @@ export function InsightTimeline({ feedItems }: InsightTimelineProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[10px] font-mono text-muted font-bold flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-muted" /> {item.time}
+                        <Clock className="w-3.5 h-3.5 text-muted" /> {translateFeedTime(item.time, activeLanguage)}
                       </span>
                       <span className={cn(
                         "text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.2 rounded border",
@@ -324,13 +340,15 @@ export function InsightTimeline({ feedItems }: InsightTimelineProps) {
                             ? "border-warning/30 text-warning bg-warning/5" 
                             : "border-success/30 text-success bg-success/5"
                       )}>
-                        {item.category}
+                        {translateFeedCategory(item.category, activeLanguage)}
                       </span>
                     </div>
-                    <p className="text-foreground font-medium mt-1.5 leading-normal">{item.text}</p>
+                    <p className="text-foreground font-medium mt-1.5 leading-normal">{translateFeedItem(item.text, activeLanguage)}</p>
                   </div>
                   <div className="text-right shrink-0 border-l border-border/40 pl-2">
-                    <span className="text-[8px] uppercase tracking-wider font-extrabold text-muted block leading-none">Conf</span>
+                    <span className="text-[8px] uppercase tracking-wider font-extrabold text-muted block leading-none">
+                      {activeLanguage === "hi" ? "विश्वास" : activeLanguage === "te" ? "విశ్వసనీయత" : activeLanguage === "ta" ? "நம்பிக்கை" : activeLanguage === "kn" ? "ವಿಶ್ವಾಸ" : "Conf"}
+                    </span>
                     <span className="text-[9.5px] font-black text-primary block mt-0.5 leading-none">{item.confidence}%</span>
                   </div>
                 </div>

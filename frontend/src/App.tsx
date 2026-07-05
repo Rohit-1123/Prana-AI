@@ -77,7 +77,6 @@ import {
 } from "./components/ui/UrbanIntelligenceComponents";
 import {
   uiTranslations,
-  localizedBriefs,
   suggestedLangByCity,
   SUPPORTED_LANGUAGES,
   type LanguageCode
@@ -786,6 +785,147 @@ const buildMetroMapPoints = () => {
   useEffect(() => {
     fetchWardIntelligence(selectedWard.id);
   }, []);
+
+  const translateBadge = (badge: string, lang: LanguageCode) => {
+    if (lang === "hi") {
+      switch (badge) {
+        case "Good": return "अच्छा";
+        case "Satisfactory": return "संतोषजनक";
+        case "Moderate": return "मध्यम";
+        default: return "खराब / गंभीर";
+      }
+    }
+    if (lang === "te") {
+      switch (badge) {
+        case "Good": return "మంచిది";
+        case "Satisfactory": return "సంతృప్తికరం";
+        case "Moderate": return "సాధారణం";
+        default: return "ప్రమాదకరం";
+      }
+    }
+    if (lang === "ta") {
+      switch (badge) {
+        case "Good": return "நல்லது";
+        case "Satisfactory": return "திருப்திகரமானது";
+        case "Moderate": return "மிதமானது";
+        default: return "மோசமானது / தீவிரமானது";
+      }
+    }
+    if (lang === "kn") {
+      switch (badge) {
+        case "Good": return "ಉತ್ತಮ";
+        case "Satisfactory": return "ತೃಪ್ತಿದಾಯಕ";
+        case "Moderate": return "ಸಾಧಾರಣ";
+        default: return "ಕಳಪೆ / ತೀವ್ರ";
+      }
+    }
+    return badge;
+  };
+
+  const getDynamicDailyBrief = () => {
+    const wardName = selectedWard.name;
+    const aqi = predictedAqi;
+    const forecastAqi = currentForecast?.[0]?.predicted_aqi || Math.min(500, Math.floor(predictedAqi * 1.05));
+    const traffic = selectedWard.traffic_congestion || 0;
+    const industrial = selectedWard.industrial_emissions || 0;
+    const windSpeed = selectedWard.wind_speed || 0.0;
+    const badge = getAQIBadge(aqi);
+    const translatedBadgeName = translateBadge(badge, language);
+
+    let currentSituation = "";
+    let keyRisks: string[] = [];
+    let forecastText = "";
+    let recommendedActions: string[] = [];
+
+    if (language === "hi") {
+      currentSituation = `${wardName} क्षेत्र में वायु गुणवत्ता सूचकांक वर्तमान में ${aqi} AQI (${translatedBadgeName}) पर बना हुआ है।`;
+      
+      const risk1 = traffic > 50
+        ? `व्यस्त समय के दौरान कार्यालय गलियारों के पास उच्च आवागमन यातायात कालिख (${traffic}% संकुलन)।`
+        : `क्षेत्रीय उद्योगों से औद्योगिक उत्सर्जन (${industrial}% उत्सर्जन भार)।`;
+      const risk2 = windSpeed < 4.5
+        ? `शांत शाम की हवा के झोंके (${windSpeed} मी/से) कणों के फैलाव चक्र में देरी कर रहे हैं।`
+        : `निर्माण स्थलों से उड़ने वाली धूल हवा में निलंबित कणात्मक स्तर को बढ़ा रही है।`;
+      keyRisks = [risk1, risk2];
+
+      forecastText = `एक्सजीबूस्ट भविष्यवाणियां संकेत देती हैं कि अगले 24 घंटों में कणों का स्तर ${forecastAqi} एक्यूआई के करीब पहुंच जाएगा।`;
+
+      recommendedActions = [
+        `${wardName} के बाहरी चौराहों से वाणिज्यिक भारी डीजल वाहनों को डायवर्ट करें।`,
+        `${wardName} के निर्माण स्थलों के पास स्थानीयकृत पानी के छिड़काव को बढ़ाएं।`
+      ];
+    } else if (language === "te") {
+      currentSituation = `${wardName} ప్రాంతంలో గాలి నాణ్యత సూచిక ప్రస్తుతం ${aqi} AQI (${translatedBadgeName}) గా నమోదు చేయబడింది.`;
+
+      const risk1 = traffic > 50
+        ? `కార్యాలయాలకు వెళ్లే రద్దీ సమయాల్లో జంక్షన్ల వద్ద వాహన కాలుష్యం ఎక్కువగా ఉంటోంది (${traffic}% రద్దీ).`
+        : `పరిశ్రమల ఉద్గారాల నిష్పత్తి స్థానిక కాలుష్యాన్ని పెంచుతోంది (${industrial}% ఉద్గారాలు).`;
+      const risk2 = windSpeed < 4.5
+        ? `సాయంత్రం వేళల్లో గాలి వేగం తగ్గడం వల్ల (${windSpeed} m/s) ధూళి కణాలు త్వరగా తొలగిపోవడం లేదు.`
+        : `నిర్ಮಾಣ పనులు జరుగుతున్న ప్రాంతాల నుండి లేస్తున్న ధూళి గాలిలో కలుస్తోంది.`;
+      keyRisks = [risk1, risk2];
+
+      forecastText = `XGBoost మోడల్ అంచనాల ప్రకారం రాబోయే 24 గంటల్లో గాలి కాలుష్య సూచిక ${forecastAqi} AQI కి చేరే అవకాశం ఉంది.`;
+
+      recommendedActions = [
+        `${wardName} జంక్షన్ల గుండా వెళ్లే భారీ డీజిల్ వాహనాలను బైపాస్ రోడ్లపైకి మళ్లించండి.`,
+        `${wardName} నిర్మాణ ప్రాంతాల వద్ద నీటిని చల్లడం మరింత పెంచండి.`
+      ];
+    } else if (language === "ta") {
+      currentSituation = `${wardName} பகுதியில் காற்றின் தரம் தற்பொழுது ${aqi} AQI (${translatedBadgeName}) ஆக பதிவாகியுள்ளது.`;
+
+      const risk1 = traffic > 50
+        ? `அலுவலக நேரங்களில் சந்திப்புகளில் வாகன புகைக்கரி மாசுபாடு அதிகமாக உள்ளது (${traffic}% நெரிசல்).`
+        : `தொழிற்சாலை உமிழ்வுகள் காற்றின் துகள் செறிவை அதிகரிக்கின்றன (${industrial}% உமிழ்வு).`;
+      const risk2 = windSpeed < 4.5
+        ? `மாலை நேரத்தில் காற்றின் வேகம் குறைவதால் (${windSpeed} மீ/வி) காற்றில் உள்ள தூசிகள் எளிதில் கலைவதில்லை.`
+        : `கட்டுமானப் பகுதிகளில் இருந்து கிளம்பும் தூசி காற்றின் மாசுபாட்டை அதிகரிக்கிறது.`;
+      keyRisks = [risk1, risk2];
+
+      forecastText = `XGBoost கணிப்புகளின்படி அடுத்த 24 மணிநேரத்தில் காற்றின் தரம் ${forecastAqi} AQI ஆக உயர வாய்ப்புள்ளது.`;
+
+      recommendedActions = [
+        `${wardName} வெளிப்புற பாதைகளில் கனரக டீசல் வாகனங்களை திருப்பிவிடவும்.`,
+        `${wardName} கட்டுமானப் பகுதிகள் அருகில் நீர் தெளிப்பதை அதிகரிக்கவும்.`
+      ];
+    } else if (language === "kn") {
+      currentSituation = `${wardName} ವಲಯದಲ್ಲಿ ಗಾಳಿಯ ಗುಣಮಟ್ಟ ಸೂಚ್ಯಂಕವು ಪ್ರಸ್ತುತ ${aqi} AQI (${translatedBadgeName}) ಆಗಿದೆ.`;
+
+      const risk1 = traffic > 50
+        ? `ಕಚೇರಿ ಸಮಯದ ರದ್ದಿಯ ಸಂದರ್ಭದಲ್ಲಿ ಜಂಕ್ಷನ್‌ಗಳ ಬಳಿ ವಾಹನಗಳ ಹೊಗೆಯ ಪ್ರಮಾಣ ಹೆಚ್ಚು (${traffic}% ಸಂಚಾರ ದಟ್ಟಣೆ).`
+        : `ಕೈಗಾರಿಕಾ ಹೊರಸೂಸುವಿಕೆಯು ಗಾಳಿಯಲ್ಲಿನ ಮಾಲಿನ್ಯ ಕಣಗಳ ಸಾಂದ್ರತೆಯನ್ನು ಹೆಚ್ಚಿಸುತ್ತಿದೆ (${industrial}% ಹೊರಸೂಸುವಿಕೆ).`;
+      const risk2 = windSpeed < 4.5
+        ? `ಸಂಜೆಯ ಶಾಂತ ಗಾಳಿಯು (${windSpeed} ಮೀ/ಸೆ) ಧೂಳಿನ ಕಣಗಳ ಚದುರುವಿಕೆಯನ್ನು ವಿಳಂಬಗೊಳಿಸುತ್ತದೆ.`
+        : `ಕಟ್ಟಡ ನಿರ್ಮಾಣ ಸ್ಥಳಗಳಿಂದ ಉಂಟಾಗುವ ಧೂಳು ಮಾಲಿನ್ಯ ಮಟ್ಟವನ್ನು ಹೆಚ್ಚಿಸುತ್ತಿದೆ.`;
+      keyRisks = [risk1, risk2];
+
+      forecastText = `XGBoost ಮುನ್ಸೂಚನೆಗಳ ಪ್ರಕಾರ ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ ಮಾಲಿನ್ಯ ಸೂಚ್ಯಂಕವು ${forecastAqi} AQI ಗೆ ಏರುವ ಸಾಧ್ಯತೆಯಿದೆ.`;
+
+      recommendedActions = [
+        `${wardName} ಹೊರ ವಲಯದ ಜಂಕ್ಷನ್‌ಗಳಿಂದ ವಾಣಿಜ್ಯ ಡೀಸೆಲ್ ವಾಹನಗಳನ್ನು ಬೇರೆಡೆಗೆ ತಿರುಗಿಸಿ.`,
+        `${wardName} ನಿರ್ಮಾಣ ಸ್ಥಳಗಳ ಬಳಿ ಸ್ಥಳೀಯವಾಗಿ ನೀರಿನ ಸಿಂಪಡಣೆಯನ್ನು ಹೆಚ್ಚಿಸಿ.`
+      ];
+    } else {
+      currentSituation = `Air quality aggregates in ${wardName} remain ${badge.toLowerCase()} with a current level of ${aqi} AQI.`;
+
+      const risk1 = traffic > 50
+        ? `High commuter traffic soot near office corridors during peak commute hours (${traffic}% congestion).`
+        : `Industrial emissions contributing to suspended particulate concentrations (${industrial}% emission factor).`;
+      const risk2 = windSpeed < 4.5
+        ? `Calm evening wind vectors (${windSpeed} m/s) delay particulate dispersion cycles.`
+        : `Fugitive dust suspensions from active construction zones and dry roads.`;
+      keyRisks = [risk1, risk2];
+
+      forecastText = `XGBoost lead predictions indicate particulate levels peaking near ${forecastAqi} AQI over 24 hours.`;
+
+      recommendedActions = [
+        `Divert heavy diesel vehicles from ${wardName} outer junctions.`,
+        `Increase localized water sprinkling near active construction sites in ${wardName}.`
+      ];
+    }
+
+    return { currentSituation, keyRisks, forecast: forecastText, recommendedActions };
+  };
 
   // Theme Aware Leaflet GIS Map Tile Loading
   useEffect(() => {
@@ -1710,7 +1850,7 @@ const buildMetroMapPoints = () => {
             
             {/* STICKY TOP NAVIGATION HEADER */}
             <header className="sticky top-0 z-40 border-b border-border bg-navbar/80 backdrop-blur-md min-h-[65px] flex items-center">
-              <div className="w-full px-4 sm:px-6 flex items-center justify-between gap-3 flex-nowrap overflow-hidden">
+              <div className="w-full px-4 sm:px-6 flex items-center justify-between gap-3 flex-nowrap overflow-visible">
 
                 <div className="flex items-center gap-3 min-w-0 flex-nowrap overflow-hidden">
                   <button 
@@ -1943,17 +2083,19 @@ const buildMetroMapPoints = () => {
                   </div>
 
                   {/* Today's AI Daily Briefing */}
-                  <DailyBriefCard 
-                    currentSituation={localizedBriefs[language]?.currentSituation || `Air quality index in ${selectedWard.name} stands at ${predictedAqi} AQI (${getAQIBadge(predictedAqi)}).`}
-                    keyRisks={localizedBriefs[language]?.keyRisks || [
-                      "High particulate loading near office junctions during peak commute.",
-                      "Calm evening wind vectors are expected to delay PM2.5 dispersion."
-                    ]}
-                    forecast={localizedBriefs[language]?.forecast || `Predictions show a 24h lead index peaking at ${currentForecast[0].predicted_aqi} AQI.`}
-                    recommendedActions={localizedBriefs[language]?.recommendedActions || actionRecommendations.map(r => r.title)}
-                    expectedImprovement={`-${totalReduction > 0 ? totalReduction : 22} AQI`}
-                    confidence={93}
-                  />
+                  {(() => {
+                    const brief = getDynamicDailyBrief();
+                    return (
+                      <DailyBriefCard 
+                        currentSituation={brief.currentSituation}
+                        keyRisks={brief.keyRisks}
+                        forecast={brief.forecast}
+                        recommendedActions={brief.recommendedActions}
+                        expectedImprovement={`-${totalReduction > 0 ? totalReduction : 22} AQI`}
+                        confidence={93}
+                      />
+                    );
+                  })()}
 
                   {/* Today's AI Environmental Brief */}
                   <ExecutiveBriefCard
@@ -2034,11 +2176,11 @@ const buildMetroMapPoints = () => {
                     <div>
                       <h4 className="text-xs font-bold text-muted uppercase tracking-widest leading-none font-extrabold flex items-center justify-between">
                         <span className="text-foreground flex items-center gap-1.5 text-sm font-black">
-                          <Users className="w-5 h-5 text-primary" /> Citizen Health Risks
+                          <Users className="w-5 h-5 text-primary" /> {t("citizenHealthRisksTitle")}
                         </span>
-                        <span className="text-[9px] font-bold bg-danger/10 border border-danger/20 text-danger px-1.5 py-0.5 rounded">Advisory Active</span>
+                        <span className="text-[9px] font-bold bg-danger/10 border border-danger/20 text-danger px-1.5 py-0.5 rounded">{t("advisoryActiveLabel")}</span>
                       </h4>
-                      <span className="text-[10px] text-muted mt-1 block">Vulnerability mapping across exposed demographic groups</span>
+                      <span className="text-[10px] text-muted mt-1 block">{t("citizenHealthRisksSub")}</span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -2088,7 +2230,13 @@ const buildMetroMapPoints = () => {
                     {/* Recharts trend comparison chart */}
                     <div className="lg:col-span-8 glass-card p-6 flex flex-col gap-6">
                       <h4 className="font-bold text-sm flex items-center gap-2">
-                        <TrendingUp className="w-4.5 h-4.5 text-primary" /> AQI Predictive Timeline (72h Forecast Horizon)
+                        <TrendingUp className="w-4.5 h-4.5 text-primary" /> {
+                          language === "hi" ? "एक्यूआई पूर्वानुमान समयरेखा (72 घंटे का पूर्वानुमान)" :
+                          language === "te" ? "AQI అంచనా కాలక్రమం (72 గంటల అంచనా)" :
+                          language === "ta" ? "AQI கணிப்பு காலவரிசை (72 மணிநேர கணிப்பு)" :
+                          language === "kn" ? "AQI ಮುನ್ಸೂಚನೆ ಕಾಲಸೂಚಿ (72 ಗಂಟೆಗಳ ಮುನ್ಸೂಚನೆ)" :
+                          "AQI Predictive Timeline (72h Forecast Horizon)"
+                        }
                       </h4>
 
                       <div className="h-[240px] w-full">
@@ -2109,9 +2257,21 @@ const buildMetroMapPoints = () => {
                             <XAxis dataKey="name" stroke="var(--muted)" fontSize={10} />
                             <YAxis stroke="var(--muted)" fontSize={10} />
                             <ChartTooltip contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)' }} />
-                            <Area type="monotone" dataKey="aqi" name="Baseline AQI" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorAqiMission)" />
+                            <Area type="monotone" dataKey="aqi" name={
+                              language === "hi" ? "आधारभूत एक्यूआई" :
+                              language === "te" ? "బేస్‌లైన్ AQI" :
+                              language === "ta" ? "அடிப்படை AQI" :
+                              language === "kn" ? "ಮೂಲ AQI" :
+                              "Baseline AQI"
+                            } stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorAqiMission)" />
                             {isSimulating && (
-                              <Area type="monotone" dataKey="simulatedAqi" name="Simulated AQI" stroke="var(--accent)" strokeWidth={2.5} strokeDasharray="5 5" fill="transparent" />
+                              <Area type="monotone" dataKey="simulatedAqi" name={
+                                language === "hi" ? "सिम्युलेटेड एक्यूआई" :
+                                language === "te" ? "సిమ్యులేటెడ్ AQI" :
+                                language === "ta" ? "உருவகப்படுத்தப்பட்ட AQI" :
+                                language === "kn" ? "ಸಿಮ್ಯುಲೇಟೆಡ್ AQI" :
+                                "Simulated AQI"
+                              } stroke="var(--accent)" strokeWidth={2.5} strokeDasharray="5 5" fill="transparent" />
                             )}
                           </AreaChart>
                         </ResponsiveContainer>
@@ -2119,13 +2279,31 @@ const buildMetroMapPoints = () => {
                     </div>
 
                     <div className="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                      <h4 className="font-bold text-sm">Hourly forecast horizons</h4>
+                      <h4 className="font-bold text-sm">
+                        {language === "hi" ? "प्रति घंटा पूर्वानुमानित समयसीमा" :
+                         language === "te" ? "గంటల వారీ అంచనా పరిధులు" :
+                         language === "ta" ? "மணிநேர முன்னறிவிப்பு எல்லைகள்" :
+                         language === "kn" ? "ಗಂಟೆವಾರು ಮುನ್ಸೂಚನೆ ವ್ಯಾಪ್ತಿಗಳು" :
+                         "Hourly forecast horizons"}
+                      </h4>
                       <div className="flex flex-col gap-2.5 mt-2">
                         {currentForecast.map((f, i) => (
                           <div key={i} className="flex justify-between items-center text-xs bg-muted/5 border border-border p-3 rounded-xl">
                             <div>
-                              <span className="font-semibold text-foreground block">Horizon +{f.horizon_hours} Hours</span>
-                              <span className="text-[9px] text-muted block mt-0.5">Confidence index: {f.confidence_score * 100}%</span>
+                              <span className="font-semibold text-foreground block">
+                                {language === "hi" ? `समयसीमा +${f.horizon_hours} घंटे` :
+                                 language === "te" ? `సమయం +${f.horizon_hours} గంటలు` :
+                                 language === "ta" ? `எல்லை +${f.horizon_hours} மணிநேரம்` :
+                                 language === "kn" ? `ವ್ಯಾಪ್ತಿ +${f.horizon_hours} ಗಂಟೆಗಳು` :
+                                 `Horizon +${f.horizon_hours} Hours`}
+                              </span>
+                              <span className="text-[9px] text-muted block mt-0.5">
+                                {language === "hi" ? `विश्वास सूचकांक: ${f.confidence_score * 100}%` :
+                                 language === "te" ? `విశ్వసనీయత సూచిక: ${f.confidence_score * 100}%` :
+                                 language === "ta" ? `நம்பிக்கை குறியீடு: ${f.confidence_score * 100}%` :
+                                 language === "kn" ? `ವಿಶ್ವಾಸಾರ್ಹತೆ ಸೂಚ್ಯಂಕ: ${f.confidence_score * 100}%` :
+                                 `Confidence index: ${f.confidence_score * 100}%`}
+                              </span>
                             </div>
                           </div>
                         ))}
@@ -2142,9 +2320,21 @@ const buildMetroMapPoints = () => {
                     <div className="lg:col-span-8 glass-card p-6 flex flex-col gap-6 text-left">
                       <div>
                         <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                          <Users className="w-4.5 h-4.5 text-primary" /> Metro AQI Comparison
+                          <Users className="w-4.5 h-4.5 text-primary" /> {
+                            language === "hi" ? "मेट्रो एक्यूआई तुलना" :
+                            language === "te" ? "మెట్రో నగరాల AQI పోలిక" :
+                            language === "ta" ? "பெருநகர AQI ஒப்பீடு" :
+                            language === "kn" ? "ಮೆಟ್ರೋ ನಗರಗಳ AQI ಹೋಲಿಕೆ" :
+                            "Metro AQI Comparison"
+                          }
                         </h4>
-                        <span className="text-[10px] text-muted mt-1 block">AQI.in live values with short-horizon forecast overlays</span>
+                        <span className="text-[10px] text-muted mt-1 block">
+                          {language === "hi" ? "लघु-अवधि पूर्वानुमान ओवरले के साथ AQI.in लाइव मान" :
+                           language === "te" ? "స్వల్పకాలిక అంచనాలతో కూడిన AQI.in ప్రత్యక్ష విలువలు" :
+                           language === "ta" ? "குறுகிய கால கணிப்புகளுடன் கூடிய AQI.in நேரடி மதிப்புகள்" :
+                           language === "kn" ? "ಅಲ್ಪಾವಧಿಯ ಮುನ್ಸೂಚನೆಯೊಂದಿಗೆ AQI.in ನೈಜ ಮೌಲ್ಯಗಳು" :
+                           "AQI.in live values with short-horizon forecast overlays"}
+                        </span>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -2178,9 +2368,9 @@ const buildMetroMapPoints = () => {
                     <div className="lg:col-span-12 glass-card p-6 flex flex-col gap-6 text-left">
                       <div>
                         <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                          <Activity className="w-4.5 h-4.5 text-primary" /> Policy Impact & Analytics Dashboard
+                          <Activity className="w-4.5 h-4.5 text-primary" /> {t("policyImpactTitle")}
                         </h4>
-                        <span className="text-[10px] text-muted mt-1 block">Expected target reductions versus actual measured environmental benefits</span>
+                        <span className="text-[10px] text-muted mt-1 block">{t("policyImpactSub")}</span>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

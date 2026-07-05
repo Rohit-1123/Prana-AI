@@ -1,19 +1,23 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
 import { BarChart3, Bell, TrendingUp } from "lucide-react";
+import { extraTranslations } from "../../../utils/i18n_extra";
 
 interface BottomAnalyticsProps {
   ward: any;
 }
 
 export function BottomAnalytics({ ward }: BottomAnalyticsProps) {
+  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
+
   const mockTimelineData = [
-    { name: "Mon", aqi: Math.floor(ward.aqi * 0.95), temp: ward.temperature - 1 },
-    { name: "Tue", aqi: Math.floor(ward.aqi * 1.02), temp: ward.temperature },
-    { name: "Wed", aqi: Math.floor(ward.aqi * 0.98), temp: ward.temperature + 0.5 },
-    { name: "Thu", aqi: Math.floor(ward.aqi * 1.05), temp: ward.temperature + 1 },
-    { name: "Fri", aqi: Math.floor(ward.aqi * 1.08), temp: ward.temperature },
-    { name: "Sat", aqi: Math.floor(ward.aqi * 1.05), temp: ward.temperature - 0.5 },
-    { name: "Sun", aqi: ward.aqi, temp: ward.temperature }
+    { name: activeLanguage === "hi" ? "सोम" : activeLanguage === "te" ? "సోమ" : activeLanguage === "ta" ? "திங்கள்" : activeLanguage === "kn" ? "ಸೋಮ" : "Mon", aqi: Math.floor(ward.aqi * 0.95), temp: ward.temperature - 1 },
+    { name: activeLanguage === "hi" ? "मंगल" : activeLanguage === "te" ? "మంగళ" : activeLanguage === "ta" ? "செவ்வாய்" : activeLanguage === "kn" ? "ಮಂಗಳ" : "Tue", aqi: Math.floor(ward.aqi * 1.02), temp: ward.temperature },
+    { name: activeLanguage === "hi" ? "बुध" : activeLanguage === "te" ? "బుధ" : activeLanguage === "ta" ? "புதன்" : activeLanguage === "kn" ? "ಬುಧ" : "Wed", aqi: Math.floor(ward.aqi * 0.98), temp: ward.temperature + 0.5 },
+    { name: activeLanguage === "hi" ? "गुरु" : activeLanguage === "te" ? "గురు" : activeLanguage === "ta" ? "வியாழன்" : activeLanguage === "kn" ? "ಗುರು" : "Thu", aqi: Math.floor(ward.aqi * 1.05), temp: ward.temperature + 1 },
+    { name: activeLanguage === "hi" ? "शुक्र" : activeLanguage === "te" ? "శుక్ర" : activeLanguage === "ta" ? "வெள்ளி" : activeLanguage === "kn" ? "ಶುಕ್ರ" : "Fri", aqi: Math.floor(ward.aqi * 1.08), temp: ward.temperature },
+    { name: activeLanguage === "hi" ? "शनि" : activeLanguage === "te" ? "శని" : activeLanguage === "ta" ? "சனி" : activeLanguage === "kn" ? "ಶನಿ" : "Sat", aqi: Math.floor(ward.aqi * 1.05), temp: ward.temperature - 0.5 },
+    { name: activeLanguage === "hi" ? "रवि" : activeLanguage === "te" ? "ఆది" : activeLanguage === "ta" ? "ஞாயிறு" : activeLanguage === "kn" ? "ಭಾನು" : "Sun", aqi: ward.aqi, temp: ward.temperature }
   ];
 
   return (
@@ -24,10 +28,10 @@ export function BottomAnalytics({ ward }: BottomAnalyticsProps) {
         <div className="flex items-center gap-2">
           <BarChart3 className="w-4.5 h-4.5 text-primary" />
           <span className="font-extrabold text-xs sm:text-sm text-foreground">
-            Neighborhood Environmental Analytics & Alerts Timeline: <strong className="text-primary">{ward.name}</strong>
+            {tExtra.bottomAnalyticsTitle}: <strong className="text-primary">{ward.name}</strong>
           </span>
         </div>
-        <span className="text-[10px] uppercase font-mono font-bold text-muted">7-Day Analysis</span>
+        <span className="text-[10px] uppercase font-mono font-bold text-muted">{tExtra.sevenDayAnalysis}</span>
       </div>
 
       {/* Content Area */}
@@ -36,7 +40,7 @@ export function BottomAnalytics({ ward }: BottomAnalyticsProps) {
         {/* Timeline Pollutant Trend Chart */}
         <div className="md:col-span-8 flex flex-col gap-3 h-full overflow-hidden">
           <span className="text-[10px] uppercase font-extrabold tracking-wider text-muted block flex items-center gap-1.5">
-            <TrendingUp className="w-4 h-4 text-primary" /> 7-Day Particulate Load Trend (AQI)
+            <TrendingUp className="w-4 h-4 text-primary" /> {tExtra.sevenDayTrend}
           </span>
           <div className="w-full h-44 mt-2">
             <ResponsiveContainer width="100%" height="100%">
@@ -60,13 +64,13 @@ export function BottomAnalytics({ ward }: BottomAnalyticsProps) {
         {/* Recent Alerts Feed */}
         <div className="md:col-span-4 flex flex-col gap-3 h-full overflow-hidden border-t md:border-t-0 md:border-l border-border pt-4 md:pt-0 md:pl-6">
           <span className="text-[10px] uppercase font-extrabold tracking-wider text-muted block flex items-center gap-1.5">
-            <Bell className="w-4 h-4 text-primary" /> Active Neighborhood Alerts
+            <Bell className="w-4 h-4 text-primary" /> {tExtra.activeAlerts}
           </span>
           <div className="flex flex-col gap-2.5 overflow-y-auto flex-grow max-h-[176px] pr-1 mt-2">
             {[
-              { title: "Traffic Soot Alert", desc: "Diesel congestion elevated PM2.5 levels.", time: "1 hr ago" },
-              { title: "Calm Wind Conditions", desc: "Dispersion values limited due to light winds.", time: "4 hrs ago" },
-              { title: "Construction Dust Warning", desc: "Local building sites particulate drift warning.", time: "1 day ago" }
+              { title: tExtra.trafficSootAlert, desc: tExtra.dieselCongestionDesc, time: activeLanguage === "hi" ? "1 घंटा पहले" : activeLanguage === "te" ? "1 గంట క్రితం" : activeLanguage === "ta" ? "1 மணிநேரத்திற்கு முன்" : activeLanguage === "kn" ? "1 ಗಂಟೆ ಹಿಂದೆ" : "1 hr ago" },
+              { title: tExtra.calmWindConditions, desc: tExtra.lightWindsDesc, time: activeLanguage === "hi" ? "4 घंटे पहले" : activeLanguage === "te" ? "4 గంటల క్రితం" : activeLanguage === "ta" ? "4 மணிநேரங்களுக்கு முன்" : activeLanguage === "kn" ? "4 ಗಂಟೆಗಳ ಹಿಂದೆ" : "4 hrs ago" },
+              { title: tExtra.constructionDustWarning, desc: tExtra.particulateDriftDesc, time: activeLanguage === "hi" ? "1 दिन पहले" : activeLanguage === "te" ? "1 రోజు క్రితం" : activeLanguage === "ta" ? "1 நாளுக்கு முன்" : activeLanguage === "kn" ? "1 ದಿನ ಹಿಂದೆ" : "1 day ago" }
             ].map((alertItem, idx) => (
               <div key={idx} className="bg-muted/5 border border-border p-3 rounded-xl flex flex-col gap-1 text-xs">
                 <div className="flex justify-between items-center text-foreground font-bold">
