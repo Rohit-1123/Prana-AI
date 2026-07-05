@@ -18,6 +18,7 @@ export const suggestedLangByCity: Record<string, LanguageCode> = {
   "Hyderabad": "te",
   "Chennai": "ta",
   "Bengaluru": "kn",
+  "Bangalore": "kn",
   "Delhi": "hi",
   "Mumbai": "hi"
 };

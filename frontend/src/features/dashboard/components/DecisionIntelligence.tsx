@@ -146,6 +146,7 @@ export function ExecutiveBriefCard({
   };
 
   const getPrimaryRiskTranslated = (risk: string) => {
+    if (activeLanguage === "en") return risk;
     if (risk.includes("Traffic & Construction")) return tExtra.trafficAndConstruction;
     if (risk.includes("Traffic & Dust")) return tExtra.trafficAndDust;
     if (risk.includes("Coastal Winds & Traffic")) return tExtra.coastalWindsTraffic;
@@ -155,12 +156,14 @@ export function ExecutiveBriefCard({
   };
 
   const getReliabilityTranslated = (rel: string) => {
+    if (activeLanguage === "en") return rel;
     if (rel.includes("Stable")) return activeLanguage === "hi" ? "95% (स्थिर)" : activeLanguage === "te" ? "95% (స్థిరంగా ఉంది)" : activeLanguage === "ta" ? "95% (நிலையானது)" : "95% (ಸ್ಥಿರವಾಗಿದೆ)";
     if (rel.includes("Moderate")) return activeLanguage === "hi" ? "90% (मध्यम)" : activeLanguage === "te" ? "90% (సాధారణ)" : activeLanguage === "ta" ? "90% (மிதமான)" : "90% (ಸಾಧಾರಣ)";
     return rel;
   };
 
   const getEvidenceSourcesTranslated = (sources: string) => {
+    if (activeLanguage === "en") return sources;
     if (sources.includes("6 Nodes, Radar, GIS")) return tExtra.nodesRadarGis;
     if (sources.includes("5 Wards, Satellite, GIS")) return tExtra.wardsSatelliteGis;
     if (sources.includes("4 Nodes, Marine Buoys")) return tExtra.nodesMarineBuoys;
@@ -170,6 +173,7 @@ export function ExecutiveBriefCard({
   };
 
   const getDecisionImpactTranslated = (impact: string) => {
+    if (activeLanguage === "en") return impact;
     if (impact.includes("Very High Impact")) return tExtra.veryHighImpact;
     if (impact.includes("High Impact")) return tExtra.highImpact;
     if (impact.includes("Moderate Impact")) return tExtra.moderateImpact;
