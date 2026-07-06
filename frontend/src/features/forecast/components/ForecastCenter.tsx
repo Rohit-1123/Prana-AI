@@ -10,6 +10,7 @@ import { AISummaryCard } from "./AISummaryCard";
 import { DiurnalChart } from "./DiurnalChart";
 import { BarChart, Bar, XAxis as BarXAxis, YAxis as BarYAxis, CartesianGrid as BarCartesianGrid, Tooltip as BarTooltip, ResponsiveContainer as BarResponsiveContainer } from "recharts";
 import { X, Check } from "lucide-react";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface ForecastCenterProps {
   wards: any[];
@@ -28,7 +29,7 @@ export function ForecastCenter({
   onNavigateToMap,
   narrativeExplanation
 }: ForecastCenterProps) {
-  
+  const { formatTemp, formatWind } = useSettings();
   // i18n localization definitions
   const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
 
@@ -157,9 +158,9 @@ export function ForecastCenter({
                   <tr>
                     <td>${r.time}</td>
                     <td><strong>${r.aqi}</strong></td>
-                    <td>${r.temp}°C</td>
+                    <td>${formatTemp(r.temp)}</td>
                     <td>${r.humidity}%</td>
-                    <td>${r.wind} m/s</td>
+                    <td>${formatWind(r.wind)}</td>
                     <td>${r.confidence}%</td>
                   </tr>
                 `).join("")}
@@ -417,9 +418,9 @@ export function ForecastCenter({
                           <td className="px-4 py-3 font-extrabold text-foreground">{w.name}</td>
                           <td className={`px-4 py-3 font-extrabold ${aqiColor}`}>{displayAqi}</td>
                           <td className="px-4 py-3 font-semibold text-muted">93%</td>
-                          <td className="px-4 py-3 font-semibold">{w.temperature}°C</td>
+                          <td className="px-4 py-3 font-semibold">{formatTemp(w.temperature)}</td>
                           <td className="px-4 py-3 font-semibold">{w.humidity}%</td>
-                          <td className="px-4 py-3 font-semibold">{w.wind_speed} m/s</td>
+                          <td className="px-4 py-3 font-semibold">{formatWind(w.wind_speed)}</td>
                         </tr>
                       );
                     })}

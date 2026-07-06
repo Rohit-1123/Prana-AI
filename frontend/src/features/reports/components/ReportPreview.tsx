@@ -166,7 +166,7 @@ export function ReportPreview({ report, onClose }: ReportPreviewProps) {
                         activeLanguage === "ta" ? "கனரக டீசல் வாகனங்கள் திசைதிருப்புதல்" :
                         activeLanguage === "kn" ? "ಹೆವಿ ಡೀಸೆಲ್ ವಾಹನಗಳ ಸಂಚಾರ ನಿಯಂತ್ರಣ" :
                         "Heavy Diesel Traffic Diversion", 
-                  target: "-22 AQI Points", cost: "$24,500", conf: "94%" 
+                  target: "-22 AQI Points", cost: "₹20,33,500", conf: "94%" 
                 },
                 { 
                   name: activeLanguage === "hi" ? "निर्माण स्थल धूल आवरण अधिदेश" :
@@ -174,7 +174,7 @@ export function ReportPreview({ report, onClose }: ReportPreviewProps) {
                         activeLanguage === "ta" ? "கட்டுமான பகுதி தூசுகள் மூடும் உறை" :
                         activeLanguage === "kn" ? "ಕಟ್ಟಡ ಧೂಳು ತಡೆಯುವ ಪರದೆಗಳ ಅಳವಡಿಕೆ" :
                         "Construction Site Dust Cover Mandate", 
-                  target: "-9 AQI Points", cost: "$8,200", conf: "91%" 
+                  target: "-9 AQI Points", cost: "₹6,80,600", conf: "91%" 
                 },
                 { 
                   name: activeLanguage === "hi" ? "स्थानीय जल छिड़काव बेड़ा" :
@@ -182,7 +182,7 @@ export function ReportPreview({ report, onClose }: ReportPreviewProps) {
                         activeLanguage === "ta" ? "நீர் தெளிக்கும் வாகனங்கள் இயக்கம்" :
                         activeLanguage === "kn" ? "ಸ್ಥಳೀಯ ರಸ್ತೆ ನೀರು ಸಿಂಪಡಣೆ ಕಾರ್ಯ" :
                         "Localized Water Sprinkling Fleet", 
-                  target: "-6 AQI Points", cost: "$1,500", conf: "88%" 
+                  target: "-6 AQI Points", cost: "₹1,24,500", conf: "88%" 
                 }
               ].map((rec, idx) => (
                 <div key={idx} className="bg-background/40 border border-border/60 p-3 rounded-xl flex justify-between items-center text-xs">

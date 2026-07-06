@@ -973,7 +973,7 @@ export function PolicyImpactCard({
         <div>
           <span className="text-[7.5px] uppercase tracking-wide font-extrabold text-muted block">{translations.budgetCost}</span>
           <span className="text-[10px] font-black text-foreground mt-0.5 block">
-            {activeLanguage === "hi" || activeLanguage === "te" || activeLanguage === "ta" || activeLanguage === "kn" ? `₹${(cost * 83).toLocaleString()}` : `$${cost.toLocaleString()}`}
+            ₹{(cost * 83).toLocaleString()}
           </span>
         </div>
         <div>

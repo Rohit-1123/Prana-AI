@@ -1,12 +1,13 @@
 import { MapPin, Compass, Thermometer, Clock, ShieldAlert } from "lucide-react";
 import { cn } from "../../../utils/cn";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface ContextPanelProps {
   selectedWard: any;
 }
 
 export function ContextPanel({ selectedWard }: ContextPanelProps) {
-  
+  const { formatTemp, formatWind } = useSettings();
   const displayAqi = selectedWard.aqi;
   
   const getAQIColorClass = (aqi: number) => {
@@ -60,8 +61,8 @@ export function ContextPanel({ selectedWard }: ContextPanelProps) {
           <Thermometer className="w-4.5 h-4.5 text-warning shrink-0 mt-0.5" />
           <div>
             <span className="text-[9px] text-muted font-bold block">Temperature Index</span>
-            <span className="text-xs font-black text-foreground block mt-0.5">{selectedWard.temperature}°C Sunny</span>
-            <span className="text-[8.5px] text-muted block mt-0.5">Wind speed: {selectedWard.wind_speed} m/s</span>
+            <span className="text-xs font-black text-foreground block mt-0.5">{formatTemp(selectedWard.temperature)} Sunny</span>
+            <span className="text-[8.5px] text-muted block mt-0.5">Wind speed: {formatWind(selectedWard.wind_speed)}</span>
           </div>
         </div>
 

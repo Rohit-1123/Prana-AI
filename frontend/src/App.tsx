@@ -58,6 +58,10 @@ import { cn } from "./utils/cn";
 
 // Import custom boot experience component
 import { BootLayout } from "./components/boot/BootSequence";
+import { EnvironmentalThemeProvider, EnvironmentalAmbience } from "./theme/EnvironmentalThemeEngine";
+import { SettingsProvider, useSettings } from "./contexts/SettingsContext";
+
+
 
 import { DigitalTwin } from "./features/digital-twin/components/DigitalTwin";
 import { ForecastCenter } from "./features/forecast/components/ForecastCenter";
@@ -205,6 +209,7 @@ const buildMetroMapPoints = () => {
 
   function PranaApp() {
     const { theme, setTheme, resolvedTheme } = useTheme();
+    const { systemTimezone, formatTemp } = useSettings();
     const [searchQuery, setSearchQuery] = useState("");
     const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -366,12 +371,16 @@ const buildMetroMapPoints = () => {
     useEffect(() => {
       const updateTime = () => {
         const date = new Date();
-        setCurrentTimeStr(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        if (systemTimezone === "UTC") {
+          setCurrentTimeStr(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: "UTC" }) + " UTC");
+        } else {
+          setCurrentTimeStr(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: "Asia/Kolkata" }) + " IST");
+        }
       };
       updateTime();
       const interval = setInterval(updateTime, 1000);
       return () => clearInterval(interval);
-    }, []);
+    }, [systemTimezone]);
 
   // Track scroll offsets for transparent header transitions
   useEffect(() => {
@@ -1284,8 +1293,11 @@ const buildMetroMapPoints = () => {
     : [];
 
   return (
-    <div className="min-h-screen text-foreground bg-background transition-colors duration-300">
-      {flow === "landing" && (
+    <EnvironmentalThemeProvider selectedWard={selectedWard}>
+      <div className="min-h-screen text-foreground bg-transparent transition-colors duration-300 relative">
+        <EnvironmentalAmbience />
+        <div className="relative z-10 w-full min-h-screen">
+          {flow === "landing" && (
         <div className={cn("min-h-screen bg-[#070B14] text-slate-100 relative overflow-x-hidden font-sans scroll-smooth prana-shell", weatherShellClass)}>
           <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             <div className={cn(
@@ -1465,7 +1477,7 @@ const buildMetroMapPoints = () => {
                   </div>
                   <div>
                     <span className="text-[9px] uppercase font-bold text-slate-500 block">Weather Pattern</span>
-                    <span className="text-xs font-black text-white">{selectedWard.temperature} °C · {weatherLabel}</span>
+                    <span className="text-xs font-black text-white">{formatTemp(selectedWard.temperature)} · {weatherLabel}</span>
                   </div>
                 </div>
               </div>
@@ -1739,7 +1751,7 @@ const buildMetroMapPoints = () => {
       {/* 4. MISSION CONTROL OPERATIONAL CANVAS */}
       {flow === "dashboard" && (
         <div className={cn(
-          "min-h-screen flex bg-background transition-colors duration-500 relative prana-shell overflow-hidden",
+          "min-h-screen flex bg-transparent transition-colors duration-500 relative prana-shell overflow-hidden",
           selectedWard.aqi <= 50 ? "bg-weather-good" : selectedWard.aqi <= 100 ? "bg-weather-moderate" : selectedWard.aqi <= 170 ? "bg-weather-poor" : "bg-weather-severe",
           weatherShellClass
         )}>
@@ -1805,7 +1817,7 @@ const buildMetroMapPoints = () => {
                 { id: "reports", label: t("reports"), icon: FileText },
                 { id: "copilot", label: t("copilot"), icon: MessageSquare },
                 { id: "settings", label: t("settings"), icon: Settings },
-                { id: "about", label: t("about"), icon: Info }
+                { id: "About", label: t("About"), icon: Info }
               ].map((tab) => {
                 const isActive = activePage === tab.id;
                 return (
@@ -1872,7 +1884,7 @@ const buildMetroMapPoints = () => {
                     <span className="hidden md:inline-flex h-4 w-px bg-border/80" />
                     <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-muted whitespace-nowrap">
                       <Sun className="w-3.5 h-3.5 text-warning shrink-0" />
-                      <span>{selectedWard.temperature}°C {weatherLabel}</span>
+                      <span>{formatTemp(selectedWard.temperature)} {weatherLabel}</span>
                     </div>
                     <span className="hidden lg:inline-flex h-4 w-px bg-border/80" />
                     <div className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-muted whitespace-nowrap">
@@ -2475,6 +2487,7 @@ const buildMetroMapPoints = () => {
                   onGenerateReport={() => handleGenerateReport("Weekly")}
                   onViewTwin={() => handleTabClick("map")}
                   onOpenForecast={() => handleTabClick("prediction")}
+                  onNavigate={handleTabClick}
                 />
               )}
 
@@ -2484,7 +2497,7 @@ const buildMetroMapPoints = () => {
               )}
 
               {/* H. ABOUT THE OPERATING SYSTEM TAB */}
-              {activePage === "about" && (
+              {activePage === "About" && (
                 <div className="glass-card p-8 flex flex-col gap-6">
                   <div>
                     <h2 className="text-xl font-extrabold text-foreground">About PranaAI</h2>
@@ -2669,14 +2682,18 @@ const buildMetroMapPoints = () => {
         </div>
       </Modal>
 
-    </div>
+        </div>
+      </div>
+    </EnvironmentalThemeProvider>
   );
 }
 
 export default function App() {
   return (
     <ThemeProvider>
-      <PranaApp />
+      <SettingsProvider>
+        <PranaApp />
+      </SettingsProvider>
     </ThemeProvider>
   );
 }

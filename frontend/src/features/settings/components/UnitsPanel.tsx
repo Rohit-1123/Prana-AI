@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Ruler, Check } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 export function UnitsPanel() {
-  const [unit, setUnit] = useState(() => localStorage.getItem("measurement_unit") || "metric");
+  const { measurementUnit, setMeasurementUnit } = useSettings();
+  const [unit, setUnit] = useState(measurementUnit);
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    setUnit(measurementUnit);
+  }, [measurementUnit]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("measurement_unit", unit);
+    setMeasurementUnit(unit as "metric" | "imperial");
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
@@ -31,7 +37,7 @@ export function UnitsPanel() {
         <label className="text-[10px] uppercase font-bold text-muted block">Measurement Scale</label>
         <select
           value={unit}
-          onChange={(e) => setUnit(e.target.value)}
+          onChange={(e) => setUnit(e.target.value as "metric" | "imperial")}
           className="bg-card border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer w-full"
         >
           <option value="metric" className="bg-card text-foreground">Metric (°C, m/s)</option>

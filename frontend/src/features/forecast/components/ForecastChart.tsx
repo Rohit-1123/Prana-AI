@@ -2,6 +2,7 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, 
 import { TrendingUp, Sun, Droplets, Wind } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../../../utils/cn";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface ForecastChartProps {
   wardName: string;
@@ -9,13 +10,27 @@ interface ForecastChartProps {
 }
 
 export function ForecastChart({ wardName, data }: ForecastChartProps) {
+  const { measurementUnit } = useSettings();
   const [activeChart, setActiveChart] = useState<"aqi" | "temp" | "humidity" | "wind">("aqi");
+
+  const isImperial = measurementUnit === "imperial";
+
+  const convertedData = data.map((d) => {
+    if (isImperial) {
+      return {
+        ...d,
+        temp: Number(((d.temp * 9) / 5 + 32).toFixed(1)),
+        wind: Number((d.wind * 2.23694).toFixed(1))
+      };
+    }
+    return d;
+  });
 
   const tabs = [
     { id: "aqi", label: "AQI Predictions", icon: TrendingUp, color: "var(--primary)" },
-    { id: "temp", label: "Temperature (°C)", icon: Sun, color: "var(--warning)" },
+    { id: "temp", label: isImperial ? "Temperature (°F)" : "Temperature (°C)", icon: Sun, color: "var(--warning)" },
     { id: "humidity", label: "Humidity (%)", icon: Droplets, color: "var(--accent)" },
-    { id: "wind", label: "Wind Vectors (m/s)", icon: Wind, color: "var(--secondary)" }
+    { id: "wind", label: isImperial ? "Wind Vectors (mph)" : "Wind Vectors (m/s)", icon: Wind, color: "var(--secondary)" }
   ];
 
   const getActiveColor = () => {
@@ -57,7 +72,7 @@ export function ForecastChart({ wardName, data }: ForecastChartProps) {
       {/* Main Chart viewport */}
       <div className="h-[260px] w-full mt-2">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
+          <AreaChart data={convertedData}>
             <defs>
               <linearGradient id="colorForecastDynamic" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={getActiveColor()} stopOpacity={0.35}/>

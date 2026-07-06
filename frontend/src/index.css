@@ -183,6 +183,16 @@ body {
   pointer-events: none;
 }
 
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--env-card-reflection, transparent);
+  pointer-events: none;
+  transition: background 1s ease-in-out;
+}
+
+
 .btn-primary {
   display: inline-flex;
   align-items: center;

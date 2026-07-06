@@ -10,6 +10,7 @@ import {
 import { cn } from "../../../utils/cn";
 import { uiTranslations } from "../../../utils/i18n";
 import { translateActionTitle, translateActionDesc } from "../../../utils/i18n_extra";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface DigitalTwinProps {
   wards: any[];
@@ -26,7 +27,7 @@ export function DigitalTwin({
   recommendations,
   onExecutePolicy
 }: DigitalTwinProps) {
-  
+  const { formatTemp, formatWind } = useSettings();
   const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
   const translations = uiTranslations[activeLanguage] || uiTranslations["en"];
   const currentAqi = selectedWard.aqi;
@@ -128,7 +129,7 @@ export function DigitalTwin({
                    activeLanguage === "kn" ? "ತಾಪಮಾನ" :
                    "Temperature"}
                 </span>
-                <span className="text-xs font-black">{selectedWard.temperature}°C</span>
+                <span className="text-xs font-black">{formatTemp(selectedWard.temperature)}</span>
               </div>
             </div>
             
@@ -151,7 +152,7 @@ export function DigitalTwin({
                      activeLanguage === "kn" ? "ಗಾಳಿಯ ವೇಗ" :
                      "Wind vectors"}
                   </span>
-                  <span className="text-xs font-black">{selectedWard.wind_speed} m/s Speed</span>
+                  <span className="text-xs font-black">{formatWind(selectedWard.wind_speed)} Speed</span>
                 </div>
                 <span className="text-[9px] font-bold text-success">Calm dispersion</span>
               </div>

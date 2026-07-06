@@ -8,13 +8,17 @@ interface ConversationViewProps {
   suggestedQuestions: string[];
   onClickQuestion: (q: string) => void;
   isLoading: boolean;
+  onNavigate?: (tabId: string) => void;
+  onGenerateReport?: () => void;
 }
 
 export function ConversationView({
   messages,
   suggestedQuestions,
   onClickQuestion,
-  isLoading
+  isLoading,
+  onNavigate,
+  onGenerateReport
 }: ConversationViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -38,7 +42,12 @@ export function ConversationView({
       ) : (
         <>
           {messages.map((msg, index) => (
-            <MessageBubble key={index} msg={msg} />
+            <MessageBubble 
+              key={index} 
+              msg={msg} 
+              onNavigate={onNavigate}
+              onGenerateReport={onGenerateReport}
+            />
           ))}
           {isLoading && <TypingIndicator />}
         </>

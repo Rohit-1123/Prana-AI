@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Globe, Check } from "lucide-react";
 import { Button } from "../../../components/ui/Button";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 export function TimezonePanel() {
-  const [timezone, setTimezone] = useState(() => localStorage.getItem("system_timezone") || "IST");
+  const { systemTimezone, setSystemTimezone } = useSettings();
+  const [timezone, setTimezone] = useState(systemTimezone);
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    setTimezone(systemTimezone);
+  }, [systemTimezone]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("system_timezone", timezone);
+    setSystemTimezone(timezone as "IST" | "UTC");
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
@@ -31,7 +37,7 @@ export function TimezonePanel() {
         <label className="text-[10px] uppercase font-bold text-muted block">Timezone Scope</label>
         <select
           value={timezone}
-          onChange={(e) => setTimezone(e.target.value)}
+          onChange={(e) => setTimezone(e.target.value as "IST" | "UTC")}
           className="bg-card border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer w-full"
         >
           <option value="IST" className="bg-card text-foreground">Indian Standard Time (IST)</option>

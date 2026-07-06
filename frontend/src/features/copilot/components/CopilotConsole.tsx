@@ -7,20 +7,133 @@ import { QuickActions } from "./QuickActions";
 import { MessageSquare, RefreshCw } from "lucide-react";
 import { type ChatMessage } from "./MessageBubble";
 import { localizedCopilotReplies } from "../../../utils/i18n";
+import { useSettings } from "../../../contexts/SettingsContext";
+
+function generateStructuredReport(text: string, ward: any) {
+  const aqi = ward?.aqi || 145;
+  const location = ward?.name || "Gachibowli";
+  const weather = ward?.weather_condition || "Sunny";
+  const wind = ward?.wind_speed || 6.2;
+  const lowerText = text.toLowerCase();
+
+  // 1. Situation summary
+  let trend = "stable over the past three hours";
+  if (lowerText.includes("increase") || lowerText.includes("high") || lowerText.includes("why") || aqi > 150) {
+    trend = "increasing due to peak hour traffic density";
+  } else if (aqi < 100) {
+    trend = "improving due to active wind dispersion";
+  }
+
+  const summary = `Current AQI in ${location} is ${aqi} (${aqi <= 50 ? "Good" : aqi <= 100 ? "Moderate" : aqi <= 200 ? "Poor" : "Severe"}). Air quality has remained ${trend} under ${weather.toLowerCase()} conditions.`;
+
+  // 2. Causal factors breakdown
+  let trafficCont = 38;
+  let constructionCont = 22;
+  let industrialCont = 15;
+  if (lowerText.includes("traffic") || location === "Madhapur" || location === "Hitech City") {
+    trafficCont = 58;
+    constructionCont = 18;
+    industrialCont = 8;
+  } else if (lowerText.includes("construction") || location === "Begumpet" || location === "Secunderabad") {
+    trafficCont = 22;
+    constructionCont = 52;
+    industrialCont = 11;
+  } else if (lowerText.includes("industrial") || location === "Uppal" || location === "Charminar") {
+    trafficCont = 28;
+    constructionCont = 12;
+    industrialCont = 48;
+  }
+
+  // 3. Evidence
+  const evidence = [
+    { name: "Traffic Data Stream", status: "Active", confidence: 96, timestamp: "Just now" },
+    { name: "Weather Satellite Layer", status: "Operational", confidence: 93, timestamp: "10m ago" },
+    { name: "Ground Sensor Network", status: "Calibrated", confidence: 98, timestamp: "2m ago" },
+    { name: "Construction Site API", status: "Synchronized", confidence: 89, timestamp: "1h ago" }
+  ];
+
+  // 4. Recommendations
+  const recommendations = [
+    {
+      title: "Restrict Heavy Silt Commercial Vehicles",
+      priority: "Critical" as const,
+      improvement: Math.max(8, Math.floor(aqi * 0.15)),
+      confidence: 93,
+      difficulty: "Moderate" as const,
+      duration: "12-24h"
+    },
+    {
+      title: "Deploy Municipal Sprinklers & Water Cannons",
+      priority: "High" as const,
+      improvement: Math.max(5, Math.floor(aqi * 0.08)),
+      confidence: 96,
+      difficulty: "Easy" as const,
+      duration: "3-6h"
+    },
+    {
+      title: "Enforce Dust Curbs at IT Construction Enclaves",
+      priority: "Medium" as const,
+      improvement: Math.max(3, Math.floor(aqi * 0.05)),
+      confidence: 88,
+      difficulty: "Hard" as const,
+      duration: "48h"
+    }
+  ];
+
+  // Calculated overall improvement
+  const expectedAqiReduction = recommendations[0].improvement + recommendations[1].improvement;
+  const predictedAqi = Math.max(25, aqi - expectedAqiReduction);
+
+  return {
+    situation: {
+      location,
+      aqi,
+      weather,
+      trend,
+      summary
+    },
+    analysis: {
+      primaryCause: trafficCont > constructionCont ? "Vehicular commuter emissions" : "Fugitive construction dust",
+      secondaryCause: industrialCont > 20 ? "Industrial processing emissions" : "Road dust re-suspension",
+      windInfluence: wind < 5.0 ? "Calm wind vectors trapping particulate loads" : "Moderate wind assisting particulate dispersion",
+      factors: [
+        { name: "Traffic Congestion", percentage: trafficCont },
+        { name: "Construction Activities", percentage: constructionCont },
+        { name: "Industrial Operations", percentage: industrialCont },
+        { name: "Met Wind Vectors", percentage: Math.floor(100 - trafficCont - constructionCont - industrialCont) }
+      ]
+    },
+    evidence,
+    recommendations,
+    expectedImprovement: {
+      currentAqi: aqi,
+      predictedAqi,
+      improvementPoints: expectedAqiReduction,
+      confidence: 94
+    },
+    overallConfidence: {
+      percentage: 94,
+      basedOn: ["Traffic Sensors", "Weather Forecasts", "Historical Models", "Sensor Grid", "Construction APIs"]
+    }
+  };
+}
 
 interface CopilotConsoleProps {
   selectedWard: any;
   onGenerateReport: () => void;
   onViewTwin: () => void;
   onOpenForecast: () => void;
+  onNavigate?: (tabId: string) => void;
 }
 
 export function CopilotConsole({
   selectedWard,
   onGenerateReport,
   onViewTwin,
-  onOpenForecast
+  onOpenForecast,
+  onNavigate
 }: CopilotConsoleProps) {
+  const { formatTemp, formatWind } = useSettings();
   
   // Suggested Questions Prompt Chips
   const suggestedQuestions = [
@@ -154,15 +267,15 @@ export function CopilotConsole({
         
         if (isWeatherQuery) {
           if (activeLanguage === "hi") {
-            reply = `आज ${targetWard.name} में मौसम ${targetWard.weather_condition === "Sunny" ? "धूप वाला" : targetWard.weather_condition === "Cloudy" ? "बादल छाए रहेंगे" : targetWard.weather_condition === "Haze" ? "धुंधला" : "साफ"} है। तापमान ${targetWard.temperature}°C है, आर्द्रता ${targetWard.humidity}% है, और हवा की गति ${targetWard.wind_speed} m/s है। कल मौसम स्थिर रहने की उम्मीद है, जिसमें तापमान ${targetWard.temperature + 1}°C के आसपास रहेगा और हवा की गति ${targetWard.wind_speed + 0.5} m/s रहेगी।`;
+            reply = `आज ${targetWard.name} में मौसम ${targetWard.weather_condition === "Sunny" ? "धूप वाला" : targetWard.weather_condition === "Cloudy" ? "बादल छाए रहेंगे" : targetWard.weather_condition === "Haze" ? "धुंधला" : "साफ"} है। तापमान ${formatTemp(targetWard.temperature)} है, आर्द्रता ${targetWard.humidity}% है, और हवा की गति ${formatWind(targetWard.wind_speed)} है। कल मौसम स्थिर रहने की उम्मीद है, जिसमें तापमान ${formatTemp(targetWard.temperature + 1)} के आसपास रहेगा और हवा की गति ${formatWind(targetWard.wind_speed + 0.5)} रहेगी।`;
           } else if (activeLanguage === "te") {
-            reply = `ఈరోజు ${targetWard.name} లో వాతావరణం ${targetWard.weather_condition === "Sunny" ? "ఎండగా" : targetWard.weather_condition === "Cloudy" ? "మబ్బులుగా" : targetWard.weather_condition === "Haze" ? "పొగమంచుతో" : "ప్రశాంతంగా"} ఉంది. ఉష్ణోగ్రత ${targetWard.temperature}°C, తేమ ${targetWard.humidity}%, మరియు గాలి వేగం ${targetWard.wind_speed} m/s. రేపు వాతావరణం స్థిరంగా ఉండే అవకాశం ఉంది, ఉష్ణోగ్రత గరిష్టంగా ${targetWard.temperature + 1}°C మరియు గాలి సగటు వేగం ${targetWard.wind_speed + 0.5} m/s గా నమోదవుతుంది.`;
+            reply = `ఈరోజు ${targetWard.name} లో వాతావరణం ${targetWard.weather_condition === "Sunny" ? "ఎండగా" : targetWard.weather_condition === "Cloudy" ? "మబ్బులుగా" : targetWard.weather_condition === "Haze" ? "పొగమంచుతో" : "ప్రశాంతంగా"} ఉంది. ఉష్ణోగ్రత ${formatTemp(targetWard.temperature)}, తేమ ${targetWard.humidity}%, మరియు గాలి వేగం ${formatWind(targetWard.wind_speed)}. రేపు వాతావరణం స్థిరంగా ఉండే అవకాశం ఉంది, ఉష్ణోగ్రత గరిష్టంగా ${formatTemp(targetWard.temperature + 1)} మరియు గాలి సగటు వేగం ${formatWind(targetWard.wind_speed + 0.5)} గా నమోదవుతుంది.`;
           } else if (activeLanguage === "ta") {
-            reply = `இன்று ${targetWard.name} இல் வானிலை ${targetWard.weather_condition === "Sunny" ? "வெயிலாக" : targetWard.weather_condition === "Cloudy" ? "மேகமூட்டமாக" : targetWard.weather_condition === "Haze" ? "பனிமூட்டமாக" : "தெளிவாக"} உள்ளது. வெப்பநிலை ${targetWard.temperature}°C, ஈரப்பதம் ${targetWard.humidity}%, மற்றும் காற்றின் வேகம் ${targetWard.wind_speed} m/s. நாளை வானிலை நிலையாக இருக்கும் என்று எதிர்பார்க்கப்படுகிறது, வெப்பநிலை ${targetWard.temperature + 1}°C ஆகவும் காற்றின் வேகம் ${targetWard.wind_speed + 0.5} m/s ஆகவும் இருக்கும்.`;
+            reply = `இன்று ${targetWard.name} இல் வானிலை ${targetWard.weather_condition === "Sunny" ? "வெயிலாக" : targetWard.weather_condition === "Cloudy" ? "மேகமூட்டமாக" : targetWard.weather_condition === "Haze" ? "பனிமூட்டமாக" : "தெளிவாக"} உள்ளது. வெப்பநிலை ${formatTemp(targetWard.temperature)}, ஈரப்பதம் ${targetWard.humidity}%, மற்றும் காற்றின் வேகம் ${formatWind(targetWard.wind_speed)}. நாளை வானிலை நிலையாக இருக்கும் என்று எதிர்பார்க்கப்படுகிறது, வெப்பநிலை ${formatTemp(targetWard.temperature + 1)} ஆகவும் காற்றின் வேகம் ${formatWind(targetWard.wind_speed + 0.5)} ஆகவும் இருக்கும்.`;
           } else if (activeLanguage === "kn") {
-            reply = `ಇಂದು ${targetWard.name} ನಲ್ಲಿ ಹವಾಮಾನವು ${targetWard.weather_condition === "Sunny" ? "ಬಿಸಿಲಾಗಿರುತ್ತದೆ" : targetWard.weather_condition === "Cloudy" ? "ಮೋಡಕವಿದಿರುತ್ತದೆ" : targetWard.weather_condition === "Haze" ? "ಮಂಜಿನಿಂದ ಕೂಡಿರುತ್ತದೆ" : "ಸ್ವಚ್ಛವಾಗಿರುತ್ತದೆ"}. ತಾಪಮಾನವು ${targetWard.temperature}°C, ತೇವಾಂಶವು ${targetWard.humidity}%, ಮತ್ತು ಗಾಳಿಯ ವೇಗವು ${targetWard.wind_speed} m/s ಆಗಿದೆ. ನಾಳೆ ಹವಾಮಾನವು ಸ್ಥಿರವಾಗಿರುವ ನಿರೀಕ್ಷೆಯಿದೆ, ತಾಪಮಾನವು ಸುಮಾರು ${targetWard.temperature + 1}°C ತಲುಪಲಿದ್ದು ಗಾಳಿಯ ಸರಾಸರಿ ವೇಗವು ${targetWard.wind_speed + 0.5} m/s ಆಗಿರುತ್ತದೆ.`;
+            reply = `ಇಂದು ${targetWard.name} ನಲ್ಲಿ ಹವಾಮಾನವು ${targetWard.weather_condition === "Sunny" ? "ಬಿಸಿಲಾಗಿರುತ್ತದೆ" : targetWard.weather_condition === "Cloudy" ? "ಮೋಡಕವಿದಿರುತ್ತದೆ" : targetWard.weather_condition === "Haze" ? "ಮಂಜಿನಿಂದ ಕೂಡಿರುತ್ತದೆ" : "ಸ್ವಚ್ಛವಾಗಿರುತ್ತದೆ"}. ತಾಪಮಾನವು ${formatTemp(targetWard.temperature)}, ತೇವಾಂಶವು ${targetWard.humidity}%, ಮತ್ತು ಗಾಳಿಯ ವೇಗವು ${formatWind(targetWard.wind_speed)} ಆಗಿದೆ. ನಾಳೆ ಹವಾಮಾನವು ಸ್ಥಿರವಾಗಿರುವ ನಿರೀಕ್ಷೆಯಿದೆ, ತಾಪಮಾನವು ಸುಮಾರು ${formatTemp(targetWard.temperature + 1)} ತಲುಪಲಿದ್ದು ಗಾಳಿಯ ಸರಾಸರಿ ವೇಗವು ${formatWind(targetWard.wind_speed + 0.5)} ಆಗಿರುತ್ತದೆ.`;
           } else {
-            reply = `Today in ${targetWard.name}, the weather condition is ${targetWard.weather_condition || "Clear"}. The temperature is ${targetWard.temperature}°C, humidity is ${targetWard.humidity}%, and wind speed is ${targetWard.wind_speed} m/s. Tomorrow, weather is expected to remain stable with temperatures peaking around ${targetWard.temperature + 1}°C and winds averaging ${targetWard.wind_speed + 0.5} m/s under ${targetWard.weather_condition || "Clear"} skies.`;
+            reply = `Today in ${targetWard.name}, the weather condition is ${targetWard.weather_condition || "Clear"}. The temperature is ${formatTemp(targetWard.temperature)}, humidity is ${targetWard.humidity}%, and wind speed is ${formatWind(targetWard.wind_speed)}. Tomorrow, weather is expected to remain stable with temperatures peaking around ${formatTemp(targetWard.temperature + 1)} and winds averaging ${formatWind(targetWard.wind_speed + 0.5)} under ${targetWard.weather_condition || "Clear"} skies.`;
           }
         } else if (isJoggingQuery) {
           if (activeLanguage === "hi") {
@@ -294,12 +407,13 @@ export function CopilotConsole({
           ];
         }
       }
+      const structuredReport = generateStructuredReport(text, targetWard);
       setSessionMessages(prev => ({
         ...prev,
-        [activeSessionId]: [...updatedUserMsg, { sender: "agent", text: reply, routes, card, structuredData } as ChatMessage]
+        [activeSessionId]: [...updatedUserMsg, { sender: "agent", text: reply, routes, card, structuredData, structuredReport } as ChatMessage]
       }));
       setIsLoading(false);
-    }, 1200);
+    }, 3000);
   };
 
   const handleNewSession = () => {
@@ -387,6 +501,8 @@ export function CopilotConsole({
           suggestedQuestions={suggestedQuestions}
           onClickQuestion={handleSend}
           isLoading={isLoading}
+          onNavigate={onNavigate}
+          onGenerateReport={onGenerateReport}
         />
 
         {/* Footer Prompt Input */}

@@ -1,12 +1,14 @@
 import { ArrowUpRight, ArrowDownRight, Equal } from "lucide-react";
 import { cn } from "../../../utils/cn";
 import { extraTranslations } from "../../../utils/i18n_extra";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface ForecastTableProps {
   data: any[];
 }
 
 export function ForecastTable({ data }: ForecastTableProps) {
+  const { formatTemp, formatWind } = useSettings();
   const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
 
@@ -88,9 +90,9 @@ export function ForecastTable({ data }: ForecastTableProps) {
                 <td className="p-3.5 font-bold">{getHorizonLabel(row.time)}</td>
                 <td className={cn("p-3.5 text-center font-extrabold", getAQIColorClass(row.aqi))}>{row.aqi}</td>
                 <td className="p-3.5 text-center font-semibold text-muted">{getAQIBadgeText(row.aqi)}</td>
-                <td className="p-3.5 text-center font-medium">{row.temp}°C</td>
+                <td className="p-3.5 text-center font-medium">{formatTemp(row.temp)}</td>
                 <td className="p-3.5 text-center font-medium">{row.humidity}%</td>
-                <td className="p-3.5 text-center font-medium">{row.wind} m/s</td>
+                <td className="p-3.5 text-center font-medium">{formatWind(row.wind)}</td>
                 <td className="p-3.5 text-center font-black text-primary">{row.confidence}%</td>
                 <td className="p-3.5 text-center font-semibold text-muted">
                   <div className="flex items-center justify-center gap-1">
