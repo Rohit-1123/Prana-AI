@@ -1024,6 +1024,48 @@ const buildMetroMapPoints = () => {
 
   const handleWardSelect = (ward: any) => {
     setSelectedWard(ward);
+    
+    // Synchronize selectedCity with the chosen ward/place
+    const nameLower = (ward?.name || "").toLowerCase();
+    let detectedCity = "Hyderabad";
+
+    const PLACE_CITY_MAP: Record<string, string> = {
+      // Bangalore / Karnataka
+      "whitefield": "Bangalore",
+      "hoodi": "Bangalore",
+      "indiranagar": "Bangalore",
+      "electronic city": "Bangalore",
+      "koramangala": "Bangalore",
+
+      // Chennai / Tamil Nadu
+      "adyar": "Chennai",
+      "velachery": "Chennai",
+      "guindy": "Chennai",
+      "anna nagar": "Chennai",
+      "tambaram": "Chennai",
+
+      // Delhi / NCR
+      "connaught": "Delhi",
+      "saket": "Delhi",
+      "anand vihar": "Delhi",
+      "dwarka": "Delhi",
+      "lajpat nagar": "Delhi",
+
+      // Mumbai / Maharashtra
+      "andheri": "Mumbai",
+      "bandra": "Mumbai",
+      "powai": "Mumbai",
+      "lower parel": "Mumbai",
+    };
+
+    for (const [placeKeyword, city] of Object.entries(PLACE_CITY_MAP)) {
+      if (nameLower.includes(placeKeyword)) {
+        detectedCity = city;
+        break;
+      }
+    }
+    setSelectedCity(detectedCity);
+
     fetchWardIntelligence(ward.id);
     setSimulatedTraffic(0);
     setSimulatedConstruction(0);
@@ -1069,12 +1111,17 @@ const buildMetroMapPoints = () => {
     setChatInput("");
     setLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1500);
+
     try {
       const res = await fetch(`${API_URL}/api/chat/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ward_id: selectedWard.id, query: query })
+        body: JSON.stringify({ ward_id: selectedWard.id, query: query }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       if (res.ok) {
         const data = await res.json();
         setChatMessages([...messages, { sender: "agent", text: data.advisory_response, routes: data.recommended_clean_routes }]);
@@ -1082,6 +1129,7 @@ const buildMetroMapPoints = () => {
         throw new Error();
       }
     } catch (e) {
+      clearTimeout(timeoutId);
       setTimeout(() => {
         let reply = "";
         let routes: any[] = [];

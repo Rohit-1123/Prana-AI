@@ -214,6 +214,23 @@ export function MapView({ wards, selectedWard, onSelectWard }: MapViewProps) {
     markersGroup.clearLayers();
     heatmapGroup.clearLayers();
 
+    // Detect the currently selected active city based on the wards passed as props
+    let activeCityName = "Hyderabad";
+    if (wards.length > 0) {
+      const firstWardName = wards[0]?.name || "";
+      if (firstWardName.includes("Whitefield")) {
+        activeCityName = "Bangalore";
+      } else if (firstWardName.includes("Adyar")) {
+        activeCityName = "Chennai";
+      } else if (firstWardName.includes("Connaught")) {
+        activeCityName = "Delhi";
+      } else if (firstWardName.includes("Andheri")) {
+        activeCityName = "Mumbai";
+      } else {
+        activeCityName = "Hyderabad";
+      }
+    }
+
     wards.forEach((w) => {
       const isSelected = w.id === selectedWard.id;
       const displayAqi = w.aqi;
@@ -278,6 +295,7 @@ export function MapView({ wards, selectedWard, onSelectWard }: MapViewProps) {
     });
 
     cityClusters.forEach((cluster) => {
+      if (cluster.city === activeCityName) return;
       const clusterColor = cluster.aqi <= 50 ? "#4ADE80" : cluster.aqi <= 100 ? "#3B82F6" : cluster.aqi <= 200 ? "#FACC15" : "#EF4444";
       const cityIcon = L.divIcon({
         className: "custom-div-icon",

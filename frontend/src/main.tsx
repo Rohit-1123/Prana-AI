@@ -44,22 +44,14 @@ const originalRemoveItem = localStorage.removeItem.bind(localStorage);
   originalRemoveItem(key);
 };
 
-// Unconditionally clear localStorage, sessionStorage, and browser cache storage
-// on every single load/reload to ensure the app starts with default settings and no previous cache.
+// Unconditionally clear localStorage and sessionStorage
+// on every single load/reload to ensure the app starts with default settings.
 try {
   localStorage.clear();
 } catch (e) {}
 try {
   sessionStorage.clear();
 } catch (e) {}
-
-if (typeof caches !== 'undefined' && caches.keys) {
-  caches.keys().then((names) => {
-    names.forEach((name) => {
-      caches.delete(name);
-    });
-  }).catch(() => {});
-}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
