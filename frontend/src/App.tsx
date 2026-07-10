@@ -274,73 +274,17 @@ const buildMetroMapPoints = () => {
             }
           }
         } catch (err) {
-          console.warn("Failed to fetch local backend telemetry, trying WAQI public feed:", err);
+          console.warn("Failed to fetch local backend telemetry, falling back to local mock data:", err);
         }
 
-        try {
-          const waqiRes = await fetch("https://api.waqi.info/search/?keyword=hyderabad&token=da3af003ceb384564f1a4b8452f914ab8f1e3cc6");
-          const t = await waqiRes.json();
-          if (t.status === "ok" && Array.isArray(t.data)) {
-            const e: Record<string, LiveWardMetrics> = {};
-            const n = new Map(MOCK_WARDS.map((w) => [normalizeWardKey(w.name), w]));
-            
-            t.data.forEach((item: any) => {
-              const r = String(item?.station?.name || "").toLowerCase();
-              const i = Number(item.aqi);
-              if (isNaN(i)) return;
-              
-              const helper = (name: string, diff: number = 0) => {
-                const a = normalizeWardKey(name);
-                const o = n.get(a) || MOCK_WARDS[0];
-                e[a] = buildLiveMetrics({ aqi: Math.max(30, i + diff) }, o, "WAQI public feed");
-              };
-              
-              if (r.includes("sanathnagar")) {
-                helper("Begumpet");
-                helper("Kukatpally", 12);
-              } else if (r.includes("bollaram")) {
-                helper("Miyapur");
-              } else if (r.includes("somajiguda") || r.includes("consulate")) {
-                helper("Banjara Hills");
-                helper("Jubilee Hills", -15);
-              } else if (r.includes("zoo")) {
-                helper("Charminar");
-              } else if (r.includes("university")) {
-                helper("Gachibowli");
-                helper("Hitech City", 25);
-                helper("Kondapur", 8);
-                helper("Financial District", 15);
-              } else if (r.includes("nampally")) {
-                helper("Nampally");
-                helper("Mehdipatnam", -10);
-              } else if (r.includes("pashamylaram")) {
-                helper("Uppal");
-                helper("LB Nagar", -18);
-              }
-            });
-            
-            const r = e[normalizeWardKey("Gachibowli")]?.aqi || 120;
-            MOCK_WARDS.forEach((t, n) => {
-              const i = normalizeWardKey(t.name);
-              if (!e[i]) {
-                e[i] = buildLiveMetrics({ aqi: Math.max(30, r + (n % 2 === 0 ? 15 : -10) + n * 2) }, t, "WAQI public feed");
-              }
-            });
-            
-            setLiveWardMetrics(e);
-            setLiveDataSource("WAQI public feed");
-            setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-          }
-        } catch (err) {
-          console.warn("Failed to fetch live Hyderabad station list:", err);
-          const fallbackMetrics: Record<string, LiveWardMetrics> = {};
-          MOCK_WARDS.forEach((w) => {
-            fallbackMetrics[normalizeWardKey(w.name)] = buildLiveMetrics(w, w, "local fallback");
-          });
-          setLiveWardMetrics(fallbackMetrics);
-          setLiveDataSource("local fallback");
-          setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-        }
+        // Direct fallback to local mock data since WAQI is removed
+        const fallbackMetrics: Record<string, LiveWardMetrics> = {};
+        MOCK_WARDS.forEach((w) => {
+          fallbackMetrics[normalizeWardKey(w.name)] = buildLiveMetrics(w, w, "local fallback");
+        });
+        setLiveWardMetrics(fallbackMetrics);
+        setLiveDataSource("local fallback");
+        setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
       };
 
       fetchTelemetry();

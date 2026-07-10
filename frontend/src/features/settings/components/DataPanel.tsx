@@ -6,20 +6,13 @@ export function DataPanel() {
   const [city, setCity] = useState("Hyderabad");
   const [unit, setUnit] = useState("metric");
   const [timezone, setTimezone] = useState("IST");
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem("waqi_api_key") || "");
   const [isSaved, setIsSaved] = useState(false);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (apiKey.trim()) {
-      localStorage.setItem("waqi_api_key", apiKey.trim());
-    } else {
-      localStorage.removeItem("waqi_api_key");
-    }
     setIsSaved(true);
     setTimeout(() => {
       setIsSaved(false);
-      window.location.reload(); // Refresh to trigger immediate re-fetch
     }, 1200);
   };
 
@@ -79,20 +72,7 @@ export function DataPanel() {
           </select>
         </div>
 
-        {/* WAQI API Token */}
-        <div className="flex flex-col gap-1.5 md:col-span-3 mt-2">
-          <label className="text-[10px] uppercase font-bold text-muted block">WAQI (World Air Quality Index) API Token</label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-            placeholder="Enter your personal WAQI API token (e.g. 96dfb28e...)"
-            className="bg-card border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary font-mono"
-          />
-          <span className="text-[9px] text-muted">
-            Obtain a free high-limit token at <a href="https://aqicn.org/data-platform/token/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline font-bold">aqicn.org/data-platform/token</a>. If left empty, a shared public demo token is used.
-          </span>
-        </div>
+
 
       </div>
 

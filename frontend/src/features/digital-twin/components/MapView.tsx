@@ -150,7 +150,7 @@ export function MapView({ wards, selectedWard, onSelectWard }: MapViewProps) {
       zoomControl: false, // Custom controls mapped instead
       attributionControl: false
     }).setView(defaultCenter, defaultZoom);
-    
+
     mapRef.current = map;
 
     // Load initial theme tile
@@ -180,7 +180,7 @@ export function MapView({ wards, selectedWard, onSelectWard }: MapViewProps) {
   // Sync Leaflet tile layer style when theme changes
   useEffect(() => {
     if (!mapRef.current || !tileLayerRef.current) return;
-    
+
     const isDark = resolvedTheme === "dark";
     const mapTilesUrl = isDark
       ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -346,7 +346,7 @@ export function MapView({ wards, selectedWard, onSelectWard }: MapViewProps) {
       "w-full h-full relative border border-border rounded-2xl overflow-hidden bg-background shadow-theme select-none",
       isFullscreen ? "fixed inset-0 z-50 h-screen w-screen rounded-none" : "min-h-[460px] h-[550px]"
     )}>
-      
+
       {/* 1. Leaflet Canvas Element */}
       <div id="digital-twin-map" className="w-full h-full z-0" />
 
@@ -374,7 +374,7 @@ export function MapView({ wards, selectedWard, onSelectWard }: MapViewProps) {
       />
 
       {/* 3. Floating Map navigation controls */}
-      <MapControls 
+      <MapControls
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onLocateMe={handleLocateMe}
