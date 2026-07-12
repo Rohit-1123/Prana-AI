@@ -406,7 +406,7 @@ export function CopilotConsole({
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch select-none">
       
       {/* 1. Left Drawer: History list (3 columns on desktop) */}
-      <div className="lg:col-span-3 h-full">
+      <div className="order-3 lg:order-1 lg:col-span-3 h-full">
         <HistoryDrawer 
           sessions={sessions}
           activeSessionId={activeSessionId}
@@ -417,7 +417,7 @@ export function CopilotConsole({
       </div>
 
       {/* 2. Center Panel: Chat Workspace (6 columns on desktop) */}
-      <div className="lg:col-span-6 glass-card p-6 flex flex-col justify-between min-h-[500px] h-[600px]">
+      <div className="order-1 lg:order-2 lg:col-span-6 glass-card p-6 flex flex-col justify-between min-h-[500px] h-[600px]">
         
         {/* Workspace Header */}
         <div className="flex justify-between items-center border-b border-border pb-4">
@@ -464,7 +464,7 @@ export function CopilotConsole({
       </div>
 
       {/* 3. Right Panel: Active Context details (3 columns on desktop) */}
-      <div className="lg:col-span-3 h-full">
+      <div className="order-2 lg:order-3 lg:col-span-3 h-full">
         <ContextPanel 
           selectedWard={selectedWard}
         />

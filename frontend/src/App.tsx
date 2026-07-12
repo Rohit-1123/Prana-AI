@@ -2760,7 +2760,7 @@ function PranaApp() {
             </button>
 
             {showCopilot && (
-              <div className="absolute bottom-16 right-0 w-[380px] md:w-[450px] glass-card p-6 flex flex-col gap-4 shadow-theme z-50">
+              <div className="fixed bottom-24 right-4 left-4 sm:left-auto sm:absolute sm:bottom-16 sm:right-0 sm:w-[380px] md:w-[450px] glass-card p-6 flex flex-col gap-4 shadow-theme z-50">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 bg-success rounded-full animate-ping"></div>

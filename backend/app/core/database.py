@@ -6,14 +6,15 @@ from sqlalchemy.orm import sessionmaker
 # Database URL configuration
 # Fallback to SQLite database locally
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./prana.db")
+sync_db_url = DATABASE_URL.replace("sqlite+aiosqlite://", "sqlite://")
 
 # If using SQLite, we need connect_args={"check_same_thread": False}
-if DATABASE_URL.startswith("sqlite"):
+if sync_db_url.startswith("sqlite"):
     engine = create_engine(
-        DATABASE_URL, connect_args={"check_same_thread": False}
+        sync_db_url, connect_args={"check_same_thread": False}
     )
 else:
-    engine = create_engine(DATABASE_URL)
+    engine = create_engine(sync_db_url)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
