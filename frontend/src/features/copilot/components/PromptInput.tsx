@@ -1,5 +1,5 @@
 import { useState, type FormEvent, type KeyboardEvent } from "react";
-import { Send, Mic, Eraser } from "lucide-react";
+import { Send, Eraser } from "lucide-react";
 
 interface PromptInputProps {
   onSend: (text: string) => void;
@@ -48,15 +48,6 @@ export function PromptInput({ onSend, onClear, isLoading }: PromptInputProps) {
       />
 
       <div className="flex gap-1.5 shrink-0 items-center">
-        {/* Mock Voice Input */}
-        <button
-          type="button"
-          onClick={() => alert("Voice advisory transcription is under development.")}
-          title="Voice input"
-          className="p-2.5 rounded-xl hover:bg-muted/10 text-muted hover:text-foreground cursor-pointer transition-colors"
-        >
-          <Mic className="w-4 h-4" />
-        </button>
 
         {/* Send */}
         <button
