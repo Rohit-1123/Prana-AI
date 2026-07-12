@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import L from "leaflet";
 
 // Override default marker icons to correct Vite asset compilation URLs
@@ -99,27 +99,55 @@ const getAQIMarkerColor = (aqi: number) => {
   return aqi <= 50 ? "#10B981" : aqi <= 100 ? "#FBBF24" : aqi <= 200 ? "#F97316" : "#EF4444";
 };
 
-// Hyderabad locations & centroids
-const MOCK_WARDS = [
-  { id: 1, name: "Gachibowli", aqi: 145, pm2_5: 58, pm10: 85, temperature: 31.5, humidity: 55, wind_speed: 6.2, weather_condition: "Sunny", environmental_health_score: 72, traffic_congestion: 65, industrial_emissions: 5, construction_activity: 50, dust_level: 40, population: 120000, latitude: 17.4401, longitude: 78.3489, uv_index: 8 },
-  { id: 2, name: "Madhapur", aqi: 182, pm2_5: 78, pm10: 110, temperature: 32.0, humidity: 52, wind_speed: 5.1, weather_condition: "Cloudy", environmental_health_score: 58, traffic_congestion: 80, industrial_emissions: 8, construction_activity: 45, dust_level: 42, population: 160000, latitude: 17.4483, longitude: 78.3915, uv_index: 6 },
-  { id: 3, name: "Kondapur", aqi: 125, pm2_5: 48, pm10: 72, temperature: 30.5, humidity: 62, wind_speed: 7.2, weather_condition: "Cloudy", environmental_health_score: 75, traffic_congestion: 55, industrial_emissions: 2, construction_activity: 55, dust_level: 35, population: 110000, latitude: 17.4622, longitude: 78.3572, uv_index: 7 },
-  { id: 4, name: "Hitech City", aqi: 198, pm2_5: 84, pm10: 124, temperature: 32.2, humidity: 50, wind_speed: 4.8, weather_condition: "Sunny", environmental_health_score: 55, traffic_congestion: 85, industrial_emissions: 3, construction_activity: 60, dust_level: 52, population: 95000, latitude: 17.4504, longitude: 78.3809, uv_index: 7 },
-  { id: 5, name: "Jubilee Hills", aqi: 95, pm2_5: 38, pm10: 58, temperature: 29.8, humidity: 60, wind_speed: 6.8, weather_condition: "Sunny", environmental_health_score: 82, traffic_congestion: 50, industrial_emissions: 1, construction_activity: 30, dust_level: 25, population: 85000, latitude: 17.4325, longitude: 78.4075, uv_index: 8 },
-  { id: 6, name: "Banjara Hills", aqi: 110, pm2_5: 44, pm10: 64, temperature: 30.0, humidity: 58, wind_speed: 6.5, weather_condition: "Sunny", environmental_health_score: 78, traffic_congestion: 60, industrial_emissions: 2, construction_activity: 35, dust_level: 28, population: 90000, latitude: 17.4165, longitude: 78.4350, uv_index: 8 },
-  { id: 7, name: "Begumpet", aqi: 156, pm2_5: 65, pm10: 92, temperature: 30.8, humidity: 58, wind_speed: 5.5, weather_condition: "Sunny", environmental_health_score: 68, traffic_congestion: 60, industrial_emissions: 2, construction_activity: 75, dust_level: 48, population: 45000, latitude: 17.4448, longitude: 78.4600, uv_index: 8 },
-  { id: 8, name: "Secunderabad", aqi: 168, pm2_5: 70, pm10: 98, temperature: 31.0, humidity: 56, wind_speed: 5.8, weather_condition: "Sunny", environmental_health_score: 63, traffic_congestion: 50, industrial_emissions: 2, construction_activity: 80, dust_level: 55, population: 65000, latitude: 17.4399, longitude: 78.4983, uv_index: 9 },
-  { id: 9, name: "Charminar", aqi: 220, pm2_5: 112, pm10: 165, temperature: 33.0, humidity: 52, wind_speed: 4.2, weather_condition: "Haze", environmental_health_score: 45, traffic_congestion: 90, industrial_emissions: 12, construction_activity: 40, dust_level: 60, population: 250000, latitude: 17.3616, longitude: 78.4747, uv_index: 9 },
-  { id: 10, name: "Kukatpally", aqi: 185, pm2_5: 88, pm10: 120, temperature: 32.5, humidity: 50, wind_speed: 5.0, weather_condition: "Cloudy", environmental_health_score: 50, traffic_congestion: 82, industrial_emissions: 10, construction_activity: 65, dust_level: 50, population: 180000, latitude: 17.4855, longitude: 78.4100, uv_index: 7 },
-  { id: 11, name: "Uppal", aqi: 172, pm2_5: 75, pm10: 105, temperature: 31.8, humidity: 54, wind_speed: 5.2, weather_condition: "Cloudy", environmental_health_score: 60, traffic_congestion: 70, industrial_emissions: 14, construction_activity: 50, dust_level: 45, population: 150000, latitude: 17.4019, longitude: 78.5602, uv_index: 7 },
-  { id: 12, name: "LB Nagar", aqi: 158, pm2_5: 66, pm10: 94, temperature: 31.0, humidity: 55, wind_speed: 5.4, weather_condition: "Sunny", environmental_health_score: 66, traffic_congestion: 65, industrial_emissions: 8, construction_activity: 55, dust_level: 40, population: 130000, latitude: 17.3457, longitude: 78.5522, uv_index: 8 },
-  { id: 13, name: "Nampally", aqi: 195, pm2_5: 92, pm10: 130, temperature: 32.0, humidity: 53, wind_speed: 4.8, weather_condition: "Sunny", environmental_health_score: 52, traffic_congestion: 88, industrial_emissions: 5, construction_activity: 60, dust_level: 52, population: 110000, latitude: 17.3918, longitude: 78.4678, uv_index: 8 },
-  { id: 14, name: "Miyapur", aqi: 138, pm2_5: 54, pm10: 80, temperature: 30.2, humidity: 60, wind_speed: 6.8, weather_condition: "Cloudy", environmental_health_score: 70, traffic_congestion: 60, industrial_emissions: 4, construction_activity: 45, dust_level: 35, population: 145000, latitude: 17.4966, longitude: 78.3483, uv_index: 7 },
-  { id: 15, name: "Mehdipatnam", aqi: 165, pm2_5: 72, pm10: 100, temperature: 31.2, humidity: 57, wind_speed: 5.6, weather_condition: "Sunny", environmental_health_score: 64, traffic_congestion: 75, industrial_emissions: 3, construction_activity: 50, dust_level: 42, population: 165000, latitude: 17.3971, longitude: 78.4316, uv_index: 8 }
-];
+// Comprehensive multi-city location database
+const MOCK_CITY_WARDS: Record<string, any[]> = {
+  Hyderabad: [
+    { id: 1, name: "Gachibowli", aqi: 145, pm2_5: 58, pm10: 85, temperature: 31.5, humidity: 55, wind_speed: 6.2, weather_condition: "Sunny", environmental_health_score: 72, traffic_congestion: 65, industrial_emissions: 5, construction_activity: 50, dust_level: 40, population: 120000, latitude: 17.4401, longitude: 78.3489, uv_index: 8, label: "Place" },
+    { id: 2, name: "Madhapur", aqi: 182, pm2_5: 78, pm10: 110, temperature: 32.0, humidity: 52, wind_speed: 5.1, weather_condition: "Cloudy", environmental_health_score: 58, traffic_congestion: 80, industrial_emissions: 8, construction_activity: 45, dust_level: 42, population: 160000, latitude: 17.4483, longitude: 78.3915, uv_index: 6, label: "Place" },
+    { id: 3, name: "Kondapur", aqi: 125, pm2_5: 48, pm10: 72, temperature: 30.5, humidity: 62, wind_speed: 7.2, weather_condition: "Cloudy", environmental_health_score: 75, traffic_congestion: 55, industrial_emissions: 2, construction_activity: 55, dust_level: 35, population: 110000, latitude: 17.4622, longitude: 78.3572, uv_index: 7, label: "Place" },
+    { id: 4, name: "Hitech City", aqi: 198, pm2_5: 84, pm10: 124, temperature: 32.2, humidity: 50, wind_speed: 4.8, weather_condition: "Sunny", environmental_health_score: 55, traffic_congestion: 85, industrial_emissions: 3, construction_activity: 60, dust_level: 52, population: 95000, latitude: 17.4504, longitude: 78.3809, uv_index: 7, label: "Place" },
+    { id: 5, name: "Jubilee Hills", aqi: 95, pm2_5: 38, pm10: 58, temperature: 29.8, humidity: 60, wind_speed: 6.8, weather_condition: "Sunny", environmental_health_score: 82, traffic_congestion: 50, industrial_emissions: 1, construction_activity: 30, dust_level: 25, population: 85000, latitude: 17.4325, longitude: 78.4075, uv_index: 8, label: "Place" },
+    { id: 6, name: "Banjara Hills", aqi: 110, pm2_5: 44, pm10: 64, temperature: 30.0, humidity: 58, wind_speed: 6.5, weather_condition: "Sunny", environmental_health_score: 78, traffic_congestion: 60, industrial_emissions: 2, construction_activity: 35, dust_level: 28, population: 90000, latitude: 17.4165, longitude: 78.4350, uv_index: 8, label: "Place" },
+    { id: 7, name: "Begumpet", aqi: 156, pm2_5: 65, pm10: 92, temperature: 30.8, humidity: 58, wind_speed: 5.5, weather_condition: "Sunny", environmental_health_score: 68, traffic_congestion: 60, industrial_emissions: 2, construction_activity: 75, dust_level: 48, population: 45000, latitude: 17.4448, longitude: 78.4600, uv_index: 8, label: "Place" },
+    { id: 8, name: "Secunderabad", aqi: 168, pm2_5: 70, pm10: 98, temperature: 31.0, humidity: 56, wind_speed: 5.8, weather_condition: "Sunny", environmental_health_score: 63, traffic_congestion: 50, industrial_emissions: 2, construction_activity: 80, dust_level: 55, population: 65000, latitude: 17.4399, longitude: 78.4983, uv_index: 9, label: "Place" },
+    { id: 9, name: "Charminar", aqi: 220, pm2_5: 112, pm10: 165, temperature: 33.0, humidity: 52, wind_speed: 4.2, weather_condition: "Haze", environmental_health_score: 45, traffic_congestion: 90, industrial_emissions: 12, construction_activity: 40, dust_level: 60, population: 250000, latitude: 17.3616, longitude: 78.4747, uv_index: 9, label: "Place" },
+    { id: 10, name: "Kukatpally", aqi: 185, pm2_5: 88, pm10: 120, temperature: 32.5, humidity: 50, wind_speed: 5.0, weather_condition: "Cloudy", environmental_health_score: 50, traffic_congestion: 82, industrial_emissions: 10, construction_activity: 65, dust_level: 50, population: 180000, latitude: 17.4855, longitude: 78.4100, uv_index: 7, label: "Place" },
+    { id: 11, name: "Uppal", aqi: 172, pm2_5: 75, pm10: 105, temperature: 31.8, humidity: 54, wind_speed: 5.2, weather_condition: "Cloudy", environmental_health_score: 60, traffic_congestion: 70, industrial_emissions: 14, construction_activity: 50, dust_level: 45, population: 150000, latitude: 17.4019, longitude: 78.5602, uv_index: 7, label: "Place" },
+    { id: 12, name: "LB Nagar", aqi: 158, pm2_5: 66, pm10: 94, temperature: 31.0, humidity: 55, wind_speed: 5.4, weather_condition: "Sunny", environmental_health_score: 66, traffic_congestion: 65, industrial_emissions: 8, construction_activity: 55, dust_level: 40, population: 130000, latitude: 17.3457, longitude: 78.5522, uv_index: 8, label: "Place" },
+    { id: 13, name: "Nampally", aqi: 195, pm2_5: 92, pm10: 130, temperature: 32.0, humidity: 53, wind_speed: 4.8, weather_condition: "Sunny", environmental_health_score: 52, traffic_congestion: 88, industrial_emissions: 5, construction_activity: 60, dust_level: 52, population: 110000, latitude: 17.3918, longitude: 78.4678, uv_index: 8, label: "Place" },
+    { id: 14, name: "Miyapur", aqi: 138, pm2_5: 54, pm10: 80, temperature: 30.2, humidity: 60, wind_speed: 6.8, weather_condition: "Cloudy", environmental_health_score: 70, traffic_congestion: 60, industrial_emissions: 4, construction_activity: 45, dust_level: 35, population: 145000, latitude: 17.4966, longitude: 78.3483, uv_index: 7, label: "Place" },
+    { id: 15, name: "Mehdipatnam", aqi: 165, pm2_5: 72, pm10: 100, temperature: 31.2, humidity: 57, wind_speed: 5.6, weather_condition: "Sunny", environmental_health_score: 64, traffic_congestion: 75, industrial_emissions: 3, construction_activity: 50, dust_level: 42, population: 165000, latitude: 17.3971, longitude: 78.4316, uv_index: 8, label: "Place" }
+  ],
+  Bangalore: [
+    { id: 16, name: "Whitefield", aqi: 56, pm2_5: 22, pm10: 45, temperature: 24.0, humidity: 62, wind_speed: 4.8, weather_condition: "Sunny", environmental_health_score: 92, traffic_congestion: 64, industrial_emissions: 40, construction_activity: 55, dust_level: 50, population: 150000, latitude: 12.9698, longitude: 77.7500, uv_index: 6, label: "IT Cluster" },
+    { id: 17, name: "Hoodi", aqi: 60, pm2_5: 24, pm10: 49, temperature: 25.0, humidity: 65, wind_speed: 4.5, weather_condition: "Cloudy", environmental_health_score: 85, traffic_congestion: 58, industrial_emissions: 55, construction_activity: 60, dust_level: 52, population: 80000, latitude: 12.9950, longitude: 77.7110, uv_index: 5, label: "Industrial" },
+    { id: 18, name: "Indiranagar", aqi: 53, pm2_5: 21, pm10: 43, temperature: 23.5, humidity: 60, wind_speed: 5.2, weather_condition: "Sunny", environmental_health_score: 94, traffic_congestion: 60, industrial_emissions: 20, construction_activity: 35, dust_level: 30, population: 120000, latitude: 12.9784, longitude: 77.6408, uv_index: 6, label: "Residential/Commercial" },
+    { id: 19, name: "Electronic City", aqi: 62, pm2_5: 25, pm10: 50, temperature: 25.5, humidity: 58, wind_speed: 4.2, weather_condition: "Sunny", environmental_health_score: 88, traffic_congestion: 70, industrial_emissions: 45, construction_activity: 40, dust_level: 45, population: 200000, latitude: 12.8456, longitude: 77.6603, uv_index: 7, label: "IT Park" },
+    { id: 20, name: "Koramangala", aqi: 55, pm2_5: 22, pm10: 44, temperature: 24.2, humidity: 64, wind_speed: 4.6, weather_condition: "Cloudy", environmental_health_score: 90, traffic_congestion: 65, industrial_emissions: 15, construction_activity: 30, dust_level: 32, population: 140000, latitude: 12.9352, longitude: 77.6245, uv_index: 6, label: "Residential Hub" }
+  ],
+  Chennai: [
+    { id: 21, name: "Adyar", aqi: 59, pm2_5: 24, pm10: 48, temperature: 29.0, humidity: 78, wind_speed: 6.5, weather_condition: "Sunny", environmental_health_score: 91, traffic_congestion: 45, industrial_emissions: 20, construction_activity: 30, dust_level: 35, population: 110000, latitude: 13.0033, longitude: 80.2550, uv_index: 8, label: "Coastal Centroid" },
+    { id: 22, name: "Velachery", aqi: 65, pm2_5: 26, pm10: 52, temperature: 30.0, humidity: 75, wind_speed: 6.2, weather_condition: "Sunny", environmental_health_score: 85, traffic_congestion: 65, industrial_emissions: 25, construction_activity: 45, dust_level: 40, population: 130000, latitude: 12.9790, longitude: 80.2180, uv_index: 8, label: "Residential" },
+    { id: 23, name: "T Nagar", aqi: 72, pm2_5: 30, pm10: 58, temperature: 31.0, humidity: 72, wind_speed: 5.8, weather_condition: "Cloudy", environmental_health_score: 80, traffic_congestion: 80, industrial_emissions: 10, construction_activity: 40, dust_level: 48, population: 150000, latitude: 13.0405, longitude: 80.2337, uv_index: 7, label: "Commercial Hub" },
+    { id: 24, name: "Mylapore", aqi: 57, pm2_5: 22, pm10: 46, temperature: 29.5, humidity: 76, wind_speed: 6.0, weather_condition: "Sunny", environmental_health_score: 93, traffic_congestion: 50, industrial_emissions: 5, construction_activity: 25, dust_level: 30, population: 95000, latitude: 13.0330, longitude: 80.2680, uv_index: 8, label: "Heritage Residential" },
+    { id: 25, name: "Guindy", aqi: 68, pm2_5: 28, pm10: 55, temperature: 30.5, humidity: 74, wind_speed: 5.5, weather_condition: "Sunny", environmental_health_score: 83, traffic_congestion: 70, industrial_emissions: 35, construction_activity: 50, dust_level: 45, population: 75000, latitude: 13.0067, longitude: 80.2200, uv_index: 8, label: "Industrial Estate" }
+  ],
+  Delhi: [
+    { id: 26, name: "Connaught Place", aqi: 125, pm2_5: 50, pm10: 110, temperature: 34.0, humidity: 42, wind_speed: 2.5, weather_condition: "Sunny", environmental_health_score: 54, traffic_congestion: 90, industrial_emissions: 80, construction_activity: 70, dust_level: 90, population: 80000, latitude: 28.6304, longitude: 77.2177, uv_index: 7, label: "City Center" },
+    { id: 27, name: "Saket", aqi: 117, pm2_5: 46, pm10: 98, temperature: 33.5, humidity: 45, wind_speed: 2.8, weather_condition: "Sunny", environmental_health_score: 60, traffic_congestion: 75, industrial_emissions: 30, construction_activity: 50, dust_level: 65, population: 140000, latitude: 28.5245, longitude: 77.2066, uv_index: 7, label: "South Delhi" },
+    { id: 28, name: "Anand Vihar", aqi: 156, pm2_5: 75, pm10: 136, temperature: 35.0, humidity: 40, wind_speed: 2.2, weather_condition: "Haze", environmental_health_score: 42, traffic_congestion: 88, industrial_emissions: 85, construction_activity: 80, dust_level: 116, population: 220000, latitude: 28.6469, longitude: 77.3160, uv_index: 6, label: "Transit Node" },
+    { id: 29, name: "Dwarka", aqi: 112, pm2_5: 42, pm10: 94, temperature: 33.0, humidity: 48, wind_speed: 3.0, weather_condition: "Sunny", environmental_health_score: 65, traffic_congestion: 60, industrial_emissions: 15, construction_activity: 55, dust_level: 60, population: 250000, latitude: 28.5921, longitude: 77.0460, uv_index: 7, label: "West Delhi" },
+    { id: 30, name: "Lajpat Nagar", aqi: 124, pm2_5: 52, pm10: 103, temperature: 34.5, humidity: 43, wind_speed: 2.7, weather_condition: "Sunny", environmental_health_score: 52, traffic_congestion: 82, industrial_emissions: 20, construction_activity: 60, dust_level: 75, population: 180000, latitude: 28.5677, longitude: 77.2431, uv_index: 7, label: "Central South" }
+  ],
+  Mumbai: [
+    { id: 31, name: "Andheri", aqi: 61, pm2_5: 25, pm10: 50, temperature: 28.0, humidity: 82, wind_speed: 3.2, weather_condition: "Sunny", environmental_health_score: 90, traffic_congestion: 85, industrial_emissions: 50, construction_activity: 60, dust_level: 65, population: 300000, latitude: 19.1136, longitude: 72.8697, uv_index: 8, label: "Commercial Hub" },
+    { id: 32, name: "Bandra", aqi: 60, pm2_5: 24, pm10: 49, temperature: 27.5, humidity: 84, wind_speed: 3.5, weather_condition: "Sunny", environmental_health_score: 92, traffic_congestion: 75, industrial_emissions: 10, construction_activity: 40, dust_level: 45, population: 220000, latitude: 19.0544, longitude: 72.8406, uv_index: 8, label: "Coastal Residential" },
+    { id: 33, name: "Powai", aqi: 58, pm2_5: 23, pm10: 47, temperature: 28.5, humidity: 80, wind_speed: 3.0, weather_condition: "Cloudy", environmental_health_score: 91, traffic_congestion: 65, industrial_emissions: 25, construction_activity: 45, dust_level: 40, population: 170000, latitude: 19.1176, longitude: 72.9060, uv_index: 7, label: "Lake Centroid" },
+    { id: 34, name: "Lower Parel", aqi: 66, pm2_5: 27, pm10: 53, temperature: 29.0, humidity: 81, wind_speed: 2.8, weather_condition: "Sunny", environmental_health_score: 88, traffic_congestion: 80, industrial_emissions: 15, construction_activity: 50, dust_level: 50, population: 130000, latitude: 18.9944, longitude: 72.8258, uv_index: 8, label: "Business District" }
+  ]
+};
 
-
-
+const MOCK_WARDS = MOCK_CITY_WARDS.Hyderabad;
 
 const CITY_REGIONS: Record<string, { center: [number, number]; zoom: number; focus: string; state: string }> = {
   Hyderabad: { center: [17.3850, 78.4867], zoom: 12, focus: "Hyderabad Central", state: "Telangana" },
@@ -138,11 +166,12 @@ const AQI_IN_METRO_CITIES = [
 ];
 
 const buildMetroMapPoints = () => {
-  return {
-    Hyderabad: MOCK_WARDS.map((ward) => ({
+  const points: Record<string, any[]> = {};
+  Object.keys(MOCK_CITY_WARDS).forEach((city) => {
+    points[city] = MOCK_CITY_WARDS[city].map((ward) => ({
       id: `ward-${ward.id}`,
       name: ward.name,
-      label: "Place",
+      label: city === "Hyderabad" ? "Place" : ward.label || "Place",
       kind: "place" as const,
       latitude: ward.latitude,
       longitude: ward.longitude,
@@ -150,31 +179,9 @@ const buildMetroMapPoints = () => {
       pm2_5: ward.pm2_5,
       pm10: ward.pm10,
       sourceWard: ward
-    })),
-    Bangalore: [
-      { id: "bangalore-whitefield", name: "Whitefield", label: "IT Cluster", kind: "place" as const, latitude: 12.9698, longitude: 77.7500, aqi: 58, pm2_5: 23, pm10: 47, sourceWard: null },
-      { id: "bangalore-hoodi", name: "Hoodi", label: "Industrial", kind: "place" as const, latitude: 12.995, longitude: 77.711, aqi: 60, pm2_5: 24, pm10: 49, sourceWard: null },
-      { id: "bangalore-indiranagar", name: "Indiranagar", label: "Residential/Commercial", kind: "place" as const, latitude: 12.9784, longitude: 77.6408, aqi: 53, pm2_5: 21, pm10: 43, sourceWard: null },
-      { id: "bangalore-electronic-city", name: "Electronic City", label: "IT Park", kind: "place" as const, latitude: 12.8456, longitude: 77.6603, aqi: 62, pm2_5: 25, pm10: 50, sourceWard: null },
-      { id: "bangalore-koramangala", name: "Koramangala", label: "Residential Hub", kind: "place" as const, latitude: 12.9352, longitude: 77.6245, aqi: 55, pm2_5: 22, pm10: 44, sourceWard: null }
-    ],
-    Mumbai: [
-      { id: "mumbai-andheri", name: "Andheri", label: "Commercial Hub", kind: "place" as const, latitude: 19.1136, longitude: 72.8697, aqi: 63, pm2_5: 26, pm10: 51, sourceWard: null },
-      { id: "mumbai-bandra", name: "Bandra", label: "Coastal Residential", kind: "place" as const, latitude: 19.0544, longitude: 72.8406, aqi: 60, pm2_5: 24, pm10: 49, sourceWard: null },
-      { id: "mumbai-powai", name: "Powai", label: "Lake Centroid", kind: "place" as const, latitude: 19.1176, longitude: 72.9060, aqi: 58, pm2_5: 23, pm10: 47, sourceWard: null },
-      { id: "mumbai-lower-parel", name: "Lower Parel", label: "Business District", kind: "place" as const, latitude: 18.9944, longitude: 72.8258, aqi: 66, pm2_5: 27, pm10: 53, sourceWard: null }
-    ],
-    Chennai: [
-      { id: "chennai-adyar", name: "Adyar", label: "Coastal Centroid", kind: "place" as const, latitude: 13.0033, longitude: 80.2550, aqi: 59, pm2_5: 24, pm10: 48, sourceWard: null }
-    ],
-    Delhi: [
-      { id: "delhi-connaught-place", name: "Connaught Place", label: "City Center", kind: "place" as const, latitude: 28.6315, longitude: 77.2167, aqi: 121, pm2_5: 48, pm10: 97, sourceWard: null },
-      { id: "delhi-saket", name: "Saket", label: "South Delhi", kind: "place" as const, latitude: 28.5245, longitude: 77.2066, aqi: 117, pm2_5: 40, pm10: 98, sourceWard: null },
-      { id: "delhi-anand-vihar", name: "Anand Vihar", label: "Transit Node", kind: "place" as const, latitude: 28.6469, longitude: 77.3160, aqi: 136, pm2_5: 49, pm10: 116, sourceWard: null },
-      { id: "delhi-dwarka", name: "Dwarka", label: "West Delhi", kind: "place" as const, latitude: 28.5921, longitude: 77.0460, aqi: 112, pm2_5: 38, pm10: 94, sourceWard: null },
-      { id: "delhi-lajpat-nagar", name: "Lajpat Nagar", label: "Central South", kind: "place" as const, latitude: 28.5677, longitude: 77.2431, aqi: 124, pm2_5: 43, pm10: 103, sourceWard: null }
-    ]
-  };
+    }));
+  });
+  return points;
 };
 
 type WardModel = (typeof MOCK_WARDS)[number];
@@ -210,6 +217,7 @@ function PranaApp() {
   const [showDemoDialog, setShowDemoDialog] = useState(false);
   const [activePage, setActivePage] = useState("dashboard");
   const [selectedWard, setSelectedWard] = useState<WardModel>(MOCK_WARDS[0]);
+  const [selectedCity, setSelectedCity] = useState("Hyderabad");
 
   const [liveWardMetrics, setLiveWardMetrics] = useState<Record<string, LiveWardMetrics>>({});
   const [liveDataSource, setLiveDataSource] = useState<string>("mock fallback");
@@ -241,6 +249,14 @@ function PranaApp() {
             data.forEach((w: any) => {
               const key = normalizeWardKey(String(w.name || ""));
               if (key) {
+                let foundFallback = null;
+                for (const cityWards of Object.values(MOCK_CITY_WARDS)) {
+                  const found = cityWards.find((fallback) => normalizeWardKey(fallback.name) === key);
+                  if (found) {
+                    foundFallback = found;
+                    break;
+                  }
+                }
                 metrics[key] = buildLiveMetrics(
                   {
                     aqi: w.aqi,
@@ -252,7 +268,7 @@ function PranaApp() {
                     weather_condition: w.weather_condition,
                     environmental_health_score: w.environmental_health_score
                   },
-                  MOCK_WARDS.find((fallback) => normalizeWardKey(fallback.name) === key) || MOCK_WARDS[0],
+                  foundFallback || MOCK_WARDS[0],
                   "backend"
                 );
               }
@@ -269,8 +285,10 @@ function PranaApp() {
 
       // Direct fallback to local mock data since WAQI is removed
       const fallbackMetrics: Record<string, LiveWardMetrics> = {};
-      MOCK_WARDS.forEach((w) => {
-        fallbackMetrics[normalizeWardKey(w.name)] = buildLiveMetrics(w, w, "local fallback");
+      Object.values(MOCK_CITY_WARDS).forEach((cityWards) => {
+        cityWards.forEach((w) => {
+          fallbackMetrics[normalizeWardKey(w.name)] = buildLiveMetrics(w, w, "local fallback");
+        });
       });
       setLiveWardMetrics(fallbackMetrics);
       setLiveDataSource("local fallback");
@@ -280,10 +298,12 @@ function PranaApp() {
     fetchTelemetry();
   }, []);
 
-  const activeWards = MOCK_WARDS.map((w) => {
-    const key = normalizeWardKey(w.name);
-    return liveWardMetrics[key] ? { ...w, ...liveWardMetrics[key] } : w;
-  });
+  const activeWards = useMemo(() => {
+    return (MOCK_CITY_WARDS[selectedCity] || MOCK_CITY_WARDS.Hyderabad).map((w) => {
+      const key = normalizeWardKey(w.name);
+      return liveWardMetrics[key] ? { ...w, ...liveWardMetrics[key] } : w;
+    });
+  }, [selectedCity, liveWardMetrics]);
 
   useEffect(() => {
     const e = liveWardMetrics[normalizeWardKey(selectedWard.name)];
@@ -392,7 +412,6 @@ function PranaApp() {
   const [langSuggestion, setLangSuggestion] = useState<{ city: string; langCode: LanguageCode } | null>(null);
 
   // Multi-City selector state & mock database
-  const [selectedCity, setSelectedCity] = useState("Hyderabad");
   const selectedRegion = CITY_REGIONS[selectedCity] || CITY_REGIONS.Hyderabad;
 
   const handleCitySelect = (cityName: string) => {
@@ -407,77 +426,10 @@ function PranaApp() {
     }
 
     // Focus a specific mock ward based on the city selected
-    if (cityName === "Hyderabad") {
-      handleWardSelect(MOCK_WARDS.find(w => w.name === "Gachibowli") || MOCK_WARDS[0]);
-    } else if (cityName === "Bangalore" || cityName === "Bengaluru") {
-      handleWardSelect({
-        id: 101,
-        name: "Whitefield Centroid",
-        aqi: 56,
-        temperature: 24,
-        humidity: 62,
-        wind_speed: 4.8,
-        traffic_congestion: 64,
-        construction_activity: 55,
-        industrial_emissions: 40,
-        dust_level: 50,
-        waste_burning: 10,
-        latitude: 12.9698,
-        longitude: 77.7500,
-        environmental_health_score: 92
-      });
-    } else if (cityName === "Chennai") {
-      handleWardSelect({
-        id: 102,
-        name: "Adyar Coastal Centroid",
-        aqi: 59,
-        temperature: 29,
-        humidity: 78,
-        wind_speed: 6.5,
-        traffic_congestion: 45,
-        construction_activity: 30,
-        industrial_emissions: 20,
-        dust_level: 35,
-        waste_burning: 5,
-        latitude: 13.0033,
-        longitude: 80.2550,
-        environmental_health_score: 91
-      });
-    } else if (cityName === "Delhi") {
-      handleWardSelect({
-        id: 103,
-        name: "Connaught Place Centroid",
-        aqi: 125,
-        temperature: 34,
-        humidity: 42,
-        wind_speed: 2.5,
-        traffic_congestion: 90,
-        construction_activity: 70,
-        industrial_emissions: 80,
-        dust_level: 90,
-        waste_burning: 30,
-        latitude: 28.6304,
-        longitude: 77.2177,
-        environmental_health_score: 54
-      });
-    } else if (cityName === "Mumbai") {
-      handleWardSelect({
-        id: 104,
-        name: "Andheri West Centroid",
-        aqi: 61,
-        temperature: 28,
-        humidity: 82,
-        wind_speed: 3.2,
-        traffic_congestion: 85,
-        construction_activity: 60,
-        industrial_emissions: 50,
-        dust_level: 65,
-        waste_burning: 15,
-        latitude: 19.1136,
-        longitude: 72.8697,
-        environmental_health_score: 90
-      });
-    }
+    const normCity = cityName === "Bengaluru" ? "Bangalore" : cityName;
+    const cityWards = MOCK_CITY_WARDS[normCity] || MOCK_CITY_WARDS.Hyderabad;
+    const defaultWard = cityWards[0];
+    handleWardSelect(defaultWard);
   };
 
   const cityHotspots = AQI_IN_METRO_CITIES.map((city) => {
@@ -769,11 +721,9 @@ function PranaApp() {
     const forecastAqi = currentForecast?.[0]?.predicted_aqi || Math.min(500, Math.floor(predictedAqi * 1.05));
     const traffic = selectedWard.traffic_congestion || 0;
     const construction = selectedWard.construction_activity || 0;
-    const industrial = selectedWard.industrial_emissions || 0;
-    const dust = selectedWard.dust_level || 0;
-    const population = selectedWard.population || 0;
     const windSpeed = selectedWard.wind_speed || 0.0;
     const humidity = selectedWard.humidity || 0;
+    const population = selectedWard.population || 0;
     const badge = getAQIBadge(aqi);
     const translatedBadgeName = translateBadge(badge, language);
 
@@ -1584,7 +1534,7 @@ function PranaApp() {
 
   // Autocomplete search suggestions filter
   const filteredSuggestions = searchQuery.trim()
-    ? MOCK_WARDS.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    ? activeWards.filter(w => w.name.toLowerCase().includes(searchQuery.toLowerCase()))
     : [];
 
   return (
@@ -2663,17 +2613,16 @@ function PranaApp() {
                     />
                   )}
 
-                  {/* C. PREDICTIVE FORECAST HORIZONS TAB */}
-                  {activePage === "prediction" && (
-                    <ForecastCenter
-                      wards={activeWards}
-                      selectedWard={selectedWard}
-                      onSelectWard={handleWardSelect}
-                      onGenerateBulletin={() => handleGenerateReport("Weekly")}
-                      onNavigateToMap={() => handleTabClick("map")}
-                      narrativeExplanation={narrativeExplanation}
-                    />
-                  )}
+              {/* C. PREDICTIVE FORECAST HORIZONS TAB */}
+              {activePage === "prediction" && (
+                <ForecastCenter
+                  wards={activeWards}
+                  selectedWard={selectedWard}
+                  onSelectWard={handleWardSelect}
+                  onNavigateToMap={() => handleTabClick("map")}
+                  narrativeExplanation={narrativeExplanation}
+                />
+              )}
 
 
 

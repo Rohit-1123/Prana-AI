@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { Download, Landmark, Map, FileText, ChevronDown, FileSpreadsheet, File } from "lucide-react";
+import { Download, Landmark, Map, ChevronDown, FileSpreadsheet, File } from "lucide-react";
 
 interface QuickActionsProps {
   onExport: (format: "csv" | "pdf") => void;
   onCompare: () => void;
   onViewMap: () => void;
-  onGenerateReport: () => void;
 }
 
 export function QuickActions({
   onExport,
   onCompare,
-  onViewMap,
-  onGenerateReport
+  onViewMap
 }: QuickActionsProps) {
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
@@ -75,15 +73,6 @@ export function QuickActions({
       >
         <Map className="w-4 h-4 shrink-0" />
         <span>View Digital Twin</span>
-      </button>
-
-      {/* Generate Bulletin Button */}
-      <button
-        onClick={onGenerateReport}
-        className="btn-secondary py-2 px-4 text-xs flex items-center gap-1.5 font-semibold cursor-pointer border border-border bg-card text-foreground hover:bg-muted/10"
-      >
-        <FileText className="w-4 h-4 shrink-0" />
-        <span>Generate Bulletin</span>
       </button>
 
     </div>

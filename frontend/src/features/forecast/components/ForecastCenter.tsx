@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ForecastSummaryCard } from "./ForecastSummaryCard";
 import { FilterPanel } from "./FilterPanel";
 import { QuickActions } from "./QuickActions";
@@ -7,7 +7,6 @@ import { ConfidenceGauge } from "./ConfidenceGauge";
 import { ComparisonChart } from "./ComparisonChart";
 import { ForecastTable } from "./ForecastTable";
 import { AISummaryCard } from "./AISummaryCard";
-import { DiurnalChart } from "./DiurnalChart";
 import { BarChart, Bar, XAxis as BarXAxis, YAxis as BarYAxis, CartesianGrid as BarCartesianGrid, Tooltip as BarTooltip, ResponsiveContainer as BarResponsiveContainer } from "recharts";
 import { X, Check } from "lucide-react";
 import { useSettings } from "../../../contexts/SettingsContext";
@@ -16,7 +15,6 @@ interface ForecastCenterProps {
   wards: any[];
   selectedWard: any;
   onSelectWard: (ward: any) => void;
-  onGenerateBulletin: () => void;
   onNavigateToMap: () => void;
   narrativeExplanation: string;
 }
@@ -25,7 +23,6 @@ export function ForecastCenter({
   wards,
   selectedWard,
   onSelectWard,
-  onGenerateBulletin,
   onNavigateToMap,
   narrativeExplanation
 }: ForecastCenterProps) {
@@ -110,6 +107,10 @@ export function ForecastCenter({
 
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [comparedWardsList, setComparedWardsList] = useState<number[]>([selectedWard.id]);
+
+  useEffect(() => {
+    setComparedWardsList([selectedWard.id]);
+  }, [selectedWard.id]);
 
   const handleExportData = (format: "csv" | "pdf") => {
     if (format === "csv") {
@@ -209,7 +210,6 @@ export function ForecastCenter({
             onExport={handleExportData}
             onCompare={handleCompareTrigger}
             onViewMap={onNavigateToMap}
-            onGenerateReport={onGenerateBulletin}
           />
         </div>
 
@@ -304,10 +304,6 @@ export function ForecastCenter({
 
           <ComparisonChart 
             data={mockComparisonData}
-          />
-
-          <DiurnalChart 
-            wardName={selectedWard.name}
           />
         </div>
 
