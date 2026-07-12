@@ -37,7 +37,26 @@ def citizen_query(payload: CitizenQueryRequest, db: Session = Depends(get_db)):
         "weather_condition": latest_reading.weather_condition if latest_reading else "Sunny"
     }
     
-    advisory = citizen_agent.get_health_advisory(metrics, payload.query)
+    # Query all wards' latest context to support questions about other locations
+    all_wards = db.query(Ward).all()
+    all_locations_context = []
+    for w in all_wards:
+        latest = (
+            db.query(HistoricalAQI)
+            .filter(HistoricalAQI.ward_id == w.id)
+            .order_by(HistoricalAQI.timestamp.desc())
+            .first()
+        )
+        all_locations_context.append({
+            "ward_name": w.name,
+            "aqi": latest.aqi if latest else 80,
+            "pm2_5": latest.pm2_5 if latest else 28,
+            "pm10": latest.pm10 if latest else 45,
+            "temperature": latest.temperature if latest else 25.0,
+            "weather_condition": latest.weather_condition if latest else "Sunny"
+        })
+        
+    advisory = citizen_agent.get_health_advisory(metrics, payload.query, all_locations_context)
     
     return CitizenQueryResponse(
         ward_name=ward.name,

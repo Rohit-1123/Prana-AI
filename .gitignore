@@ -49,4 +49,5 @@ lerna-debug.log*
 /.pytest_cache/
 /.github/workflows/
 /prana.db
+/backend/prana.db
 *.db

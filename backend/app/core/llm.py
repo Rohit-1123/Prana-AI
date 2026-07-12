@@ -1,11 +1,12 @@
 import os
 import json
 import requests
+from app.core.config.settings import settings
 
 class LLMClient:
     def __init__(self):
-        self.api_key = os.getenv("GROQ_API_KEY", "")
-        self.model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+        self.api_key = settings.GROQ_API_KEY or os.getenv("GROQ_API_KEY", "")
+        self.model = os.getenv("GROQ_MODEL", settings.GROQ_MODEL)
         self.url = "https://api.groq.com/openai/v1/chat/completions"
 
     def generate_text(self, prompt: str, system_instruction: str = None) -> str:
@@ -32,7 +33,10 @@ class LLMClient:
                 }
                 response = requests.post(self.url, headers=headers, json=payload, timeout=10)
                 if response.status_code == 200:
-                    return response.json()["choices"][0]["message"]["content"]
+                    content = response.json()["choices"][0]["message"]["content"]
+                    import re
+                    content = re.sub(r"<think>.*?(?:</think>|$)", "", content, flags=re.DOTALL).strip()
+                    return content
                 else:
                     print(f"Groq API Error: {response.text}. Falling back to Offline Agent Engine.")
             except Exception as e:
@@ -86,10 +90,22 @@ class LLMClient:
             return "PranaAI Copilot: Ask me direct questions about air quality index values, safe jogging hours, or local exposure risks, and I will provide a direct, concise answer."
 
     def _extract_ward(self, prompt: str) -> str:
+        import re
+        # Check for Focus Ward: [Name] format first
+        match = re.search(r"focus ward:\s*([^\n(]+)", prompt.lower())
+        if match:
+            return match.group(1).strip().title()
+            
+        # Fallback to checking location keywords
+        locations = ["gachibowli", "hitech city", "financial district", "madhapur", "kondapur", "nanakramguda"]
+        for loc in locations:
+            if loc in prompt.lower():
+                return loc.title()
+                
         for i in range(1, 11):
             if f"ward {i}" in prompt.lower():
                 return f"Ward {i}"
-        return "Ward 1"
+        return "Gachibowli"
 
     def _extract_number(self, prompt: str, keyword: str, default: int) -> int:
         import re

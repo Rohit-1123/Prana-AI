@@ -70,7 +70,7 @@ class AgentOrchestrator:
         
         if not latest_reading:
             # Return nominal default if database is empty
-            return self._get_default_response(ward.name)
+            return self._get_default_response(ward)
             
         prev_aqi = previous_reading.aqi if previous_reading else 120
         
@@ -140,12 +140,16 @@ class AgentOrchestrator:
             "data_source": data_source
         }
 
-    def _get_default_response(self, ward_name: str) -> dict:
+    def _get_default_response(self, ward) -> dict:
         return {
-            "ward_name": ward_name,
+            "ward_id": ward.id,
+            "ward_name": ward.name,
+            "population": ward.population or 50000,
+            "area_sqkm": ward.area_sqkm or 10.0,
+            "green_cover_pct": ward.green_cover_pct or 20.0,
             "environmental_health_score": 75,
             "current_metrics": {
-                "ward": ward_name,
+                "ward": ward.name,
                 "aqi": 80,
                 "pm2_5": 28,
                 "pm10": 45,

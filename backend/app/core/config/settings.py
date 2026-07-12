@@ -2,6 +2,10 @@ import os
 from typing import List, Optional
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import load_dotenv
+
+# Load .env file searching upwards from current directory
+load_dotenv()
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "PranaAI"
@@ -43,6 +47,7 @@ class Settings(BaseSettings):
     OPENWEATHER_API_KEY: Optional[str] = None
     NOMINATIM_USER_AGENT: str = "PranaAI-Environmental-Intelligence-Platform"
     GROQ_API_KEY: Optional[str] = None
+    GROQ_MODEL: str = "qwen/qwen3-32b"
 
 
     model_config = SettingsConfigDict(

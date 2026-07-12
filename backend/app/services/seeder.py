@@ -56,14 +56,25 @@ def seed_database(db: Session):
     print("City (Hyderabad) seeded.")
     
     # 3. Create Hyderabad Focus Area Wards
-    # Actual coordinates for Hyderabad IT corridor
+    # Actual coordinates for Hyderabad locations
     ward_details = {
         "Gachibowli": {"lat": 17.4401, "lng": 78.3489, "pop": 120000, "area": 14.5, "green": 24.5, "number": 1},
         "Hitech City": {"lat": 17.4504, "lng": 78.3809, "pop": 95000, "area": 8.2, "green": 12.0, "number": 2},
         "Financial District": {"lat": 17.4190, "lng": 78.3429, "pop": 45000, "area": 11.2, "green": 28.0, "number": 3},
         "Madhapur": {"lat": 17.4483, "lng": 78.3915, "pop": 160000, "area": 12.0, "green": 9.5, "number": 4},
         "Kondapur": {"lat": 17.4622, "lng": 78.3572, "pop": 110000, "area": 10.4, "green": 18.0, "number": 5},
-        "Nanakramguda": {"lat": 17.4172, "lng": 78.3562, "pop": 65000, "area": 7.8, "green": 22.0, "number": 6}
+        "Nanakramguda": {"lat": 17.4172, "lng": 78.3562, "pop": 65000, "area": 7.8, "green": 22.0, "number": 6},
+        "Jubilee Hills": {"lat": 17.4325, "lng": 78.4075, "pop": 85000, "area": 9.0, "green": 20.0, "number": 7},
+        "Banjara Hills": {"lat": 17.4165, "lng": 78.4350, "pop": 90000, "area": 10.0, "green": 18.0, "number": 8},
+        "Begumpet": {"lat": 17.4448, "lng": 78.4600, "pop": 45000, "area": 6.5, "green": 10.0, "number": 9},
+        "Secunderabad": {"lat": 17.4399, "lng": 78.4983, "pop": 65000, "area": 8.0, "green": 12.5, "number": 10},
+        "Charminar": {"lat": 17.3616, "lng": 78.4747, "pop": 250000, "area": 12.0, "green": 5.0, "number": 11},
+        "Kukatpally": {"lat": 17.4855, "lng": 78.4100, "pop": 180000, "area": 11.5, "green": 8.5, "number": 12},
+        "Uppal": {"lat": 17.4019, "lng": 78.5602, "pop": 150000, "area": 13.0, "green": 14.0, "number": 13},
+        "LB Nagar": {"lat": 17.3457, "lng": 78.5522, "pop": 130000, "area": 12.5, "green": 11.0, "number": 14},
+        "Nampally": {"lat": 17.3918, "lng": 78.4678, "pop": 110000, "area": 9.5, "green": 7.0, "number": 15},
+        "Miyapur": {"lat": 17.4966, "lng": 78.3483, "pop": 145000, "area": 10.0, "green": 15.0, "number": 16},
+        "Mehdipatnam": {"lat": 17.3971, "lng": 78.4316, "pop": 165000, "area": 10.5, "green": 13.0, "number": 17}
     }
     
     wards_db = {}

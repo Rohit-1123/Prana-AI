@@ -3,6 +3,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 import io
 from typing import List
+import time
 from app.core.database import get_db
 from app.core.security import get_current_user
 from app.models.models import Report, HistoricalAQI, User
@@ -38,7 +39,7 @@ def generate_report(
         user_id=current_user.id,
         title=analysis["title"],
         type=report_type,
-        file_path=f"downloads/report_{report_type.lower()}_{int(pd.Timestamp.now().timestamp()) if 'pd' in globals() else 1234}.csv",
+        file_path=f"downloads/report_{report_type.lower()}_{int(time.time())}.csv",
         summary=analysis["executive_summary"]
     )
     db.add(new_report)

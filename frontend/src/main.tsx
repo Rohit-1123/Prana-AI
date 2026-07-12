@@ -14,7 +14,10 @@ const sessionKeys = [
   "isAuthenticated",
   "flow",
   "prana-recent-searches",
-  "waqi_api_key"
+  "waqi_api_key",
+  "prana-copilot-sessions",
+  "prana-copilot-messages",
+  "prana-copilot-active-session"
 ];
 
 const originalGetItem = localStorage.getItem.bind(localStorage);

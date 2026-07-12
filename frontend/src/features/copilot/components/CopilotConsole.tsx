@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { HistoryDrawer, type ConversationSession } from "./HistoryDrawer";
 import { ConversationView } from "./ConversationView";
 import { PromptInput } from "./PromptInput";
@@ -37,25 +37,40 @@ export function CopilotConsole({
   ];
 
   // Conversation Sessions list state
-  const [sessions, setSessions] = useState<ConversationSession[]>([
-    { id: "sess-1", title: "Gachibowli sensor calibrations", timestamp: "2026-06-27" },
-    { id: "sess-2", title: "Madhapur particulate load", timestamp: "2026-06-26" }
-  ]);
-  const [activeSessionId, setActiveSessionId] = useState("sess-1");
+  const [sessions, setSessions] = useState<ConversationSession[]>(() => {
+    const saved = localStorage.getItem("prana-copilot-sessions");
+    return saved ? JSON.parse(saved) : [
+      { id: "sess-1", title: "New Conversation", timestamp: new Date().toISOString().split("T")[0] }
+    ];
+  });
+  const [activeSessionId, setActiveSessionId] = useState(() => {
+    return localStorage.getItem("prana-copilot-active-session") || "sess-1";
+  });
 
   // Messages session logs mapping
-  const [sessionMessages, setSessionMessages] = useState<Record<string, ChatMessage[]>>({
-    "sess-1": [
-      { sender: "agent", text: "Hello! I am your Citizen Advisory Agent. Ask me questions about Hyderabad's air quality, safe jogging hours, or clean exposure routes." }
-    ],
-    "sess-2": [
-      { sender: "user", text: "Is AQI high in Madhapur?" },
-      { sender: "agent", text: "Madhapur AQI stands at 182 (Moderate). Commuter traffic spikes along junctions remain the primary driver vector." }
-    ]
+  const [sessionMessages, setSessionMessages] = useState<Record<string, ChatMessage[]>>(() => {
+    const saved = localStorage.getItem("prana-copilot-messages");
+    return saved ? JSON.parse(saved) : {
+      "sess-1": [
+        { sender: "agent", text: "Hello! I am your Citizen Advisory Agent. Ask me questions about Hyderabad's air quality, safe jogging hours, or clean exposure routes." }
+      ]
+    };
   });
 
   const [isLoading, setIsLoading] = useState(false);
   const messages = sessionMessages[activeSessionId] || [];
+
+  useEffect(() => {
+    localStorage.setItem("prana-copilot-sessions", JSON.stringify(sessions));
+  }, [sessions]);
+
+  useEffect(() => {
+    localStorage.setItem("prana-copilot-messages", JSON.stringify(sessionMessages));
+  }, [sessionMessages]);
+
+  useEffect(() => {
+    localStorage.setItem("prana-copilot-active-session", activeSessionId);
+  }, [activeSessionId]);
 
   const handleSend = (text: string) => {
     const updatedUserMsg = [...messages, { sender: "user", text } as ChatMessage];
@@ -65,8 +80,45 @@ export function CopilotConsole({
     }));
     setIsLoading(true);
 
-    // Mock AI reply calculations
-    setTimeout(() => {
+    // Try real API query first, fall back to mock if it fails or times out
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+    const controller = new AbortController();
+    const apiTimeoutId = setTimeout(() => controller.abort(), 15000);
+
+    let apiSucceeded = false;
+
+    fetch(`${API_URL}/api/chat/query`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ward_id: selectedWard.id, query: text }),
+      signal: controller.signal
+    })
+      .then(res => {
+        clearTimeout(apiTimeoutId);
+        if (res.ok) return res.json();
+        throw new Error();
+      })
+      .then(data => {
+        apiSucceeded = true;
+        clearTimeout(mockTimeout);
+        setSessionMessages(prev => ({
+          ...prev,
+          [activeSessionId]: [...updatedUserMsg, { 
+            sender: "agent", 
+            text: data.advisory_response,
+            routes: data.recommended_clean_routes?.map((r: any) => ({ name: r.name, aqi: r.aqi, reason: r.reason }))
+          } as ChatMessage]
+        }));
+        setIsLoading(false);
+      })
+      .catch(() => {
+        clearTimeout(apiTimeoutId);
+        // Do nothing, let the mock timeout handle the fallback response
+      });
+
+    // Mock AI reply calculations (runs after 3 seconds if not canceled by a successful API response)
+    const mockTimeout = setTimeout(() => {
+      if (apiSucceeded) return;
       let reply = "";
       let routes: any[] | undefined = undefined;
       let card: any = undefined;

@@ -5,11 +5,11 @@ class CitizenAdvisoryAgent:
         self.name = "Citizen Advisory Agent"
         self.llm = LLMClient()
 
-    def get_health_advisory(self, current_metrics: dict, citizen_query: str) -> dict:
+    def get_health_advisory(self, current_metrics: dict, citizen_query: str, all_locations_context: list = None) -> dict:
         """
         Generates personalized health advice, activity guidelines, and clean route mapping.
         """
-        ward = current_metrics.get("ward", "Ward 1")
+        ward = current_metrics.get("ward", "Gachibowli")
         aqi = current_metrics.get("aqi", 150)
         temp = current_metrics.get("temperature", 25.0)
         weather = current_metrics.get("weather_condition", "Sunny")
@@ -31,17 +31,24 @@ class CitizenAdvisoryAgent:
             rating = "Very Poor / Severe"
             color = "#EF4444"
             
+        locations_summary = ""
+        if all_locations_context:
+            locations_summary = "\n".join([
+                f"- {m['ward_name']}: AQI {m['aqi']}, PM2.5 {m['pm2_5']} µg/m³, Temp {m['temperature']}°C, {m['weather_condition']}"
+                for m in all_locations_context
+            ])
+            
         prompt = f"""
         You are the Citizen Advisory Agent for PranaAI. Provide ONLY a direct, concise, and extremely short answer to the citizen query.
         Do NOT provide background explanations, tables, charts, or detailed guides. Keep it to a single sentence or two.
         Citizen Query: "{citizen_query}"
-        Citizen Location: {ward}
-        Current Environmental Context:
-        - Local AQI: {aqi} ({rating} category)
-        - Temperature: {temp}°C
-        - Weather: {weather}
         
-        Address the citizen's query directly. Keep the tone polite, clear, and extremely brief.
+        Focus Ward: {ward} (AQI: {aqi}, Category: {rating}, Temp: {temp}°C, Weather: {weather})
+        
+        All Available Locations in the City:
+        {locations_summary}
+        
+        Address the citizen's query directly. Use the Focus Ward as the primary context, but if the citizen asks about other locations or comparative options, use the list of All Available Locations to answer correctly. Keep the tone polite, clear, and extremely brief.
         """
         
         system_instruction = "You are PranaAI's Citizen Advisory Agent. Provide only the direct concise answer. No background explanations or charts."
