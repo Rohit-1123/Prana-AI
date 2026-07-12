@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # PostgreSQL Database configurations
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: Optional[str] = None
+    POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "prana_db"
     POSTGRES_PORT: int = 5432
     DATABASE_URL: Optional[str] = None
@@ -29,8 +29,6 @@ class Settings(BaseSettings):
         if isinstance(v, str) and v:
             return v
         data = info.data
-        if not data.get('POSTGRES_PASSWORD'):
-            raise ValueError("POSTGRES_PASSWORD must be set in environment variables")
         return f"postgresql+asyncpg://{data.get('POSTGRES_USER')}:{data.get('POSTGRES_PASSWORD')}@{data.get('POSTGRES_SERVER')}:{data.get('POSTGRES_PORT')}/{data.get('POSTGRES_DB')}"
 
     # Redis configuration
@@ -40,11 +38,11 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: Optional[str] = None
 
     # Security JWT tokens settings
-    SECRET_KEY: Optional[str] = None
+    SECRET_KEY: str = "prana_super_secret_signing_key_token_parameters_hash"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
 
     # External Provider Configs
-    OPENWEATHER_API_KEY: Optional[str] = None
+    OPENWEATHER_API_KEY: str = "mock_openweather_api_key_credentials_token"
     NOMINATIM_USER_AGENT: str = "PranaAI-Environmental-Intelligence-Platform"
     GROQ_API_KEY: Optional[str] = None
     GROQ_MODEL: str = "qwen/qwen3-32b"
