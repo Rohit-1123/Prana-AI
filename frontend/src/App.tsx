@@ -240,8 +240,14 @@ function PranaApp() {
 
   useEffect(() => {
     const fetchTelemetry = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
       try {
-        const res = await fetch(`${API_URL}/api/dashboard/wards`, { cache: "no-store" });
+        const res = await fetch(`${API_URL}/api/dashboard/wards`, { 
+          cache: "no-store",
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
@@ -280,6 +286,7 @@ function PranaApp() {
           }
         }
       } catch (err) {
+        clearTimeout(timeoutId);
         console.warn("Failed to fetch local backend telemetry, falling back to local mock data:", err);
       }
 
@@ -650,14 +657,22 @@ function PranaApp() {
 
   const fetchWardIntelligence = async (wardId: number) => {
     setLoading(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
     try {
-      const res = await fetch(`${API_URL}/api/dashboard/wards/${wardId}/intelligence`);
+      const res = await fetch(`${API_URL}/api/dashboard/wards/${wardId}/intelligence`, {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
       if (res.ok) {
         const data = await res.json();
         setForecast(data.predictions);
         setNarrativeExplanation(data.explanation.narrative_explanation);
+      } else {
+        throw new Error("API responded with an error status");
       }
     } catch (e) {
+      clearTimeout(timeoutId);
       const current = activeWards.find(w => w.id === wardId) || activeWards[0];
 
       setForecast([
