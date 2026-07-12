@@ -92,9 +92,9 @@ class GroqProvider(LLMProviderInterface):
     def _get_mock_response(self, prompt: str) -> str:
         prompt_lower = prompt.lower()
         if "forecast" in prompt_lower:
-            return "Based on recent telemetry analysis, AQI predictions for the Gachibowli ward show a potential rise to 142 within the next 24 hours. The XGBoost forecasting model rates this with 93% confidence, recommending sensitive groups limit outdoor activity during peak afternoon hours."
+            return "Recent telemetry analysis projects a potential rise in Gachibowli AQI to 142 within the next 24 hours."
         if "compare" in prompt_lower:
-            return "Comparing target wards: Madhapur reports an AQI of 152 (Moderate Risk) while Hitech City stands at 138 (Low Risk). Particulate matter PM2.5 levels are higher in Madhapur near major transit junctions."
+            return "Madhapur reports an AQI of 152 (Moderate Risk) while Hitech City reports 138 (Low Risk)."
         if "hotspot" in prompt_lower:
-            return "The active hotspots in the IT Corridor are Gachibowli Junction and Cyber Towers metro corridors, showing elevated PM10 dust particles from metro expansion zones. We recommend mist sprayers deployment."
-        return "Greetings! I am PranaAI Copilot, your environmental intelligence assistant. Ask me about current air quality indices, weather metrics, spatial sensors hotspots, or forecasting trends in the IT Corridor."
+            return "Active hotspots in the IT Corridor are the Gachibowli Junction and Cyber Towers metro corridors."
+        return "I am PranaAI Copilot. Ask me direct questions about air quality, weather, hotspots, or forecasting trends."

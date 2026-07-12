@@ -32,7 +32,8 @@ class CitizenAdvisoryAgent:
             color = "#EF4444"
             
         prompt = f"""
-        You are the Citizen Advisory Agent for PranaAI. Provide a helpful, caring, yet scientifically accurate response to this citizen query.
+        You are the Citizen Advisory Agent for PranaAI. Provide ONLY a direct, concise, and extremely short answer to the citizen query.
+        Do NOT provide background explanations, tables, charts, or detailed guides. Keep it to a single sentence or two.
         Citizen Query: "{citizen_query}"
         Citizen Location: {ward}
         Current Environmental Context:
@@ -40,12 +41,10 @@ class CitizenAdvisoryAgent:
         - Temperature: {temp}°C
         - Weather: {weather}
         
-        Address the citizen's query directly (e.g., if they asked about jogging, schools, mask recommendations, outdoor activities).
-        Suggest a practical tip, and recommend using green pathways or staying indoors based on their specific local AQI of {aqi}.
-        Keep the tone polite, engaging, and clear.
+        Address the citizen's query directly. Keep the tone polite, clear, and extremely brief.
         """
         
-        system_instruction = "You are PranaAI's Citizen Advisory Agent, representing a friendly, localized virtual environmental assistant."
+        system_instruction = "You are PranaAI's Citizen Advisory Agent. Provide only the direct concise answer. No background explanations or charts."
         response_text = self.llm.generate_text(prompt, system_instruction)
         
         # Clean route mock suggestions

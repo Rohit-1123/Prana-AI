@@ -61,7 +61,23 @@ PranaAI/
 *   Python 3.11+
 *   Node.js v18+ & NPM
 
-### Step 1: Run Machine Learning Training
+### Step 1: Configure Environment Variables
+```bash
+# Copy the example environment file
+cp .env.example .env
+
+# Edit .env and add your API keys (optional but recommended)
+# - GROQ_API_KEY: Get yours at https://console.groq.com (for AI Copilot features)
+# - OPENWEATHER_API_KEY: Get yours at https://openweathermap.org/api (for weather data)
+# - SECRET_KEY: Generate with `openssl rand -hex 32` (for production)
+```
+
+**Note:** The app works without API keys but will use mock/fallback data. For full functionality:
+- **GROQ API Key**: Enables AI Copilot chat with real LLM responses
+- **OpenWeather API Key**: Provides real-time weather and air quality data
+- Without keys, the app uses free OpenAQ API and mock responses
+
+### Step 2: Run Machine Learning Training
 Before launching the server, generate the dataset and train the prediction models:
 ```bash
 # 1. Install ML dependencies
@@ -74,7 +90,7 @@ python datasets/generate_dataset.py
 python models/train_models.py
 ```
 
-### Step 2: Spin Up Backend Server
+### Step 3: Spin Up Backend Server
 ```bash
 cd backend/
 
@@ -86,7 +102,7 @@ python -m uvicorn app.main:app --reload
 ```
 Swagger API docs will be available at `http://127.0.0.1:8000/docs`.
 
-### Step 3: Spin Up Frontend Dashboard
+### Step 4: Spin Up Frontend Dashboard
 ```bash
 cd frontend/
 

@@ -151,3 +151,13 @@ class Report(Base):
     summary = Column(Text, nullable=True)
     
     user = relationship("User", back_populates="reports")
+
+class Location(Base):
+    __tablename__ = "locations"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    city_id = Column(Integer, ForeignKey("cities.id"), nullable=False)
+    name = Column(String, index=True, nullable=False)
+    latitude = Column(Float, nullable=False)
+    longitude = Column(Float, nullable=False)
+

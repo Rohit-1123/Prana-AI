@@ -241,7 +241,7 @@ function PranaApp() {
   useEffect(() => {
     const fetchTelemetry = async () => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1200);
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout for API calls
       try {
         const res = await fetch(`${API_URL}/api/dashboard/wards`, { 
           cache: "no-store",
@@ -252,57 +252,68 @@ function PranaApp() {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
             const metrics: Record<string, LiveWardMetrics> = {};
+            const source = data[0].data_source || "backend";
+            
             data.forEach((w: any) => {
               const key = normalizeWardKey(String(w.name || ""));
               if (key) {
-                let foundFallback = null;
-                for (const cityWards of Object.values(MOCK_CITY_WARDS)) {
-                  const found = cityWards.find((fallback) => normalizeWardKey(fallback.name) === key);
-                  if (found) {
-                    foundFallback = found;
-                    break;
-                  }
-                }
-                metrics[key] = buildLiveMetrics(
-                  {
-                    aqi: w.aqi,
-                    pm2_5: w.pm2_5,
-                    pm10: w.pm10,
-                    temperature: w.temperature,
-                    humidity: w.humidity,
-                    wind_speed: w.wind_speed,
-                    weather_condition: w.weather_condition,
-                    environmental_health_score: w.environmental_health_score
-                  },
-                  foundFallback || MOCK_WARDS[0],
-                  "backend"
-                );
+                // Use ONLY backend data - no hardcoded fallbacks
+                metrics[key] = {
+                  aqi: Number(w.aqi),
+                  pm2_5: Number(w.pm2_5),
+                  pm10: Number(w.pm10),
+                  temperature: Number(w.temperature),
+                  humidity: Number(w.humidity),
+                  wind_speed: Number(w.wind_speed),
+                  weather_condition: w.weather_condition || "Sunny",
+                  environmental_health_score: Number(w.environmental_health_score),
+                  source: source
+                };
               }
             });
-            setLiveWardMetrics(metrics);
-            setLiveDataSource("backend telemetry");
-            setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-            return;
+            
+            if (Object.keys(metrics).length > 0) {
+              setLiveWardMetrics(metrics);
+              setLiveDataSource(source === "live" ? "🔴 LIVE" : source === "calculated" ? "🟡 CALCULATED" : "⚪ BACKEND");
+              setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+              console.log(`✅ Loaded ${source} data for ${metrics.length} locations from backend API`);
+              return;
+            }
           }
         }
       } catch (err) {
         clearTimeout(timeoutId);
-        console.warn("Failed to fetch local backend telemetry, falling back to local mock data:", err);
+        console.error("❌ Failed to fetch backend telemetry:", err);
       }
 
-      // Direct fallback to local mock data since WAQI is removed
+      // Only use mock data if API completely fails
+      console.warn("⚠️ API OFFLINE - Using mock data as last resort");
       const fallbackMetrics: Record<string, LiveWardMetrics> = {};
       Object.values(MOCK_CITY_WARDS).forEach((cityWards) => {
         cityWards.forEach((w) => {
-          fallbackMetrics[normalizeWardKey(w.name)] = buildLiveMetrics(w, w, "local fallback");
+          fallbackMetrics[normalizeWardKey(w.name)] = {
+            aqi: w.aqi,
+            pm2_5: w.pm2_5,
+            pm10: w.pm10,
+            temperature: w.temperature,
+            humidity: w.humidity,
+            wind_speed: w.wind_speed,
+            weather_condition: w.weather_condition,
+            environmental_health_score: w.environmental_health_score,
+            source: "mock (API offline)"
+          };
         });
       });
       setLiveWardMetrics(fallbackMetrics);
-      setLiveDataSource("local fallback");
+      setLiveDataSource("⚫ MOCK (OFFLINE)");
       setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
     };
 
     fetchTelemetry();
+    
+    // Refresh data every 2 minutes for real-time updates
+    const interval = setInterval(fetchTelemetry, 2 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const activeWards = useMemo(() => {
@@ -355,7 +366,7 @@ function PranaApp() {
   // Tagline rotation timeline
   useEffect(() => {
     const timer = setInterval(() => {
-      setTaglineIdx((prev) => (prev + 1) % 5);
+      setTaglineIdx((prev: number) => (prev + 1) % 5);
     }, 4000);
     return () => clearInterval(timer);
   }, []);
@@ -638,7 +649,7 @@ function PranaApp() {
 
         // Add step to completed list after progress ticks
         setTimeout(() => {
-          setBootingStepLogs(prev => [...prev, step]);
+          setBootingStepLogs((prev: string[]) => [...prev, step]);
         }, 150);
 
         index++;
@@ -1392,7 +1403,7 @@ function PranaApp() {
       clearTimeout(timeoutId);
       if (res.ok) {
         const data = await res.json();
-        setChatMessages([...messages, { sender: "agent", text: data.advisory_response, routes: data.recommended_clean_routes }]);
+        setChatMessages([...messages, { sender: "agent", text: data.advisory_response }]);
       } else {
         throw new Error();
       }
@@ -1484,10 +1495,10 @@ function PranaApp() {
           ];
         }
 
+        void routes;
         setChatMessages([...messages, {
           sender: "agent",
-          text: reply,
-          routes
+          text: reply
         }]);
       }, 400);
     } finally {
