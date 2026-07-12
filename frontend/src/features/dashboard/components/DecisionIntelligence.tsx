@@ -29,6 +29,7 @@ import {
   translateEvidence,
   translateNarrativeExplanation 
 } from "../../../utils/i18n_extra";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 // Helper to get AQI category details
 const getAQICategory = (aqi: number, lang: string) => {
@@ -86,7 +87,8 @@ export function ExecutiveBriefCard({
   confidence,
   cityName
 }: ExecutiveBriefCardProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
   const cat = getAQICategory(currentAqi, activeLanguage);
 
@@ -331,7 +333,8 @@ export function SourceAttributionCard({
   explanation,
   overallConfidence
 }: SourceAttributionCardProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
 
   // Sort attributions by percentage descending
@@ -454,7 +457,8 @@ export function WhatIfSimulator({
   estimatedImprovement,
   confidence
 }: WhatIfSimulatorProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
 
   const getLocalizedTime = (time: string) => {
@@ -658,7 +662,8 @@ export function RecommendedActions({
   wardName
 }: RecommendedActionsProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
 
   const toggleExpand = (id: number) => {

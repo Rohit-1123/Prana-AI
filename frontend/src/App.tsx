@@ -74,8 +74,6 @@ import {
 import {
   HealthRiskCard,
   EnvironmentalHealthIndexCard,
-  CityComparisonCard,
-  EnvironmentalScoreCard,
   DailyBriefCard,
   PolicyImpactCard
 } from "./components/ui/UrbanIntelligenceComponents";
@@ -83,7 +81,8 @@ import {
   uiTranslations,
   suggestedLangByCity,
   SUPPORTED_LANGUAGES,
-  type LanguageCode
+  type LanguageCode,
+  localizedBootSteps
 } from "./utils/i18n";
 
 
@@ -121,16 +120,7 @@ const MOCK_WARDS = [
 
 
 
-const BOOT_STEPS = [
-  "Initializing Platform",
-  "Connecting AQI Services",
-  "Connecting Weather Network",
-  "Loading Environmental Intelligence",
-  "Preparing Digital Twin",
-  "Loading Forecast Engine",
-  "Preparing AI Copilot",
-  "Finalizing Mission Control"
-];
+
 const CITY_REGIONS: Record<string, { center: [number, number]; zoom: number; focus: string; state: string }> = {
   Hyderabad: { center: [17.3850, 78.4867], zoom: 12, focus: "Hyderabad Central", state: "Telangana" },
   Bangalore: { center: [12.9716, 77.5946], zoom: 12, focus: "Whitefield Centroid", state: "Karnataka" },
@@ -187,144 +177,144 @@ const buildMetroMapPoints = () => {
   };
 };
 
-  type WardModel = (typeof MOCK_WARDS)[number];
+type WardModel = (typeof MOCK_WARDS)[number];
 
-  type LiveWardMetrics = Pick<WardModel, "aqi" | "pm2_5" | "pm10" | "temperature" | "humidity" | "wind_speed" | "weather_condition" | "environmental_health_score"> & {
-    source: string;
-  };
+type LiveWardMetrics = Pick<WardModel, "aqi" | "pm2_5" | "pm10" | "temperature" | "humidity" | "wind_speed" | "weather_condition" | "environmental_health_score"> & {
+  source: string;
+};
 
-  const normalizeWardKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const normalizeWardKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
-  const buildLiveMetrics = (ward: Partial<LiveWardMetrics>, fallbackWard: WardModel, source: string): LiveWardMetrics => ({
-    aqi: Number(ward.aqi ?? fallbackWard.aqi),
-    pm2_5: Number(ward.pm2_5 ?? Math.floor(Number(ward.aqi ?? fallbackWard.aqi) * 0.4)),
-    pm10: Number(ward.pm10 ?? fallbackWard.pm10),
-    temperature: Number(ward.temperature ?? fallbackWard.temperature),
-    humidity: Number(ward.humidity ?? fallbackWard.humidity),
-    wind_speed: Number(ward.wind_speed ?? fallbackWard.wind_speed),
-    weather_condition: ward.weather_condition ?? fallbackWard.weather_condition,
-    environmental_health_score: Number(ward.environmental_health_score ?? fallbackWard.environmental_health_score),
-    source,
+const buildLiveMetrics = (ward: Partial<LiveWardMetrics>, fallbackWard: WardModel, source: string): LiveWardMetrics => ({
+  aqi: Number(ward.aqi ?? fallbackWard.aqi),
+  pm2_5: Number(ward.pm2_5 ?? Math.floor(Number(ward.aqi ?? fallbackWard.aqi) * 0.4)),
+  pm10: Number(ward.pm10 ?? fallbackWard.pm10),
+  temperature: Number(ward.temperature ?? fallbackWard.temperature),
+  humidity: Number(ward.humidity ?? fallbackWard.humidity),
+  wind_speed: Number(ward.wind_speed ?? fallbackWard.wind_speed),
+  weather_condition: ward.weather_condition ?? fallbackWard.weather_condition,
+  environmental_health_score: Number(ward.environmental_health_score ?? fallbackWard.environmental_health_score),
+  source,
+});
+
+function PranaApp() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { systemTimezone, formatTemp } = useSettings();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const [flow, setFlow] = useState<string>("landing");
+
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalReason, setAuthModalReason] = useState("");
+  const [showDemoDialog, setShowDemoDialog] = useState(false);
+  const [activePage, setActivePage] = useState("dashboard");
+  const [selectedWard, setSelectedWard] = useState<WardModel>(MOCK_WARDS[0]);
+
+  const [liveWardMetrics, setLiveWardMetrics] = useState<Record<string, LiveWardMetrics>>({});
+  const [liveDataSource, setLiveDataSource] = useState<string>("mock fallback");
+  const [liveDataLastUpdated, setLiveDataLastUpdated] = useState<string>("");
+
+  const [isAuthenticated] = useState<boolean>(true);
+
+  // Scroll-aware landing viewport state
+  const [scrollY, setScrollY] = useState<number>(0);
+
+  // Autoplay tagline state for storytelling
+  const [taglineIdx, setTaglineIdx] = useState<number>(0);
+
+  // Layout sidebars & toggles
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  // Clock telemetry state
+  const [currentTimeStr, setCurrentTimeStr] = useState<string>("");
+
+  useEffect(() => {
+    const fetchTelemetry = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/dashboard/wards`, { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const metrics: Record<string, LiveWardMetrics> = {};
+            data.forEach((w: any) => {
+              const key = normalizeWardKey(String(w.name || ""));
+              if (key) {
+                metrics[key] = buildLiveMetrics(
+                  {
+                    aqi: w.aqi,
+                    pm2_5: w.pm2_5,
+                    pm10: w.pm10,
+                    temperature: w.temperature,
+                    humidity: w.humidity,
+                    wind_speed: w.wind_speed,
+                    weather_condition: w.weather_condition,
+                    environmental_health_score: w.environmental_health_score
+                  },
+                  MOCK_WARDS.find((fallback) => normalizeWardKey(fallback.name) === key) || MOCK_WARDS[0],
+                  "backend"
+                );
+              }
+            });
+            setLiveWardMetrics(metrics);
+            setLiveDataSource("backend telemetry");
+            setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to fetch local backend telemetry, falling back to local mock data:", err);
+      }
+
+      // Direct fallback to local mock data since WAQI is removed
+      const fallbackMetrics: Record<string, LiveWardMetrics> = {};
+      MOCK_WARDS.forEach((w) => {
+        fallbackMetrics[normalizeWardKey(w.name)] = buildLiveMetrics(w, w, "local fallback");
+      });
+      setLiveWardMetrics(fallbackMetrics);
+      setLiveDataSource("local fallback");
+      setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+    };
+
+    fetchTelemetry();
+  }, []);
+
+  const activeWards = MOCK_WARDS.map((w) => {
+    const key = normalizeWardKey(w.name);
+    return liveWardMetrics[key] ? { ...w, ...liveWardMetrics[key] } : w;
   });
 
-  function PranaApp() {
-    const { theme, setTheme, resolvedTheme } = useTheme();
-    const { systemTimezone, formatTemp } = useSettings();
-    const [searchQuery, setSearchQuery] = useState("");
-    const [showSuggestions, setShowSuggestions] = useState(false);
+  useEffect(() => {
+    const e = liveWardMetrics[normalizeWardKey(selectedWard.name)];
+    if (e && selectedWard.aqi !== e.aqi) {
+      setSelectedWard((prev) => ({
+        ...prev,
+        aqi: e.aqi,
+        pm2_5: e.pm2_5,
+        pm10: e.pm10,
+        temperature: e.temperature,
+        humidity: e.humidity,
+        wind_speed: e.wind_speed,
+        weather_condition: e.weather_condition,
+        environmental_health_score: e.environmental_health_score
+      }));
+    }
+  }, [liveWardMetrics, selectedWard.name, selectedWard.aqi]);
 
-    const [flow, setFlow] = useState<string>("landing");
-
-    const [showAuthModal, setShowAuthModal] = useState(false);
-    const [authModalReason, setAuthModalReason] = useState("");
-    const [showDemoDialog, setShowDemoDialog] = useState(false);
-    const [activePage, setActivePage] = useState("dashboard");
-    const [selectedWard, setSelectedWard] = useState<WardModel>(MOCK_WARDS[0]);
-
-    const [liveWardMetrics, setLiveWardMetrics] = useState<Record<string, LiveWardMetrics>>({});
-    const [liveDataSource, setLiveDataSource] = useState<string>("mock fallback");
-    const [liveDataLastUpdated, setLiveDataLastUpdated] = useState<string>("");
-
-    const [isAuthenticated] = useState<boolean>(true);
-
-    // Scroll-aware landing viewport state
-    const [scrollY, setScrollY] = useState<number>(0);
-
-    // Autoplay tagline state for storytelling
-    const [taglineIdx, setTaglineIdx] = useState<number>(0);
-
-    // Layout sidebars & toggles
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-
-    // Clock telemetry state
-    const [currentTimeStr, setCurrentTimeStr] = useState<string>("");
-
-    useEffect(() => {
-      const fetchTelemetry = async () => {
-        try {
-          const res = await fetch(`${API_URL}/api/dashboard/wards`, { cache: "no-store" });
-          if (res.ok) {
-            const data = await res.json();
-            if (Array.isArray(data) && data.length > 0) {
-              const metrics: Record<string, LiveWardMetrics> = {};
-              data.forEach((w: any) => {
-                const key = normalizeWardKey(String(w.name || ""));
-                if (key) {
-                  metrics[key] = buildLiveMetrics(
-                    {
-                      aqi: w.aqi,
-                      pm2_5: w.pm2_5,
-                      pm10: w.pm10,
-                      temperature: w.temperature,
-                      humidity: w.humidity,
-                      wind_speed: w.wind_speed,
-                      weather_condition: w.weather_condition,
-                      environmental_health_score: w.environmental_health_score
-                    },
-                    MOCK_WARDS.find((fallback) => normalizeWardKey(fallback.name) === key) || MOCK_WARDS[0],
-                    "backend"
-                  );
-                }
-              });
-              setLiveWardMetrics(metrics);
-              setLiveDataSource("backend telemetry");
-              setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-              return;
-            }
-          }
-        } catch (err) {
-          console.warn("Failed to fetch local backend telemetry, falling back to local mock data:", err);
-        }
-
-        // Direct fallback to local mock data since WAQI is removed
-        const fallbackMetrics: Record<string, LiveWardMetrics> = {};
-        MOCK_WARDS.forEach((w) => {
-          fallbackMetrics[normalizeWardKey(w.name)] = buildLiveMetrics(w, w, "local fallback");
-        });
-        setLiveWardMetrics(fallbackMetrics);
-        setLiveDataSource("local fallback");
-        setLiveDataLastUpdated(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
-      };
-
-      fetchTelemetry();
-    }, []);
-
-    const activeWards = MOCK_WARDS.map((w) => {
-      const key = normalizeWardKey(w.name);
-      return liveWardMetrics[key] ? { ...w, ...liveWardMetrics[key] } : w;
-    });
-
-    useEffect(() => {
-      const e = liveWardMetrics[normalizeWardKey(selectedWard.name)];
-      if (e && selectedWard.aqi !== e.aqi) {
-        setSelectedWard((prev) => ({
-          ...prev,
-          aqi: e.aqi,
-          pm2_5: e.pm2_5,
-          pm10: e.pm10,
-          temperature: e.temperature,
-          humidity: e.humidity,
-          wind_speed: e.wind_speed,
-          weather_condition: e.weather_condition,
-          environmental_health_score: e.environmental_health_score
-        }));
+  useEffect(() => {
+    const updateTime = () => {
+      const date = new Date();
+      if (systemTimezone === "UTC") {
+        setCurrentTimeStr(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: "UTC" }) + " UTC");
+      } else {
+        setCurrentTimeStr(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: "Asia/Kolkata" }) + " IST");
       }
-    }, [liveWardMetrics, selectedWard.name, selectedWard.aqi]);
-
-    useEffect(() => {
-      const updateTime = () => {
-        const date = new Date();
-        if (systemTimezone === "UTC") {
-          setCurrentTimeStr(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: "UTC" }) + " UTC");
-        } else {
-          setCurrentTimeStr(date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: "Asia/Kolkata" }) + " IST");
-        }
-      };
-      updateTime();
-      const interval = setInterval(updateTime, 1000);
-      return () => clearInterval(interval);
-    }, [systemTimezone]);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, [systemTimezone]);
 
   // Track scroll offsets for transparent header transitions
   useEffect(() => {
@@ -352,46 +342,44 @@ const buildMetroMapPoints = () => {
 
   // Action Recommendations
   const [actionRecommendations, setActionRecommendations] = useState([
-    { 
-      id: 1, 
-      title: "Restrict Heavy Diesel Vehicles", 
-      desc: "Divert commercial diesel transport from Gachibowli outer ring road junctions during office commute spikes.", 
-      priority: "P1 / High", 
-      impact: "-18 AQI Points", 
-      confidence: 94, 
-      duration: "4 hours", 
-      evidence: "Commute traffic sensors registered traffic congestion at 65% in Gachibowli sectors.", 
-      executed: false 
+    {
+      id: 1,
+      title: "Restrict Heavy Diesel Vehicles",
+      desc: "Divert commercial diesel transport from Gachibowli outer ring road junctions during office commute spikes.",
+      priority: "P1 / High",
+      impact: "-18 AQI Points",
+      confidence: 94,
+      duration: "4 hours",
+      evidence: "Commute traffic sensors registered traffic congestion at 65% in Gachibowli sectors.",
+      executed: false
     },
-    { 
-      id: 2, 
-      title: "Inspect Construction Site & Suppress Dust", 
-      desc: "Conduct on-site inspections of active construction areas in Gachibowli and mandate abating controls.", 
-      priority: "P2 / High", 
-      impact: "-9 AQI Points", 
-      confidence: 91, 
-      duration: "2 hours", 
-      evidence: "Particulate sensors recorded PM10 concentrations at 85 µg/m³ near Gachibowli centroids.", 
-      executed: false 
+    {
+      id: 2,
+      title: "Inspect Construction Site & Suppress Dust",
+      desc: "Conduct on-site inspections of active construction areas in Gachibowli and mandate abating controls.",
+      priority: "P2 / High",
+      impact: "-9 AQI Points",
+      confidence: 91,
+      duration: "2 hours",
+      evidence: "Particulate sensors recorded PM10 concentrations at 85 µg/m³ near Gachibowli centroids.",
+      executed: false
     },
-    { 
-      id: 3, 
-      title: "Deploy Environmental Water Sprinkling", 
-      desc: "Initiate localized water sprinkling runs across dry corridors in Gachibowli to suppress dust.", 
-      priority: "P3 / Medium", 
-      impact: "-6 AQI Points", 
-      confidence: 88, 
-      duration: "3 hours", 
-      evidence: "Fugitive dust loads reached 40% with local wind speeds at 6.2 m/s.", 
-      executed: false 
+    {
+      id: 3,
+      title: "Deploy Environmental Water Sprinkling",
+      desc: "Initiate localized water sprinkling runs across dry corridors in Gachibowli to suppress dust.",
+      priority: "P3 / Medium",
+      impact: "-6 AQI Points",
+      confidence: 88,
+      duration: "3 hours",
+      evidence: "Fugitive dust loads reached 40% with local wind speeds at 6.2 m/s.",
+      executed: false
     }
   ]);
 
   // i18n Language Selector states
   const [showLangDropdown, setShowLangDropdown] = useState(false);
-  const [language, setLanguage] = useState<LanguageCode>(() => {
-    return (localStorage.getItem("language") as LanguageCode) || "en";
-  });
+  const { language, setLanguage } = useSettings();
 
   const t = (key: string): string => {
     return uiTranslations[language]?.[key] || uiTranslations["en"]?.[key] || key;
@@ -399,7 +387,6 @@ const buildMetroMapPoints = () => {
 
   const handleLanguageChange = (langCode: LanguageCode) => {
     setLanguage(langCode);
-    localStorage.setItem("language", langCode);
   };
 
   const [langSuggestion, setLangSuggestion] = useState<{ city: string; langCode: LanguageCode } | null>(null);
@@ -410,7 +397,7 @@ const buildMetroMapPoints = () => {
 
   const handleCitySelect = (cityName: string) => {
     setSelectedCity(cityName);
-    
+
     // Trigger language suggestion for the selected city
     const suggestedLang = suggestedLangByCity[cityName];
     if (suggestedLang && suggestedLang !== language) {
@@ -506,19 +493,19 @@ const buildMetroMapPoints = () => {
   });
 
   const isSimulating = simulatedTraffic > 0 || simulatedConstruction > 0 || simulatedIndustrial > 0 || simulatedSprinkling > 0 || simulatedWasteBurning > 0;
-  
+
   const trafficReductionPoints = Math.floor(simulatedTraffic * 0.22);
   const constructionReductionPoints = Math.floor(simulatedConstruction * 0.12);
   const industrialReductionPoints = Math.floor(simulatedIndustrial * 0.18);
   const sprinklingReductionPoints = simulatedSprinkling > 0 ? 8 : 0;
   const wasteBurningReductionPoints = simulatedWasteBurning > 0 ? 12 : 0;
-  
+
   const totalReduction = trafficReductionPoints + constructionReductionPoints + industrialReductionPoints + sprinklingReductionPoints + wasteBurningReductionPoints;
   const predictedAqi = Math.max(10, selectedWard.aqi - totalReduction);
 
   const estimatedCost = Math.floor(simulatedTraffic * 120 + simulatedConstruction * 90 + simulatedIndustrial * 150 + (simulatedSprinkling > 0 ? 800 : 0) + (simulatedWasteBurning > 0 ? 300 : 0));
-  const estimatedTime = isSimulating 
-    ? (simulatedSprinkling > 0 && simulatedWasteBurning > 0 ? "1.0 hour" : simulatedSprinkling > 0 ? "1.5 hours" : "2 hours") 
+  const estimatedTime = isSimulating
+    ? (simulatedSprinkling > 0 && simulatedWasteBurning > 0 ? "1.0 hour" : simulatedSprinkling > 0 ? "1.5 hours" : "2 hours")
     : "Immediate";
   const environmentalImpact = totalReduction > 25 ? "Outstanding" : totalReduction > 15 ? "Excellent" : totalReduction > 5 ? "Good" : "Nominal";
 
@@ -561,50 +548,50 @@ const buildMetroMapPoints = () => {
 
   // Live explainability feed items for chronological timeline
   const feedItems = [
-    { 
-      id: 1, 
-      time: "09:15 AM", 
-      text: `Traffic congestion increased in ${selectedWard.name} IT corridor junctions.`, 
-      category: "Traffic", 
-      severity: "Medium" as const, 
-      confidence: 94, 
-      icon: <Truck className="w-3.5 h-3.5" /> 
+    {
+      id: 1,
+      time: "09:15 AM",
+      text: `Traffic congestion increased in ${selectedWard.name} IT corridor junctions.`,
+      category: "Traffic",
+      severity: "Medium" as const,
+      confidence: 94,
+      icon: <Truck className="w-3.5 h-3.5" />
     },
-    { 
-      id: 2, 
-      time: "09:32 AM", 
-      text: `PM2.5 particulate loading elevated by 11% near ${selectedWard.name} centroids.`, 
-      category: "Sensors", 
-      severity: "Medium" as const, 
-      confidence: 98, 
-      icon: <Activity className="w-3.5 h-3.5" /> 
+    {
+      id: 2,
+      time: "09:32 AM",
+      text: `PM2.5 particulate loading elevated by 11% near ${selectedWard.name} centroids.`,
+      category: "Sensors",
+      severity: "Medium" as const,
+      confidence: 98,
+      icon: <Activity className="w-3.5 h-3.5" />
     },
-    { 
-      id: 3, 
-      time: "10:05 AM", 
-      text: `Construction demolition dust detected near ${selectedWard.name} active sites.`, 
-      category: "Demolition", 
-      severity: "High" as const, 
-      confidence: 91, 
-      icon: <HardHat className="w-3.5 h-3.5" /> 
+    {
+      id: 3,
+      time: "10:05 AM",
+      text: `Construction demolition dust detected near ${selectedWard.name} active sites.`,
+      category: "Demolition",
+      severity: "High" as const,
+      confidence: 91,
+      icon: <HardHat className="w-3.5 h-3.5" />
     },
-    { 
-      id: 4, 
-      time: "10:18 AM", 
-      text: "XGBoost forecast model grid confidence index stabilized at 93%.", 
-      category: "Forecast", 
-      severity: "Low" as const, 
-      confidence: 93, 
-      icon: <Clock className="w-3.5 h-3.5" /> 
+    {
+      id: 4,
+      time: "10:18 AM",
+      text: "AI forecast model grid confidence index stabilized at 93%.",
+      category: "Forecast",
+      severity: "Low" as const,
+      confidence: 93,
+      icon: <Clock className="w-3.5 h-3.5" />
     },
-    { 
-      id: 5, 
-      time: "10:42 AM", 
-      text: `AI engine recommends transmitting directive to restrict heavy diesel transport near ${selectedWard.name}.`, 
-      category: "Advisory", 
-      severity: "High" as const, 
-      confidence: 94, 
-      icon: <CheckCircle2 className="w-3.5 h-3.5" /> 
+    {
+      id: 5,
+      time: "10:42 AM",
+      text: `AI engine recommends transmitting directive to restrict heavy diesel transport near ${selectedWard.name}.`,
+      category: "Advisory",
+      severity: "High" as const,
+      confidence: 94,
+      icon: <CheckCircle2 className="w-3.5 h-3.5" />
     }
   ];
 
@@ -678,17 +665,18 @@ const buildMetroMapPoints = () => {
   useEffect(() => {
     if (flow !== "booting") return;
 
+    const steps = localizedBootSteps[language] || localizedBootSteps["en"];
     setBootingProgress(0);
     setBootingStepLogs([]);
-    setBootingActiveStep(BOOT_STEPS[0] + "...");
+    setBootingActiveStep(steps[0] + "...");
 
     let index = 0;
     const interval = setInterval(() => {
-      if (index < BOOT_STEPS.length) {
-        const step = BOOT_STEPS[index];
+      if (index < steps.length) {
+        const step = steps[index];
         setBootingActiveStep(step + "...");
-        setBootingProgress(Math.floor(((index + 1) / BOOT_STEPS.length) * 100));
-        
+        setBootingProgress(Math.floor(((index + 1) / steps.length) * 100));
+
         // Add step to completed list after progress ticks
         setTimeout(() => {
           setBootingStepLogs(prev => [...prev, step]);
@@ -706,7 +694,7 @@ const buildMetroMapPoints = () => {
     }, 380);
 
     return () => clearInterval(interval);
-  }, [flow, targetRedirect]);
+  }, [flow, targetRedirect, language]);
 
   const fetchWardIntelligence = async (wardId: number) => {
     setLoading(true);
@@ -719,7 +707,7 @@ const buildMetroMapPoints = () => {
       }
     } catch (e) {
       const current = activeWards.find(w => w.id === wardId) || activeWards[0];
-      
+
       setForecast([
         { horizon_hours: 24, predicted_aqi: Math.min(500, Math.max(10, Math.floor(current.aqi * 1.05))), confidence_score: 0.93, trend: "Rising" },
         { horizon_hours: 48, predicted_aqi: Math.min(500, Math.max(10, Math.floor(current.aqi * 1.10))), confidence_score: 0.93, trend: "Rising" },
@@ -780,104 +768,419 @@ const buildMetroMapPoints = () => {
     const aqi = predictedAqi;
     const forecastAqi = currentForecast?.[0]?.predicted_aqi || Math.min(500, Math.floor(predictedAqi * 1.05));
     const traffic = selectedWard.traffic_congestion || 0;
+    const construction = selectedWard.construction_activity || 0;
     const industrial = selectedWard.industrial_emissions || 0;
+    const dust = selectedWard.dust_level || 0;
+    const population = selectedWard.population || 0;
     const windSpeed = selectedWard.wind_speed || 0.0;
+    const humidity = selectedWard.humidity || 0;
     const badge = getAQIBadge(aqi);
     const translatedBadgeName = translateBadge(badge, language);
 
-    let currentSituation = "";
-    let keyRisks: string[] = [];
-    let forecastText = "";
-    let recommendedActions: string[] = [];
+    // City-specific content profiles (for English/default)
+    const cityProfiles: Record<string, {
+      situation: string;
+      risks: string[];
+      forecast: string;
+      actions: string[];
+    }> = {
+      Hyderabad: {
+        situation: `IT corridor commuter traffic and construction dust push ${wardName} to ${aqi} AQI (${badge}). Dense office clusters create localized particulate hotspots.`,
+        risks: [
+          `High-rise building construction in ${wardName} generates fugitive dust (PM10 at ${selectedWard.pm10} µg/m³).`,
+          `Traffic congestion (${traffic}%) on Outer Ring Road junctions amplifies vehicular soot during peak hours.`,
+          `Humidity at ${humidity}% traps fine aerosols close to the surface.`
+        ],
+        forecast: `Particulate levels forecast near ${forecastAqi} AQI over 24h as office commute cycles repeat. Weekend relief expected.`,
+        actions: [
+          `Enforce dust suppression at construction sites across ${wardName}.`,
+          `Stagger office commute timings to reduce peak-hour congestion.`
+        ]
+      },
+      Bangalore: {
+        situation: `${wardName} enjoys relatively clean air at ${aqi} AQI (${badge}) due to dense tree canopy and coastal breeze influence, but localized traffic nodes still spike.`,
+        risks: [
+          `IT corridor vehicle density in ${wardName} causes lunch-hour traffic pulses (${traffic}% congestion).`,
+          `Construction debris from metro expansion adds PM10 load near transit corridors.`,
+          `Light wind speeds (${windSpeed} m/s) limit afternoon dispersion.`
+        ],
+        forecast: `AQI expected to hold near ${forecastAqi} over 24h. Garden city vegetation buffers help maintain stable conditions.`,
+        actions: [
+          `Encourage staggered lunch breaks to reduce midday traffic in ${wardName}.`,
+          `Expand green buffer zones along construction perimeters.`
+        ]
+      },
+      Chennai: {
+        situation: `Coastal humidity (${humidity}%) and sea breeze in ${wardName} keep AQI moderate at ${aqi} (${badge}), but inland traffic corridors show strain.`,
+        risks: [
+          `Sea breeze reversal traps afternoon emissions near ${wardName} coastal roads.`,
+          `Construction activity (${construction}%) along the IT corridor generates dust.`,
+          `Industrial emissions from north Chennai contribute to PM2.5 creep.`
+        ],
+        forecast: `AQI may touch ${forecastAqi} as sea breeze weakens in the evening. Coastal dispersal improves by morning.`,
+        actions: [
+          `Increase water sprinkling on unpaved roads near ${wardName} construction sites.`,
+          `Monitor industrial stack emissions during sea breeze reversal hours.`
+        ]
+      },
+      Delhi: {
+        situation: `${wardName} records elevated AQI at ${aqi} (${badge}) due to calm wind conditions (${windSpeed} m/s), high vehicle density, and regional crop residue burning.`,
+        risks: [
+          `Thermal inversion traps pollutants near the surface with wind speeds at ${windSpeed} m/s.`,
+          `Vehicular congestion (${traffic}%) at major intersections contributes to peak soot loads.`,
+          `Secondary particulate formation increases under high humidity (${humidity}%) conditions.`
+        ],
+        forecast: `AQI expected to rise to ${forecastAqi} over 24h as calm conditions persist. No significant wind relief expected.`,
+        actions: [
+          `Enforce odd-even vehicle scheme in ${wardName} to cut traffic emissions by 15%.`,
+          `Deploy anti-smog guns at major intersections for particulate suppression.`
+        ]
+      },
+      Mumbai: {
+        situation: `${wardName} coastal location provides moderate AQI at ${aqi} (${badge}), but construction (${construction}%) and traffic congestion (${traffic}%) are growing concerns.`,
+        risks: [
+          `Sea breeze provides partial relief but construction dust near ${wardName} remains unmitigated.`,
+          `Traffic bottlenecks at business district junctions elevate rush-hour AQI spikes.`,
+          `High population density (${(population / 1000).toFixed(0)}K) increases cumulative exposure risk.`
+        ],
+        forecast: `AQI forecast at ${forecastAqi} over 24h; coastal winds expected to strengthen, improving dispersion by evening.`,
+        actions: [
+          `Mandate construction dust barriers and water sprinkling in ${wardName}.`,
+          `Promote ferry and coastal rail use to reduce road congestion.`
+        ]
+      }
+    };
 
-    if (language === "hi") {
-      currentSituation = `${wardName} क्षेत्र में वायु गुणवत्ता सूचकांक वर्तमान में ${aqi} AQI (${translatedBadgeName}) पर बना हुआ है।`;
-      
-      const risk1 = traffic > 50
-        ? `व्यस्त समय के दौरान कार्यालय गलियारों के पास उच्च आवागमन यातायात कालिख (${traffic}% संकुलन)।`
-        : `क्षेत्रीय उद्योगों से औद्योगिक उत्सर्जन (${industrial}% उत्सर्जन भार)।`;
-      const risk2 = windSpeed < 4.5
-        ? `शांत शाम की हवा के झोंके (${windSpeed} मी/से) कणों के फैलाव चक्र में देरी कर रहे हैं।`
-        : `निर्माण स्थलों से उड़ने वाली धूल हवा में निलंबित कणात्मक स्तर को बढ़ा रही है।`;
-      keyRisks = [risk1, risk2];
+    const profile = cityProfiles[selectedCity] || cityProfiles.Hyderabad;
 
-      forecastText = `एक्सजीबूस्ट भविष्यवाणियां संकेत देती हैं कि अगले 24 घंटों में कणों का स्तर ${forecastAqi} एक्यूआई के करीब पहुंच जाएगा।`;
+    let situation: string, risks: string[], forecastTxt: string, actions: string[];
 
-      recommendedActions = [
-        `${wardName} के बाहरी चौराहों से वाणिज्यिक भारी डीजल वाहनों को डायवर्ट करें।`,
-        `${wardName} के निर्माण स्थलों के पास स्थानीयकृत पानी के छिड़काव को बढ़ाएं।`
-      ];
+    if (language === "en" || !["hi", "te", "ta", "kn"].includes(language)) {
+      situation = profile.situation;
+      risks = profile.risks;
+      forecastTxt = profile.forecast;
+      actions = profile.actions;
+    } else if (language === "hi") {
+      const cityProfilesHi: Record<string, {
+        situation: string;
+        risks: string[];
+        forecast: string;
+        actions: string[];
+      }> = {
+        Hyderabad: {
+          situation: `${wardName} क्षेत्र में आईटी कॉरिडोर यात्री यातायात और निर्माण धूल वर्तमान में इसे ${aqi} AQI (${translatedBadgeName}) पर ले जाते हैं। घने कार्यालय समूहों के कारण स्थानीय स्तर पर कणात्मक हॉटस्पॉट बन रहे हैं।`,
+          risks: [
+            `${wardName} में ऊंची इमारतों के निर्माण से उड़ने वाली धूल (PM10 स्तर ${selectedWard.pm10 || 0} µg/m³) उत्पन्न हो रही है।`,
+            `आउटर रिंग रोड जंक्शनों पर भारी यातायात संकुलन (${traffic}%) व्यस्त समय के दौरान वाहनों के धुएं को बढ़ाता है।`,
+            `आर्द्रता ${humidity}% होने के कारण सूक्ष्म कण सतह के करीब फंस जाते हैं।`
+          ],
+          forecast: `कार्यालय आवागमन चक्र दोहराए जाने के कारण अगले 24 घंटों में कणों का स्तर ${forecastAqi} AQI के करीब रहने का अनुमान है। सप्ताहांत में राहत की उम्मीद है।`,
+          actions: [
+            `${wardName} के सभी निर्माण स्थलों पर धूल शमन नियमों को सख्ती से लागू करें।`,
+            `व्यस्त समय के संकुलन को कम करने के लिए कार्यालय आवागमन के समय में बदलाव करें।`
+          ]
+        },
+        Bangalore: {
+          situation: `घने पेड़ों के आवरण और हवा के प्रभाव के कारण ${wardName} में वायु गुणवत्ता अपेक्षाकृत साफ ${aqi} AQI (${translatedBadgeName}) पर बनी हुई है, लेकिन स्थानीय यातायात नोड्स पर अब भी प्रदूषण बढ़ जाता है।`,
+          risks: [
+            `${wardName} में आईटी कॉरिडोर वाहनों की संख्या के कारण दोपहर के भोजन के समय यातायात संकुलन (${traffic}%) होता है।`,
+            `मेट्रो विस्तार से निकलने वाला निर्माण मलबा पारगमन गलियारों के पास PM10 का स्तर बढ़ाता है।`,
+            `हवा की धीमी गति (${windSpeed} मी/से) दोपहर के समय प्रदूषकों के फैलाव को सीमित करती है।`,
+          ],
+          forecast: `अगले 24 घंटों में AQI ${forecastAqi} के करीब रहने की उम्मीद है। गार्डन सिटी की हरी-भरी वनस्पतियां स्थिर स्थिति बनाए रखने में मदद करती हैं।`,
+          actions: [
+            `${wardName} में दोपहर के यातायात को कम करने के लिए दोपहर के भोजन के समय को अलग-अलग करने के लिए प्रोत्साहित करें।`,
+            `निर्माण सीमाओं के साथ हरित बफर जोन का विस्तार करें।`
+          ]
+        },
+        Chennai: {
+          situation: `तटीय आर्द्रता (${humidity}%) और समुद्री हवा के कारण ${wardName} में AQI मध्यम ${aqi} (${translatedBadgeName}) पर बना हुआ है, लेकिन अंतर्देशीय यातायात गलियारे तनाव में दिख रहे हैं।`,
+          risks: [
+            `समुद्री हवा के विपरीत होने से दोपहर के समय ${wardName} के तटीय सड़कों के पास उत्सर्जन फंस जाता है।`,
+            `आईटी कॉरिडोर के साथ हो रही निर्माण गतिविधियों (${construction}%) के कारण धूल उड़ती है।`,
+            `उत्तरी चेन्नई से औद्योगिक उत्सर्जन PM2.5 के स्तर को धीरे-धीरे बढ़ाता है।`
+          ],
+          forecast: `शाम को समुद्री हवा कमजोर होने से AQI ${forecastAqi} को छू सकता है। सुबह तक तटीय फैलाव में सुधार होगा।`,
+          actions: [
+            `${wardName} के निर्माण स्थलों के पास कच्ची सड़कों पर पानी का छिड़काव बढ़ाएं।`,
+            `समुद्री हवा के विपरीत प्रवाह के घंटों के दौरान औद्योगिक चिमनियों के उत्सर्जन की निगरानी करें।`
+          ]
+        },
+        Delhi: {
+          situation: `धीमी हवा (${windSpeed} मी/से), उच्च वाहन घनत्व और क्षेत्रीय फसल अवशेष (पराली) जलाने के कारण ${wardName} में उच्च AQI ${aqi} (${translatedBadgeName}) दर्ज किया गया है।`,
+          risks: [
+            `तापीय प्रतिलोमन (थर्मल इनवर्जन) के कारण प्रदूषक सतह के करीब फंस जाते हैं, जहां हवा की गति ${windSpeed} मी/से है।`,
+            `प्रमुख चौराहों पर वाहनों की भीड़ (${traffic}%) व्यस्त समय के दौरान कालिख के भार को बढ़ाती है।`,
+            `उच्च आर्द्रता (${humidity}%) की स्थिति में माध्यमिक कणों का निर्माण बढ़ जाता है।`
+          ],
+          forecast: `शांत स्थिति बने रहने के कारण अगले 24 घंटों में AQI बढ़कर ${forecastAqi} होने की उम्मीद है। हवा से कोई महत्वपूर्ण राहत मिलने की उम्मीद नहीं है।`,
+          actions: [
+            `${wardName} में यातायात उत्सर्जन को 15% तक कम करने के लिए सम-विषय (ऑड-इवन) वाहन योजना लागू करें।`,
+            `कणों के शमन के लिए प्रमुख चौराहों पर एंटी-स्मॉग गन तैनात करें।`
+          ]
+        },
+        Mumbai: {
+          situation: `${wardName} की तटीय स्थिति मध्यम AQI ${aqi} (${translatedBadgeName}) प्रदान करती है, लेकिन निर्माण कार्य (${construction}%) और यातायात संकुलन (${traffic}%) बढ़ती चिंताएं हैं।`,
+          risks: [
+            `समुद्री हवा आंशिक राहत देती है लेकिन ${wardName} के पास निर्माण धूल का कोई शमन नहीं हो पा रहा है।`,
+            `व्यावसायिक जिलों के चौराहों पर यातायात की रुकावटें व्यस्त समय में AQI को बढ़ा देती हैं।`,
+            `उच्च जनसंख्या घनत्व (${(population / 1000).toFixed(0)}K) संचयी स्वास्थ्य जोखिम को बढ़ाता है।`
+          ],
+          forecast: `अगले 24 घंटों में AQI ${forecastAqi} रहने का अनुमान है; तटीय हवाएं मजबूत होने की उम्मीद है, जिससे शाम तक प्रदूषण के फैलाव में सुधार होगा।`,
+          actions: [
+            `${wardName} में निर्माण धूल अवरोधक और पानी के छिड़काव को अनिवार्य करें।`,
+            `सड़क संकुलन को कम करने के लिए नौका (फेरी) और तटीय रेल के उपयोग को बढ़ावा दें।`
+          ]
+        }
+      };
+      const profHi = cityProfilesHi[selectedCity] || cityProfilesHi.Hyderabad;
+      situation = profHi.situation;
+      risks = profHi.risks;
+      forecastTxt = profHi.forecast;
+      actions = profHi.actions;
     } else if (language === "te") {
-      currentSituation = `${wardName} ప్రాంతంలో గాలి నాణ్యత సూచిక ప్రస్తుతం ${aqi} AQI (${translatedBadgeName}) గా నమోదు చేయబడింది.`;
-
-      const risk1 = traffic > 50
-        ? `కార్యాలయాలకు వెళ్లే రద్దీ సమయాల్లో జంక్షన్ల వద్ద వాహన కాలుష్యం ఎక్కువగా ఉంటోంది (${traffic}% రద్దీ).`
-        : `పరిశ్రమల ఉద్గారాల నిష్పత్తి స్థానిక కాలుష్యాన్ని పెంచుతోంది (${industrial}% ఉద్గారాలు).`;
-      const risk2 = windSpeed < 4.5
-        ? `సాయంత్రం వేళల్లో గాలి వేగం తగ్గడం వల్ల (${windSpeed} m/s) ధూళి కణాలు త్వరగా తొలగిపోవడం లేదు.`
-        : `నిర్ಮಾಣ పనులు జరుగుతున్న ప్రాంతాల నుండి లేస్తున్న ధూళి గాలిలో కలుస్తోంది.`;
-      keyRisks = [risk1, risk2];
-
-      forecastText = `XGBoost మోడల్ అంచనాల ప్రకారం రాబోయే 24 గంటల్లో గాలి కాలుష్య సూచిక ${forecastAqi} AQI కి చేరే అవకాశం ఉంది.`;
-
-      recommendedActions = [
-        `${wardName} జంక్షన్ల గుండా వెళ్లే భారీ డీజిల్ వాహనాలను బైపాస్ రోడ్లపైకి మళ్లించండి.`,
-        `${wardName} నిర్మాణ ప్రాంతాల వద్ద నీటిని చల్లడం మరింత పెంచండి.`
-      ];
+      const cityProfilesTe: Record<string, {
+        situation: string;
+        risks: string[];
+        forecast: string;
+        actions: string[];
+      }> = {
+        Hyderabad: {
+          situation: `ఐటీ కారిడార్ ప్రయాణికుల రద్దీ మరియు నిర్మాణ ధూళి వల్ల ${wardName} ప్రాంతంలో గాలి నాణ్యత ${aqi} AQI (${translatedBadgeName}) కి పడిపోయింది. దట్టమైన కార్యాలయ సముదాయాలు స్థానికంగా కాలుష్య కణాల హాట్‌స్పాట్‌లను సృష్టిస్తున్నాయి.`,
+          risks: [
+            `${wardName} లో ఎత్తైన భవనాల నిర్మాణం వల్ల విపరీతంగా ధూళి (PM10 స్థాయి ${selectedWard.pm10 || 0} µg/m³) ఉత్పత్తి అవుతోంది.`,
+            `ఔటర్ రింగ్ రోడ్ జంక్షన్లలో ట్రాఫిక్ రద్దీ (${traffic}%) రద్దీ సమయాల్లో వాహనాల పొగను మరింత పెంచుతోంది.`,
+            `గాలిలో తేమ శాతం ${humidity}% ఉండటం వల్ల కాలుష్య కణాలు భూ ఉపరితలానికి దగ్గరగా పేరుకుపోతున్నాయి.`
+          ],
+          forecast: `కార్యాలయాల ప్రయాణాల సాధారణ చక్రం కారణంగా రాబోయే 24 గంటల్లో కాలుష్య స్థాయిలు ${forecastAqi} AQI వద్ద నమోదయ్యే అవకాశం ఉంది. వారాంతంలో కొంత ఉపశమనం లభించవచ్చు.`,
+          actions: [
+            `${wardName} వ్యాప్తంగా నిర్మాణ స్థలాల వద్ద ధూళి నియంత్రణ చర్యలను కఠినంగా అమలు చేయండి.`,
+            `రద్దీ సమయాల్లో ట్రాఫిక్‌ను తగ్గించడానికి కార్యాలయ సమయాలను సవరించండి.`
+          ]
+        },
+        Bangalore: {
+          situation: `దట్టమైన చెట్లు మరియు సముద్రపు గాలి ప్రభావం వల్ల ${wardName} లో గాలి నాణ్యత సాపేక్షంగా మెరుగ్గా ${aqi} AQI (${translatedBadgeName}) గా ఉంది, అయితే స్థానిక జంక్షన్లలో ట్రాఫిక్ కాలుష్యం ఇంకా ఎక్కువగా ఉంది.`,
+          risks: [
+            `${wardName} లో ఐటీ కారిడార్ వాహనాల సాంద్రత కారణంగా మధ్యాహ్నం భోజన సమయంలో ట్రాఫిక్ రద్దీ (${traffic}%) ఏర్పడుతోంది.`,
+            `మెట్రో విస్తరణ పనుల శిథిలాల వల్ల రవాణా కారిడార్ల సమీపంలో PM10 పరిమాణం పెరుగుతోంది.`,
+            `తక్కువ గాలి వేగం (${windSpeed} m/s) మధ్యాహ్నం వేళల్లో కాలుష్య కణాల వ్యాప్తిని అడ్డుకుంటోంది.`
+          ],
+          forecast: `రాబోయే 24 గంటల్లో AQI ${forecastAqi} వద్దే కొనసాగే అవకాశం ఉంది. గార్డెన్ సిటీ పచ్చదనం వాతావరణం స్థిరంగా ఉండేలా తోడ్పడుతుంది.`,
+          actions: [
+            `${wardName} లో మధ్యాహ్న ట్రాఫిక్‌ను తగ్గించడానికి లంచ్ విరామ సమయాలను మార్చమని ప్రోత్సహించండి.`,
+            `నిర్మాణ సరిహద్దుల చుట్టూ పచ్చటి బఫర్ జోన్లను విస్తరించండి.`
+          ]
+        },
+        Chennai: {
+          situation: `తీరప్రాంత తేమ (${humidity}%) మరియు సముద్రపు గాలి వల్ల ${wardName} లో గాలి నాణ్యత సాధారణ స్థాయిలో ${aqi} (${translatedBadgeName}) గా ఉంది, కానీ లోతట్టు రవాణా మార్గాల్లో ఒత్తిడి కనిపిస్తోంది.`,
+          risks: [
+            `సముద్రపు గాలి వెనుకకు తిరగడం వల్ల మధ్యాహ్నం ఉద్గారాలు ${wardName} తీరప్రాంత రోడ్ల సమీపంలోనే ఉండిపోతున్నాయి.`,
+            `ఐటీ కారిడార్ వెంబడి జరుగుతున్న నిర్మాణ పనుల (${construction}%) వల్ల ధూళి లేస్తోంది.`,
+            `ఉత్తర చెన్నై పారిశ్రామిక ఉద్గారాల వల్ల PM2.5 కణాలు క్రమంగా పెరుగుతున్నాయి.`
+          ],
+          forecast: `సాయంత్రం సముద్రపు గాలి బలహీనపడటంతో AQI ${forecastAqi} కి చేరే ప్రమాదం ఉంది. ఉదయానికి పరిస్థితి మెరుగుపడుతుంది.`,
+          actions: [
+            `${wardName} నిర్మాణ స్థలాల సమీపంలోని మురికి రోడ్లపై నీటిని చల్లడం పెంచండి.`,
+            `సముద్రపు గాలి వెనుకకు తిరిగే సమయాల్లో పారిశ్రామిక చిమిణీల ఉద్గారాలను పర్యవేక్షించండి.`
+          ]
+        },
+        Delhi: {
+          situation: `తక్కువ గాలి వేగం (${windSpeed} m/s), అధిక వాహనాల సాంద్రత మరియు ప్రాంతీయంగా పంట వ్యర్థాల దహనం వల్ల ${wardName} లో గాలి నాణ్యత అత్యంత ప్రమాదకర స్థాయిలో ${aqi} (${translatedBadgeName}) గా నమోదైంది.`,
+          risks: [
+            `ఉష్ణోగ్రతల విలోమం కారణంగా కాలుష్య కణాలు ${windSpeed} m/s వేగం గల గాలిలోనే నిలిచిపోతున్నాయి.`,
+            `ప్రధాన కూడళ్ల వద్ద వాహన రద్దీ (${traffic}%) రద్దీ వేళల్లో కాలుష్య భారాన్ని మరింత పెంచుతోంది.`,
+            `అధిక తేమ (${humidity}%) పరిస్థితుల వల్ల ద్వితీయ కాలుష్య కణాల నిర్మాణం వేగవంతం అవుతోంది.`
+          ],
+          forecast: `ప్రస్తుత గాలి లేని పరిస్థితులు ఇలాగే కొనసాగితే రాబోయే 24 గంటల్లో AQI ${forecastAqi} కి పెరిగే అవకాశం ఉంది. గాలి వల్ల తక్షణ ఉపశమనం లభించకపోవచ్చు.`,
+          actions: [
+            `${wardName} లో వాహన ఉద్గారాలను 15% తగ్గించడానికి సరి-బేసి విధానాన్ని అమలు చేయండి.`,
+            `ప్రధాన కూడళ్ల వద్ద ధూళి నివారణకు యాంటీ-స్మాగ్ గన్స్ మోహరించండి.`
+          ]
+        },
+        Mumbai: {
+          situation: `${wardName} తీరప్రాంత స్థానం వల్ల గాలి నాణ్యత సాధారణంగా ${aqi} (${translatedBadgeName}) గా ఉన్నప్పటికీ, నిర్మాణ పనులు (${construction}%) మరియు ట్రాఫిక్ రద్దీ (${traffic}%) ఆందోళన కలిగిస్తున్నాయి.`,
+          risks: [
+            `సముద్రపు గాలి కొంత ఉపశమనం కలిగిస్తున్నప్పటికీ, ${wardName} సమీపంలో నిర్మాణ ధూళి నియন্ত্রণ లోపించింది.`,
+            `వ్యాపార జిల్లాల కూడళ్ల వద్ద వాహనాల నిలిచిపోవడం వల్ల రద్దీ వేళల్లో AQI అకస్మాత్తుగా పెరుగుతోంది.`,
+            `అధిక జనాభా సాంద్రత (${(population / 1000).toFixed(0)} వేలు) వల్ల ప్రజారోగ్య ముప్పు పెరుగుతోంది.`
+          ],
+          forecast: `రాబోయే 24 గంటల్లో AQI అంచనా ${forecastAqi} గా ఉంది; సాయంత్రానికి తీరప్రాంత గాలులు బలపడి కాలుష్యం తొలగిపోయే అవకాశం ఉంది.`,
+          actions: [
+            `${wardName} లో నిర్మాణ ధూళి నిరోధక బారికేడ్లు మరియు నీటి సేద్యాన్ని తప్పనిసరి చేయండి.`,
+            `రోడ్డు రద్దీని తగ్గించడానికి ఫెర్రీలు మరియు కోస్టల్ రైలు వినియోగాన్ని ప్రోత్సహించండి.`
+          ]
+        }
+      };
+      const profTe = cityProfilesTe[selectedCity] || cityProfilesTe.Hyderabad;
+      situation = profTe.situation;
+      risks = profTe.risks;
+      forecastTxt = profTe.forecast;
+      actions = profTe.actions;
     } else if (language === "ta") {
-      currentSituation = `${wardName} பகுதியில் காற்றின் தரம் தற்பொழுது ${aqi} AQI (${translatedBadgeName}) ஆக பதிவாகியுள்ளது.`;
-
-      const risk1 = traffic > 50
-        ? `அலுவலக நேரங்களில் சந்திப்புகளில் வாகன புகைக்கரி மாசுபாடு அதிகமாக உள்ளது (${traffic}% நெரிசல்).`
-        : `தொழிற்சாலை உமிழ்வுகள் காற்றின் துகள் செறிவை அதிகரிக்கின்றன (${industrial}% உமிழ்வு).`;
-      const risk2 = windSpeed < 4.5
-        ? `மாலை நேரத்தில் காற்றின் வேகம் குறைவதால் (${windSpeed} மீ/வி) காற்றில் உள்ள தூசிகள் எளிதில் கலைவதில்லை.`
-        : `கட்டுமானப் பகுதிகளில் இருந்து கிளம்பும் தூசி காற்றின் மாசுபாட்டை அதிகரிக்கிறது.`;
-      keyRisks = [risk1, risk2];
-
-      forecastText = `XGBoost கணிப்புகளின்படி அடுத்த 24 மணிநேரத்தில் காற்றின் தரம் ${forecastAqi} AQI ஆக உயர வாய்ப்புள்ளது.`;
-
-      recommendedActions = [
-        `${wardName} வெளிப்புற பாதைகளில் கனரக டீசல் வாகனங்களை திருப்பிவிடவும்.`,
-        `${wardName} கட்டுமானப் பகுதிகள் அருகில் நீர் தெளிப்பதை அதிகரிக்கவும்.`
-      ];
-    } else if (language === "kn") {
-      currentSituation = `${wardName} ವಲಯದಲ್ಲಿ ಗಾಳಿಯ ಗುಣಮಟ್ಟ ಸೂಚ್ಯಂಕವು ಪ್ರಸ್ತುತ ${aqi} AQI (${translatedBadgeName}) ಆಗಿದೆ.`;
-
-      const risk1 = traffic > 50
-        ? `ಕಚೇರಿ ಸಮಯದ ರದ್ದಿಯ ಸಂದರ್ಭದಲ್ಲಿ ಜಂಕ್ಷನ್‌ಗಳ ಬಳಿ ವಾಹನಗಳ ಹೊಗೆಯ ಪ್ರಮಾಣ ಹೆಚ್ಚು (${traffic}% ಸಂಚಾರ ದಟ್ಟಣೆ).`
-        : `ಕೈಗಾರಿಕಾ ಹೊರಸೂಸುವಿಕೆಯು ಗಾಳಿಯಲ್ಲಿನ ಮಾಲಿನ್ಯ ಕಣಗಳ ಸಾಂದ್ರತೆಯನ್ನು ಹೆಚ್ಚಿಸುತ್ತಿದೆ (${industrial}% ಹೊರಸೂಸುವಿಕೆ).`;
-      const risk2 = windSpeed < 4.5
-        ? `ಸಂಜೆಯ ಶಾಂತ ಗಾಳಿಯು (${windSpeed} ಮೀ/ಸೆ) ಧೂಳಿನ ಕಣಗಳ ಚದುರುವಿಕೆಯನ್ನು ವಿಳಂಬಗೊಳಿಸುತ್ತದೆ.`
-        : `ಕಟ್ಟಡ ನಿರ್ಮಾಣ ಸ್ಥಳಗಳಿಂದ ಉಂಟಾಗುವ ಧೂಳು ಮಾಲಿನ್ಯ ಮಟ್ಟವನ್ನು ಹೆಚ್ಚಿಸುತ್ತಿದೆ.`;
-      keyRisks = [risk1, risk2];
-
-      forecastText = `XGBoost ಮುನ್ಸೂಚನೆಗಳ ಪ್ರಕಾರ ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ ಮಾಲಿನ್ಯ ಸೂಚ್ಯಂಕವು ${forecastAqi} AQI ಗೆ ಏರುವ ಸಾಧ್ಯತೆಯಿದೆ.`;
-
-      recommendedActions = [
-        `${wardName} ಹೊರ ವಲಯದ ಜಂಕ್ಷನ್‌ಗಳಿಂದ ವಾಣಿಜ್ಯ ಡೀಸೆಲ್ ವಾಹನಗಳನ್ನು ಬೇರೆಡೆಗೆ ತಿರುಗಿಸಿ.`,
-        `${wardName} ನಿರ್ಮಾಣ ಸ್ಥಳಗಳ ಬಳಿ ಸ್ಥಳೀಯವಾಗಿ ನೀರಿನ ಸಿಂಪಡಣೆಯನ್ನು ಹೆಚ್ಚಿಸಿ.`
-      ];
+      const cityProfilesTa: Record<string, {
+        situation: string;
+        risks: string[];
+        forecast: string;
+        actions: string[];
+      }> = {
+        Hyderabad: {
+          situation: `ஐடி காரிடார் பயணிகள் போக்குவரத்து மற்றும் கட்டுமானத் தூசிகள் ${wardName} பகுதியின் காற்றின் தரத்தை ${aqi} AQI (${translatedBadgeName}) ஆகக் குறைத்துள்ளன. அடர்த்தியான அலுவலக வளாகங்கள் உள்ளூர் அளவில் காற்று மாசடைவதை அதிகப்படுத்துகின்றன.`,
+          risks: [
+            `${wardName} பகுதியில் உள்ள உயரமான கட்டிட கட்டுமானப் பணிகள் தூசியை (PM10 அளவு ${selectedWard.pm10 || 0} µg/m³) உருவாக்குகின்றன.`,
+            `வட்ட சாலை சந்திப்புகளில் ஏற்படும் போக்குவரத்து நெரிசல் (${traffic}%) அலுவலக நேரங்களில் வாகனப் புகையை அதிகரிக்கிறது.`,
+            `காற்றின் ஈரப்பதம் ${humidity}% ஆக இருப்பதால் நுண்ணிய துகள்கள் தரைக்கு அருகிலேயே தேங்குகின்றன.`
+          ],
+          forecast: `அலுவலக போக்குவரத்து சுழற்சி தொடர்வதால் அடுத்த 24 மணிநேரத்தில் துகள்களின் அளவு ${forecastAqi} AQI ஆக இருக்கும் என கணிக்கப்பட்டுள்ளது. வார இறுதியில் மாற்றம் எதிர்பார்க்கப்படுகிறது.`,
+          actions: [
+            `${wardName} முழுவதும் உள்ள கட்டுமான தளங்களில் தூசி தடுப்பு விதிகளை கடுமையாக அமல்படுத்தவும்.`,
+            `போக்குவரத்து நெரிசலைக் குறைக்க அலுவலக நேரங்களை மாற்றியமைக்கவும்.`
+          ]
+        },
+        Bangalore: {
+          situation: `அடர்த்தியான மரங்கள் மற்றும் காற்றின் தாக்கத்தால் ${wardName} பகுதியில் காற்றின் தரம் ஒப்பீட்டளவில் சுத்தமாக ${aqi} AQI (${translatedBadgeName}) ஆக உள்ளது, ஆனால் உள்ளூர் போக்குவரத்து சந்திப்புகளில் இன்னும் மாசு அதிகமாக உள்ளது.`,
+          risks: [
+            `${wardName} பகுதியில் ஐடி காரிடார் வாகன நெரிசலால் மதிய உணவு நேரத்தில் போக்குவரத்து நெரிசல் (${traffic}%) ஏற்படுகிறது.`,
+            `மெட்ரோ விரிவாக்கப் பணிகளின் கட்டுமானக் கழிவுகள் போக்குவரத்து வழித்தடங்களுக்கு அருகில் PM10 அளவை அதிகரிக்கின்றன.`,
+            `காற்றின் வேகம் குறைவாக (${windSpeed} மீ/வி) இருப்பது மதிய வேளையில் மாசு கலைவதைத் தடுக்கிறது.`
+          ],
+          forecast: `காற்றின் தரம் அடுத்த 24 மணிநேரத்திற்கு ${forecastAqi} ஆக நீடிக்கும் என எதிர்பார்க்கப்படுகிறது. பூங்கா நகரத்தின் பசுமை பரப்பு நிலைத்தன்மைக்கு உதவுகிறது.`,
+          actions: [
+            `${wardName} பகுதியில் மதிய நேர நெரிசலைக் குறைக்க மதிய உணவு இடைவேளை நேரங்களை மாற்றியமைக்க ஊக்குவிக்கவும்.`,
+            `கட்டுமானப் பகுதிகளின் எல்லைகளைச் சுற்றி பசுமை வளையங்களை விரிவுபடுத்தவும்.`
+          ]
+        },
+        Chennai: {
+          situation: `கடலோர ஈரப்பதம் (${humidity}%) மற்றும் கடல் காற்று காரணமாக ${wardName} பகுதியில் காற்றின் தரம் மிதமான ${aqi} (${translatedBadgeName}) ஆக உள்ளது, ஆனால் உள்நாட்டு போக்குவரத்து வழித்தடங்கள் சவாலாக உள்ளன.`,
+          risks: [
+            `கடல் காற்று திசைமாறுவதால் மதிய வேளையில் ${wardName} கடலோரச் சாலைகளுக்கு அருகில் மாசு தேங்குகிறது.`,
+            `ஐடி காரிடார் பகுதியில் நடைபெறும் கட்டுமானப் பணிகள் (${construction}%) தூசியை உருவாக்குகின்றன.`,
+            `வட சென்னையிலிருந்து வெளியேறும் தொழிற்சாலை உமிழ்வுகள் PM2.5 துகள் அளவை படிப்படியாக அதிகரிக்கின்றன.`
+          ],
+          forecast: `மாலை நேரத்தில் கடல் காற்று பலவீனமடைவதால் AQI ${forecastAqi} ஐ எட்டக்கூடும். காலையில் காற்றின் தரம் மேம்படும்.`,
+          actions: [
+            `${wardName} கட்டுமான தளங்களுக்கு அருகில் உள்ள மண் சாலைகளில் தண்ணீர் தெளிப்பதை அதிகரிக்கவும்.`,
+            `கடல் காற்று திசைமாறும் நேரங்களில் தொழிற்சாலை புகை உமிழ்வைக் கண்காணிக்கவும்.`
+          ]
+        },
+        Delhi: {
+          situation: `குறைந்த காற்றின் வேகம் (${windSpeed} மீ/வி), அதிக வாகன அடர்த்தி மற்றும் அண்டை மாநிலங்களில் பயிர் எச்சங்களை எரிப்பதால் ${wardName} பகுதியில் அதிக AQI ${aqi} (${translatedBadgeName}) பதிவாகியுள்ளது.`,
+          risks: [
+            `வெப்பநிலை தலைகீழ் மாற்றத்தால் மாசுகள் தரைக்கு அருகிலேயே தேங்குகின்றன, காற்றின் வேகம் ${windSpeed} மீ/வி ஆக உள்ளது.`,
+            `முக்கிய சந்திப்புகளில் ஏற்படும் வாகன நெரிசல் (${traffic}%) உச்ச நேரங்களில் புகைக்கரியை அதிகரிக்கிறது.`,
+            `அதிக ஈரப்பதம் (${humidity}%) காரணமாக இரண்டாம் நிலை மாசு துகள்கள் உருவாவது அதிகரிக்கிறது.`
+          ],
+          forecast: `காற்று வீசாத நிலை தொடர்வதால் அடுத்த 24 மணிநேரத்தில் AQI ${forecastAqi} ஆக உயரும் என எதிர்பார்க்கப்படுகிறது. தற்காலிகமாக காற்று வீச வாய்ப்பில்லை.`,
+          actions: [
+            `${wardName} பகுதியில் வாகன புகையைக் குறைக்க ஒற்றை-இரட்டை இலக்க வாகன முறையை அமல்படுத்தவும்.`,
+            `துகள்களைக் கட்டுப்படுத்த முக்கிய சந்திப்புகளில் புகை எதிர்ப்பு பீரங்கிகளை பயன்படுத்தவும்.`
+          ]
+        },
+        Mumbai: {
+          situation: `${wardName} கடலோரப் பகுதி என்பதால் காற்றின் தரம் மிதமான ${aqi} (${translatedBadgeName}) ஆக உள்ளது, ஆனால் கட்டுமானப் பணிகள் (${construction}%) மற்றும் போக்குவரத்து நெரிசல் (${traffic}%) கவலையளிக்கின்றன.`,
+          risks: [
+            `கடல் காற்று ஓரளவு நிவாரணம் அளித்தாலும், ${wardName} கட்டுமானப் பகுதிகளில் தூசி தடுப்பு நடவடிக்கைகள் இல்லை.`,
+            `வர்த்தக மையங்களின் சந்திப்புகளில் ஏற்படும் போக்குவரத்து நெரிசல்கள் அலுவலக நேரத்தில் AQI ஐ அதிகரிக்கின்றன.`,
+            `அதிக மக்கள் தொகை அடர்த்தி (${(population / 1000).toFixed(0)} ஆயிரம்) ஒட்டுமொத்த சுகாதார ஆபத்தை அதிகரிக்கிறது.`
+          ],
+          forecast: `அடுத்த 24 மணிநேரத்திற்கு AQI ${forecastAqi} ஆக கணிக்கப்பட்டுள்ளது; மாலைக்குள் கடலோர காற்று வலுவடைந்து மாசு கலைந்துவிடும்.`,
+          actions: [
+            `${wardName} பகுதியில் கட்டுமான தூசி தடுப்பு சுவர்கள் மற்றும் தண்ணீர் தெளிப்பதை கட்டாயமாக்குங்கள்.`,
+            `சாலை நெரிசலைக் குறைக்க படகு மற்றும் கடலோர ரயில் சேவைகளைப் பயன்படுத்துவதை ஊக்குவிக்கவும்.`
+          ]
+        }
+      };
+      const profTa = cityProfilesTa[selectedCity] || cityProfilesTa.Hyderabad;
+      situation = profTa.situation;
+      risks = profTa.risks;
+      forecastTxt = profTa.forecast;
+      actions = profTa.actions;
     } else {
-      currentSituation = `Air quality aggregates in ${wardName} remain ${badge.toLowerCase()} with a current level of ${aqi} AQI.`;
-
-      const risk1 = traffic > 50
-        ? `High commuter traffic soot near office corridors during peak commute hours (${traffic}% congestion).`
-        : `Industrial emissions contributing to suspended particulate concentrations (${industrial}% emission factor).`;
-      const risk2 = windSpeed < 4.5
-        ? `Calm evening wind vectors (${windSpeed} m/s) delay particulate dispersion cycles.`
-        : `Fugitive dust suspensions from active construction zones and dry roads.`;
-      keyRisks = [risk1, risk2];
-
-      forecastText = `XGBoost lead predictions indicate particulate levels peaking near ${forecastAqi} AQI over 24 hours.`;
-
-      recommendedActions = [
-        `Divert heavy diesel vehicles from ${wardName} outer junctions.`,
-        `Increase localized water sprinkling near active construction sites in ${wardName}.`
-      ];
+      // kn - Kannada
+      const cityProfilesKn: Record<string, {
+        situation: string;
+        risks: string[];
+        forecast: string;
+        actions: string[];
+      }> = {
+        Hyderabad: {
+          situation: `ಐಟಿ ಕಾರಿಡಾರ್ ಸಂಚಾರ ದಟ್ಟಣೆ ಮತ್ತು ನಿರ್ಮಾಣ ಧೂಳು ${wardName} ವಲಯದ ಗಾಳಿ ಗುಣಮಟ್ಟವನ್ನು ${aqi} AQI (${translatedBadgeName}) ಮಟ್ಟಕ್ಕೆ ಇಳಿಸಿವೆ. ಕಚೇರಿಗಳ ದಟ್ಟಣೆಯು ಸ್ಥಳೀಯ ಮಾಲಿನ್ಯ ಕಣಗಳ ಹಾಟ್‌ಸ್ಪಾಟ್‌ಗಳನ್ನು ಸೃಷ್ಟಿಸುತ್ತಿದೆ.`,
+          risks: [
+            `${wardName} ನಲ್ಲಿ ಗಗನಚುಂಬಿ ಕಟ್ಟಡಗಳ ನಿರ್ಮಾಣದಿಂದ ಧೂಳು (PM10 ಮಟ್ಟ ${selectedWard.pm10 || 0} µg/m³) ಗಾಳಿಯಲ್ಲಿ ಹರಡುತ್ತಿದೆ.`,
+            `ಔಟರ್ ರಿಂಗ್ ರೋಡ್ ಜಂಕ್ಷನ್‌ಗಳಲ್ಲಿನ ವಾಹನ ದಟ್ಟಣೆ (${traffic}%) ಕಚೇರಿ ಸಮಯದಲ್ಲಿ ಹೊಗೆಯ ಪ್ರಮಾಣವನ್ನು ಹೆಚ್ಚಿಸುತ್ತಿದೆ.`,
+            `ಗಾಳಿಯಲ್ಲಿನ ಶೇ. ${humidity} ರಷ್ಟು ಆರ್ದ್ರತೆಯು ಮಾಲಿನ್ಯ ಕಣಗಳನ್ನು ನೆಲದ ಹತ್ತಿರವೇ ಉಳಿಯುವಂತೆ ಮಾಡುತ್ತಿದೆ.`
+          ],
+          forecast: `ಕಚೇರಿ ಸಮಯದ ಸಂಚಾರದ ಪುನರಾವರ್ತನೆಯಿಂದಾಗಿ ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ ಮಾಲಿನ್ಯ ಮಟ್ಟವು ${forecastAqi} AQI ತಲುಪುವ ಅಂದಾಜಿದೆ. ವಾರಾಂತ್ಯದಲ್ಲಿ ಸುಧಾರಣೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ.`,
+          actions: [
+            `${wardName} ನಾದ್ಯಂತ ಕಟ್ಟಡ ನಿರ್ಮಾಣ ಸ್ಥಳಗಳಲ್ಲಿ ಧೂಳು ನಿಯಂತ್ರಣ ನಿಯಮಗಳನ್ನು ಕಟ್ಟುನಿಟ್ಟಾಗಿ ಜಾರಿಗೊಳಿಸಿ.`,
+            `ಕಚೇರಿ ಸಮಯವನ್ನು ಬದಲಾಯಿಸುವ ಮೂಲಕ ಸಂಚಾರ ದಟ್ಟಣೆಯನ್ನು ಕಡಿಮೆ ಮಾಡಿ.`
+          ]
+        },
+        Bangalore: {
+          situation: `ದಟ್ಟವಾದ ಮರಗಳ ಹೊದಿಕೆ ಮತ್ತು ಸಮುದ್ರ ಮಾರುತಗಳ ಪ್ರಭಾವದಿಂದಾಗಿ ${wardName} ವಲಯದಲ್ಲಿ ಗಾಳಿಯ ಗುಣಮಟ್ಟ ಸಾಪೇಕ್ಷವಾಗಿ ಉತ್ತಮ ${aqi} AQI (${translatedBadgeName}) ಆಗಿದೆ, ಆದರೆ ಸ್ಥಳೀಯ ಸಂಚಾರ ವಲಯಗಳಲ್ಲಿ ಇನ್ನೂ ಹೆಚ್ಚಿನ ಮಾಲಿನ್ಯವಿದೆ.`,
+          risks: [
+            `${wardName} ನ ಐಟಿ ಕಾರಿಡಾರ್‌ನಲ್ಲಿ ವಾಹನ ದಟ್ಟಣೆಯು ಮಧ್ಯಾಹ್ನದ ಊಟದ ಸಮಯದಲ್ಲಿ (${traffic}% ದಟ್ಟಣೆ) ಸಂಚಾರ ಸಮಸ್ಯೆಗೆ ಕಾರಣವಾಗುತ್ತದೆ.`,
+            `ಮೆಟ್ರೋ ವಿಸ್ತರಣೆಯ ನಿರ್ಮಾಣ ತ್ಯಾಜ್ಯವು ಸಾರಿಗೆ ಮಾರ್ಗಗಳ ಬಳಿ PM10 ಮಟ್ಟವನ್ನು ಹೆಚ್ಚಿಸುತ್ತಿದೆ.`,
+            `ಕಡಿಮೆ ಗಾಳಿಯ ವೇಗವು (${windSpeed} ಮೀ/ಸೆ) ಮಧ್ಯಾಹ್ನದ ಮಾಲಿನ್ಯ ಹರಡುವಿಕೆಯನ್ನು ನಿರ್ಬಂಧಿಸುತ್ತದೆ.`
+          ],
+          forecast: `ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ AQI ${forecastAqi} ಆಸುಪಾಸಿನಲ್ಲಿರಬಹುದು. ಉದ್ಯಾನ ನಗರಿಯ ಹಸಿರು ವಾತಾವರಣವು ಸ್ಥಿರತೆ ಕಾಪಾಡಿಕೊಳ್ಳಲು ನೆರವಾಗುತ್ತದೆ.`,
+          actions: [
+            `${wardName} ನಲ್ಲಿ ಮಧ್ಯಾಹ್ನದ ಸಂಚಾರ ದಟ್ಟಣೆ ಕಡಿಮೆ ಮಾಡಲು ಊಟದ ವಿರಾಮದ ಸಮಯವನ್ನು ಬದಲಿಸಲು ಪ್ರೋತ್ಸಾಹಿಸಿ.`,
+            `ನಿರ್ಮಾಣ ಪ್ರದೇಶಗಳ ಸುತ್ತಲೂ ಹಸಿರು ಬಫರ್ ವಲಯಗಳನ್ನು ವಿಸ್ತರಿಸಿ.`
+          ]
+        },
+        Chennai: {
+          situation: `ಕರಾವಳಿ ತೇವಾಂಶ (${humidity}%) ಮತ್ತು ಸಮುದ್ರದ ತಂಗಾಳಿ ಇರುವ ಕಾರಣ ${wardName} ವಲಯದಲ್ಲಿ AQI ಸಾಧಾರಣ ಮಟ್ಟದಲ್ಲಿ ${aqi} (${translatedBadgeName}) ಇದೆ, ಆದರೆ ಒಳನಾಡಿನ ಸಂಚಾರ ಮಾರ್ಗಗಳು ಸಂಕಷ್ಟದಲ್ಲಿವೆ.`,
+          risks: [
+            `ಸಮುದ್ರದ ಗಾಳಿಯ ವಿರುದ್ಧ ದಿಕ್ಕಿನ ಚಲನೆಯು ಮಧ್ಯಾಹ್ನದ ನಂತರ ${wardName} ಕರಾವಳಿ ರಸ್ತೆಗಳ ಬಳಿ ಮಾಲಿನ್ಯವನ್ನು ತಡೆಹಿಡಿಯುತ್ತದೆ.`,
+            `ಐಟಿ ಕಾರಿಡಾರ್ ವಲಯದಲ್ಲಿ ನಡೆಯುತ್ತಿರುವ ನಿರ್ಮಾಣ ಕಾಮಗಾರಿಗಳು (${construction}%) ಧೂಳನ್ನು ಉಂಟುಮಾಡುತ್ತಿವೆ.`,
+            `ಉತ್ತರ ಚೆನ್ನೈನ ಕೈಗಾರಿಕಾ ಹೊರಸೂಸುವಿಕೆಯು PM2.5 ಮಟ್ಟವು ಕ್ರಮೇಣ ಹೆಚ್ಚಲು ಕಾರಣವಾಗುತ್ತಿದೆ.`
+          ],
+          forecast: `ಸಂಜೆ ಸಮುದ್ರದ ತಂಗಾಳಿ ದುರ್ಬಲಗೊಳ್ಳುತ್ತಿದ್ದಂತೆ AQI ${forecastAqi} ತಲುಪಬಹುದು. ಮುಂಜಾನೆಯ ಹೊತ್ತಿಗೆ ಕರಾವಳಿ ಮಾಲಿನ್ಯ ಚದುರಲಿದೆ.`,
+          actions: [
+            `${wardName} ನ ನಿರ್ಮಾಣ ಪ್ರದೇಶಗಳ ಸಮೀಪವಿರುವ ಕಚ್ಚಾ ರಸ್ತೆಗಳಲ್ಲಿ ನೀರು ಸಿಂಪಡಿಸುವುದನ್ನು ಹೆಚ್ಚಿಸಿ.`,
+            `ಸಮುದ್ರದ ಗಾಳಿ ವಿರುದ್ಧ ದಿಕ್ಕಿನಲ್ಲಿ ಚಲಿಸುವ ಸಮಯದಲ್ಲಿ ಕೈಗಾರಿಕಾ ಚಿಮಣಿ ಹೊರಸೂಸುವಿಕೆಯನ್ನು ಮೇಲ್ವಿಚಾರಣೆ ಮಾಡಿ.`
+          ]
+        },
+        Delhi: {
+          situation: `ಕಡಿಮೆ ಗಾಳಿಯ ವೇಗ (${windSpeed} ಮೀ/ಸೆ), ಹೆಚ್ಚಿನ ವಾಹನ ದಟ್ಟಣೆ ಮತ್ತು ಪ್ರಾದೇಶಿಕ ಕೃಷಿ ತ್ಯಾಜ್ಯ ದಹನದಿಂದಾಗಿ ${wardName} ವಲಯದಲ್ಲಿ ಅತಿ ಹೆಚ್ಚಿನ AQI ${aqi} (${translatedBadgeName}) ದಾಖಲಾಗಿದೆ.`,
+          risks: [
+            `ತಾಪಮಾನದ ವಿಲೋಮತೆಯಿಂದಾಗಿ ಮಾಲಿನ್ಯಕಾರಕಗಳು ನೆಲದ ಸಮೀಪವೇ ಸಿಲುಕಿಕೊಳ್ಳುತ್ತಿವೆ, ಗಾಳಿಯ ವೇಗವು ${windSpeed} ಮೀ/ಸೆ ಆಗಿದೆ.`,
+            `ಪ್ರಮುಖ ಜಂಕ್ಷನ್‌ಗಳಲ್ಲಿನ ವಾಹನ ದಟ್ಟಣೆಯು (${traffic}%) ಕಚೇರಿ ಸಮಯದಲ್ಲಿ ಕರಿಯ ಹೊಗೆಯನ್ನು ಹೆಚ್ಚಿಸುತ್ತಿದೆ.`,
+            `ಹೆಚ್ಚಿನ ಆರ್ದ್ರತೆ (${humidity}%) ಇರುವುದರಿಂದ ಮಾಲಿನ್ಯ ಕಣಗಳು ಅತಿ ವೇಗವಾಗಿ ದ್ವಿತೀಯಕ ಕಣಗಳಾಗಿ ರೂಪಾಂತರಗೊಳ್ಳುತ್ತಿವೆ.`
+          ],
+          forecast: `ಗಾಳಿ ಇಲ್ಲದ ಪರಿಸ್ಥಿತಿ ಮುಂದುವರಿಯುವುದರಿಂದ ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ AQI ${forecastAqi} ವರೆಗೆ ಏರುವ ನಿರೀಕ್ಷೆಯಿದೆ. ತಕ್ಷಣಕ್ಕೆ ಗಾಳಿಯ ಸುಧಾರಣೆ ನಿರೀಕ್ಷೆಯಿಲ್ಲ.`,
+          actions: [
+            `${wardName} ನಲ್ಲಿ ವಾಹನಗಳ ಹೊರಸೂಸುವಿಕೆಯನ್ನು ಶೇ. 15 ರಷ್ಟು ಕಡಿಮೆ ಮಾಡಲು ಸಮ-ಬೆಸ ವಾಹನ ನಿಯಮ ಜಾರಿಗೊಳಿಸಿ.`,
+            `ಮಾಲಿನ್ಯ ಕಣಗಳನ್ನು ತಗ್ಗಿಸಲು ಪ್ರಮುಖ ಜಂಕ್ಷನ್‌ಗಳಲ್ಲಿ ಆಂಟಿ-ಸ್ಮಾಗ್ ಗನ್‌ಗಳನ್ನು ನಿಯೋಜಿಸಿ.`
+          ]
+        },
+        Mumbai: {
+          situation: `${wardName} ನ ಕರಾವಳಿ ನೆಲೆಯು ಸಾಧಾರಣ AQI ${aqi} (${translatedBadgeName}) ಅನ್ನು ಒದಗಿಸುತ್ತದೆಯಾದರೂ, ನಿರ್ಮಾಣ ಕಾಮಗಾರಿಗಳು (${construction}%) ಮತ್ತು ಸಂಚಾರ ದಟ್ಟಣೆ (${traffic}%) ಹೆಚ್ಚುತ್ತಿರುವ ಕಳವಳಗಳಾಗಿವೆ.`,
+          risks: [
+            `ಸಮುದ್ರದ ತಂಗಾಳಿಯು ಭಾಗಶಃ ಪರಿಹಾರ ನೀಡಿದರೂ ${wardName} ಬಳಿ ನಿರ್ಮಾಣ ಧೂಳು ತಗ್ಗಿಸುವ ಯಾವುದೇ ವ್ಯವಸ್ಥೆಯಾಗಿಲ್ಲ.`,
+            `ವಾಣಿಜ್ಯ ಕೇಂದ್ರಗಳ ಜಂಕ್ಷನ್‌ಗಳಲ್ಲಿನ ಸಂಚಾರ ಅಡೆತಡೆಗಳು ಕಚೇರಿ ಸಮಯದಲ್ಲಿ AQI ಮಟ್ಟವನ್ನು ಹೆಚ್ಚಿಸುತ್ತವೆ.`,
+            `ಹೆಚ್ಚಿನ ಜನಸಂಖ್ಯಾ ಸಾಂದ್ರತೆಯು (${(population / 1000).toFixed(0)} ಸಾವಿರ) ಸಂಚಿತ ಆರೋಗ್ಯ ಅಪಾಯವನ್ನು ಹೆಚ್ಚಿಸುತ್ತದೆ.`
+          ],
+          forecast: `ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ AQI ${forecastAqi} ಇರಲಿದೆ; ಸಂಜೆಯ ವೇಳೆಗೆ ಕರಾವಳಿ ಗಾಳಿ ಬಲಗೊಳ್ಳುವುದರಿಂದ ಮಾಲಿನ್ಯ ಮಟ್ಟ ಚದುರಲಿದೆ.`,
+          actions: [
+            `${wardName} ನಲ್ಲಿ ಕಡ್ಡಾಯವಾಗಿ ಧೂಳು ತಡೆಗೋಡೆಗಳನ್ನು ಮತ್ತು ನೀರು ಸಿಂಪಡಿಸುವುದನ್ನು ನಿಯಮವಾಗಿಸಿ.`,
+            `ರಸ್ತೆ ದಟ್ಟಣೆ ಕಡಿಮೆ ಮಾಡಲು ಜಲಸಾರಿಗೆ ಮತ್ತು ಕರಾವಳಿ ರೈಲು ಬಳಕೆಯನ್ನು ಉತ್ತೇಜಿಸಿ.`
+          ]
+        }
+      };
+      const profKn = cityProfilesKn[selectedCity] || cityProfilesKn.Hyderabad;
+      situation = profKn.situation;
+      risks = profKn.risks;
+      forecastTxt = profKn.forecast;
+      actions = profKn.actions;
     }
 
-    return { currentSituation, keyRisks, forecast: forecastText, recommendedActions };
+    const briefSituation = situation;
+    const briefRisks = risks;
+    const briefForecast = forecastTxt;
+    const briefActions = actions;
+
+    return { currentSituation: briefSituation, keyRisks: briefRisks, forecast: briefForecast, recommendedActions: briefActions };
   };
 
   // Theme Aware Leaflet GIS Map Tile Loading
@@ -1024,7 +1327,7 @@ const buildMetroMapPoints = () => {
 
   const handleWardSelect = (ward: any) => {
     setSelectedWard(ward);
-    
+
     // Synchronize selectedCity with the chosen ward/place
     const nameLower = (ward?.name || "").toLowerCase();
     let detectedCity = "Hyderabad";
@@ -1076,25 +1379,25 @@ const buildMetroMapPoints = () => {
     // Update dynamic details inside recommendations based on focus ward
     setActionRecommendations(prev => prev.map(act => {
       if (act.id === 1) {
-        return { 
-          ...act, 
+        return {
+          ...act,
           desc: `Divert commercial diesel transport from ${ward.name} junctions during office commute spikes.`,
           evidence: `Commute traffic sensors registered traffic congestion at ${ward.traffic_congestion}% in ${ward.name} sectors.`,
-          executed: false 
+          executed: false
         };
       } else if (act.id === 2) {
-        return { 
-          ...act, 
+        return {
+          ...act,
           desc: `Conduct on-site inspections of active construction areas in ${ward.name} and mandate dust suppression controls.`,
           evidence: `Particulate sensors recorded PM10 concentrations at ${ward.pm10} µg/m³ near ${ward.name} centroids.`,
-          executed: false 
+          executed: false
         };
       } else {
-        return { 
-          ...act, 
+        return {
+          ...act,
           desc: `Initiate localized water sprinkling runs across dry corridors in ${ward.name} to suppress dust.`,
           evidence: `Fugitive dust loads reached ${ward.dust_level}% with local wind speeds at ${ward.wind_speed} m/s.`,
-          executed: false 
+          executed: false
         };
       }
     }));
@@ -1134,7 +1437,7 @@ const buildMetroMapPoints = () => {
         let reply = "";
         let routes: any[] = [];
         const lowerText = query.toLowerCase();
-        
+
         let city = "Hyderabad";
         let targetWard = selectedWard;
 
@@ -1178,11 +1481,11 @@ const buildMetroMapPoints = () => {
         if (lowerText.includes("weather") || lowerText.includes("temperature") || lowerText.includes("wind") || lowerText.includes("humidity")) {
           reply = `Today in ${targetWard.name}, the weather condition is ${targetWard.weather_condition || "Clear"}. The temperature is ${targetWard.temperature}°C, humidity is ${targetWard.humidity}%, and wind speed is ${targetWard.wind_speed} m/s. Tomorrow, weather is expected to remain stable with temperatures peaking around ${targetWard.temperature + 1}°C and winds averaging ${targetWard.wind_speed + 0.5} m/s under ${targetWard.weather_condition || "Clear"} skies.`;
         } else if (lowerText.includes("jog")) {
-          reply = targetWard.aqi > 150 
+          reply = targetWard.aqi > 150
             ? `Outdoor jogging is NOT recommended in ${targetWard.name} today. The current AQI is ${targetWard.aqi} (Moderate/High). Sensitive groups should exercise indoors.`
             : `Jogging is safe in ${targetWard.name} today. The current AQI is ${targetWard.aqi} (Satisfactory).`;
         } else if (lowerText.includes("safe")) {
-          reply = targetWard.aqi > 150 
+          reply = targetWard.aqi > 150
             ? `Air Quality in ${targetWard.name} is currently elevated to ${targetWard.aqi}. It is advised to keep windows closed and wear N95 filters outdoors.`
             : `Conditions in ${targetWard.name} are currently satisfactory (AQI: ${targetWard.aqi}). It is acceptable for most citizens.`;
         } else {
@@ -1216,8 +1519,8 @@ const buildMetroMapPoints = () => {
           ];
         }
 
-        setChatMessages([...messages, { 
-          sender: "agent", 
+        setChatMessages([...messages, {
+          sender: "agent",
           text: reply,
           routes
         }]);
@@ -1290,1389 +1593,1319 @@ const buildMetroMapPoints = () => {
         <EnvironmentalAmbience />
         <div className="relative z-10 w-full min-h-screen">
           {flow === "landing" && (
-        <div className={cn("min-h-screen bg-[#070B14] text-slate-100 relative overflow-x-hidden font-sans scroll-smooth prana-shell", weatherShellClass)}>
-          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-            <div className={cn(
-              "absolute -top-24 left-[-8%] h-96 w-96 rounded-full blur-[140px] animate-pulse",
-              currentAqi <= 50 ? "bg-emerald-400/20" : currentAqi <= 100 ? "bg-sky-400/18" : currentAqi <= 170 ? "bg-amber-400/18" : "bg-rose-400/20"
-            )} style={{ animationDuration: "11s" }} />
-            <div className={cn(
-              "absolute bottom-[-16%] right-[-6%] h-[30rem] w-[30rem] rounded-full blur-[150px] animate-pulse",
-              currentAqi <= 50 ? "bg-cyan-400/12" : currentAqi <= 100 ? "bg-sky-500/14" : currentAqi <= 170 ? "bg-orange-400/14" : "bg-red-500/16"
-            )} style={{ animationDuration: "15s" }} />
-            <div className="absolute inset-0 bg-grid-pattern opacity-[0.04]" />
-          </div>
-          
-          {/* Transparent, scroll-aware Glass Navbar */}
-          <nav className={cn(
-            "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
-            scrollY > 20 
-              ? "bg-[#070B14]/85 backdrop-blur-md py-3.5 border-slate-800/80 shadow-lg" 
-              : "bg-transparent py-5 border-transparent"
-          )}>
-            <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <Activity className="w-5 h-5 text-white animate-pulse" />
-                </div>
-                <span className="font-extrabold text-lg tracking-tight text-white">PranaAI</span>
-              </div>
-              
-              <div className="hidden md:flex items-center gap-6">
-                {[
-                  { id: "dashboard", label: "Mission Control" },
-                  { id: "map", label: "Digital Twin" },
-                  { id: "prediction", label: "Forecast Intel" },
-                  { id: "copilot", label: "Copilot Console" },
-                  { id: "reports", label: "Intelligence Reports" },
-                  { id: "settings", label: "Settings" }
-                ].map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setTargetRedirect(item.id);
-                      setFlow("booting");
-                    }}
-                    className="text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-              
-              <div>
-                <button
-                  onClick={() => {
-                    setTargetRedirect("dashboard");
-                    setFlow("booting");
-                  }}
-                  className="btn-primary py-2 px-4 text-xs font-bold shadow-md shadow-emerald-500/10 cursor-pointer"
-                >
-                  Launch Mission Control
-                </button>
-              </div>
-            </div>
-          </nav>
-
-          {/* Cinematic Hero (100vh) */}
-          <section className="min-h-screen flex flex-col justify-center items-center relative px-6 pt-20">
-            {/* Background spotlight overlays */}
-            <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-60">
-              <div className="absolute top-[15%] left-[20%] w-[45rem] h-[45rem] rounded-full bg-emerald-500/5 blur-[130px] animate-pulse" style={{ animationDuration: "10s" }} />
-              <div className="absolute bottom-[10%] right-[10%] w-[50rem] h-[50rem] rounded-full bg-cyan-500/5 blur-[140px] animate-pulse" style={{ animationDuration: "14s" }} />
-              <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]" />
-              
-              {/* Floating particles */}
-              {[1, 2, 3, 4, 5, 6].map((p) => (
-                <div
-                  key={p}
-                  className={cn(
-                    "absolute w-1 h-1 rounded-full bg-emerald-400/20 animate-float",
-                    p === 1 && "top-1/4 left-1/3 duration-[12s]",
-                    p === 2 && "top-2/3 left-[12%] duration-[18s] delay-300",
-                    p === 3 && "top-1/3 left-3/4 duration-[15s] delay-700",
-                    p === 4 && "top-[75%] left-[55%] duration-[20s] delay-500",
-                    p === 5 && "top-[15%] left-[85%] duration-[10s] delay-200"
-                  )}
-                />
-              ))}
-            </div>
-
-            <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 py-12">
-              {/* Hero Left Info */}
-              <div className="lg:col-span-6 flex flex-col gap-6 text-left items-start max-w-xl">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-extrabold uppercase tracking-widest">
-                  <Compass className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '8s' }} /> Live {selectedRegion.focus} · {weatherLabel} · {liveTelemetryLabel}
-                </div>
-                
-                <div className="flex flex-col gap-2">
-                  <h1 className="text-5xl sm:text-6xl font-black tracking-tight leading-none text-white">
-                    Prana<span className="text-primary">AI</span>
-                  </h1>
-                  <span className="text-2xl sm:text-3xl font-extrabold text-slate-300 block mt-1">
-                    Environmental Intelligence. Reimagined.
-                  </span>
-                </div>
-
-                <p className="text-slate-400 text-sm md:text-base leading-relaxed">
-                  A premium decision intelligence platform monitoring air loads, predicting future dispersion grids, and sandboxing local policies.
-                </p>
-
-                {/* Tagline rotation indicators */}
-                <div className="h-6 flex items-center overflow-hidden">
-                  <span className="text-xs font-mono font-bold text-accent transition-all duration-500 animate-pulse">
-                    {taglineIdx === 0 && "➔ Real-Time Air Quality Intelligence"}
-                    {taglineIdx === 1 && "➔ AI-Powered Forecasting"}
-                    {taglineIdx === 2 && "➔ Digital Environmental Twin"}
-                    {taglineIdx === 3 && "➔ Smart City Insights"}
-                    {taglineIdx === 4 && "➔ Live Pollution Analytics"}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-4 mt-2 w-full sm:w-auto">
-                  <button 
-                    onClick={() => {
-                      setTargetRedirect("dashboard");
-                      setFlow("booting");
-                    }} 
-                    className="btn-primary py-3.5 px-8 text-xs font-bold shadow-lg shadow-emerald-500/25 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto cursor-pointer"
-                  >
-                    Launch Mission Control
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setTargetRedirect("map");
-                      setFlow("booting");
-                    }} 
-                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white py-3.5 px-8 text-xs font-semibold rounded-xl hover:scale-105 active:scale-95 transition-all w-full sm:w-auto cursor-pointer"
-                  >
-                    View Live Environmental Map
-                  </button>
-                </div>
+            <div className={cn("min-h-screen bg-[#070B14] text-slate-100 relative overflow-x-hidden font-sans scroll-smooth prana-shell", weatherShellClass)}>
+              <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                <div className={cn(
+                  "absolute -top-24 left-[-8%] h-96 w-96 rounded-full blur-[140px] animate-pulse",
+                  currentAqi <= 50 ? "bg-emerald-400/20" : currentAqi <= 100 ? "bg-sky-400/18" : currentAqi <= 170 ? "bg-amber-400/18" : "bg-rose-400/20"
+                )} style={{ animationDuration: "11s" }} />
+                <div className={cn(
+                  "absolute bottom-[-16%] right-[-6%] h-[30rem] w-[30rem] rounded-full blur-[150px] animate-pulse",
+                  currentAqi <= 50 ? "bg-cyan-400/12" : currentAqi <= 100 ? "bg-sky-500/14" : currentAqi <= 170 ? "bg-orange-400/14" : "bg-red-500/16"
+                )} style={{ animationDuration: "15s" }} />
+                <div className="absolute inset-0 bg-grid-pattern opacity-[0.04]" />
               </div>
 
-              {/* Hero Right: Rotating Earth Visuals */}
-              <div className="lg:col-span-6 flex justify-center items-center relative w-full h-[400px]">
-                {/* Outer Glow */}
-                <div className="absolute w-72 h-72 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
-                
-                {/* Orbital Rings */}
-                <div className="absolute w-[360px] h-[360px] rounded-full border border-slate-800 animate-spin" style={{ animationDuration: '40s' }} />
-                <div className="absolute w-[300px] h-[300px] rounded-full border border-dashed border-emerald-500/10 animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} />
-                <div className="absolute w-[240px] h-[240px] rounded-full border border-cyan-500/10 animate-spin" style={{ animationDuration: '12s' }} />
-
-                {/* Globe Sphere */}
-                <div className="absolute w-48 h-48 rounded-full bg-[#0d1d33] border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/25 via-cyan-500/10 to-transparent z-10" />
-                  <div className="absolute inset-[3px] rounded-full bg-[#070e17] flex items-center justify-center">
-                    <Wind className="w-12 h-12 text-emerald-500/15 animate-pulse" />
-                  </div>
-                  <div className="absolute w-40 h-[1px] bg-white/5 rotate-12" />
-                  <div className="absolute w-40 h-[1px] bg-white/5 -rotate-45" />
-                  <div className="absolute w-[1px] h-40 bg-white/5" />
-                </div>
-
-                {/* Floating Metric Tags */}
-                <div className="absolute top-[8%] -left-6 bg-slate-900/90 border border-white/10 rounded-2xl p-4 shadow-xl flex items-center gap-3 animate-bounce" style={{ animationDuration: "5s" }}>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/25 flex items-center justify-center text-emerald-400">
-                    <Activity className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <span className="text-[9px] uppercase font-bold text-slate-500 block">IT Corridor AQI</span>
-                    <span className="text-xs font-black text-white">{selectedWard.aqi} - {getAQIBadge(selectedWard.aqi)}</span>
-                  </div>
-                </div>
-
-                <div className="absolute bottom-[8%] -right-6 bg-slate-900/90 border border-white/10 rounded-2xl p-4 shadow-xl flex items-center gap-3 animate-bounce" style={{ animationDuration: "6s", animationDelay: "1.2s" }}>
-                  <div className="w-8 h-8 rounded-lg bg-cyan-500/25 flex items-center justify-center text-cyan-400">
-                    <Sun className="w-4.5 h-4.5" />
-                  </div>
-                  <div>
-                    <span className="text-[9px] uppercase font-bold text-slate-500 block">Weather Pattern</span>
-                    <span className="text-xs font-black text-white">{formatTemp(selectedWard.temperature)} · {weatherLabel}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Scroll Indicator */}
-            <div className="absolute bottom-6 flex flex-col items-center gap-1.5 opacity-60">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Scroll to Explore</span>
-              <div className="w-1 h-3.5 bg-slate-600 rounded-full relative overflow-hidden">
-                <div className="w-full h-1/2 bg-primary rounded-full absolute top-0 animate-bounce" />
-              </div>
-            </div>
-          </section>
-
-          {/* Section 1: Monitor */}
-          <section className="py-24 border-t border-slate-900 bg-slate-950/40 relative">
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              <div className="lg:col-span-5 flex flex-col gap-5 text-left">
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">01 / Real-time sensing</span>
-                <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  Monitor Urban Air Loads Instantly.
-                </h2>
-                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
-                  Continuous sensor updates compile particulate levels, humidity indices, and meteorological telemetry. Our localized spatial grid traces details down to the sector centroid.
-                </p>
-                <div className="flex flex-col gap-2 mt-2">
-                  {[
-                    "Live multi-station geofenced mapping feed.",
-                    "Attribution of particulate counts to traffic and construction zones.",
-                    "Immediate threshold alert warnings."
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex gap-2 text-xs text-slate-300 font-semibold items-center">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                      <span>{item}</span>
+              {/* Transparent, scroll-aware Glass Navbar */}
+              <nav className={cn(
+                "fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b",
+                scrollY > 20
+                  ? "bg-[#070B14]/85 backdrop-blur-md py-3.5 border-slate-800/80 shadow-lg"
+                  : "bg-transparent py-5 border-transparent"
+              )}>
+                <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                      <Activity className="w-5 h-5 text-white animate-pulse" />
                     </div>
+                    <span className="font-extrabold text-lg tracking-tight text-white">PranaAI</span>
+                  </div>
+
+
+                  <div>
+                    <button
+                      onClick={() => {
+                        setTargetRedirect("dashboard");
+                        setFlow("booting");
+                      }}
+                      className="btn-primary py-2 px-4 text-xs font-bold shadow-md shadow-emerald-500/10 cursor-pointer"
+                    >
+                      Launch Mission Control
+                    </button>
+                  </div>
+                </div>
+              </nav>
+
+              {/* Cinematic Hero (100vh) */}
+              <section className="min-h-screen flex flex-col justify-center items-center relative px-6 pt-20">
+                {/* Background spotlight overlays */}
+                <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none opacity-60">
+                  <div className="absolute top-[15%] left-[20%] w-[45rem] h-[45rem] rounded-full bg-emerald-500/5 blur-[130px] animate-pulse" style={{ animationDuration: "10s" }} />
+                  <div className="absolute bottom-[10%] right-[10%] w-[50rem] h-[50rem] rounded-full bg-cyan-500/5 blur-[140px] animate-pulse" style={{ animationDuration: "14s" }} />
+                  <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]" />
+
+                  {/* Floating particles */}
+                  {[1, 2, 3, 4, 5, 6].map((p) => (
+                    <div
+                      key={p}
+                      className={cn(
+                        "absolute w-1 h-1 rounded-full bg-emerald-400/20 animate-float",
+                        p === 1 && "top-1/4 left-1/3 duration-[12s]",
+                        p === 2 && "top-2/3 left-[12%] duration-[18s] delay-300",
+                        p === 3 && "top-1/3 left-3/4 duration-[15s] delay-700",
+                        p === 4 && "top-[75%] left-[55%] duration-[20s] delay-500",
+                        p === 5 && "top-[15%] left-[85%] duration-[10s] delay-200"
+                      )}
+                    />
                   ))}
                 </div>
-              </div>
 
-              {/* Graphic container */}
-              <div className="lg:col-span-7 bg-[#0b101d] border border-slate-900 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-2xl">
-                <div className="flex justify-between items-center border-b border-slate-900 pb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
-                    <span className="text-xs font-extrabold text-white">Live Hyd Corridor Nodes</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-500">6 Sensors Online</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {MOCK_WARDS.slice(0, 4).map((w) => (
-                    <div key={w.id} className="bg-slate-950/80 border border-slate-900/60 p-4 rounded-2xl flex justify-between items-center">
-                      <div>
-                        <span className="text-xs font-bold text-white block">{w.name}</span>
-                        <span className="text-[10px] text-slate-500 mt-1 block">PM2.5: {w.pm2_5} µg/m³</span>
-                      </div>
-                      <span className={cn(
-                        "text-xs font-black px-2 py-0.5 rounded border",
-                        w.aqi > 150 
-                          ? "text-red-400 border-red-500/20 bg-red-500/5" 
-                          : w.aqi > 100 
-                            ? "text-amber-400 border-amber-500/20 bg-amber-500/5" 
-                            : "text-emerald-400 border-emerald-500/20 bg-emerald-500/5"
-                      )}>
-                        {w.aqi} AQI
+                <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10 py-12">
+                  {/* Hero Left Info */}
+                  <div className="lg:col-span-6 flex flex-col gap-6 text-left items-start max-w-xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-extrabold uppercase tracking-widest">
+                      <Compass className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '8s' }} /> Live {selectedRegion.focus} · {weatherLabel} · {liveTelemetryLabel}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <h1 className="text-5xl sm:text-6xl font-black tracking-tight leading-none text-white">
+                        Prana<span className="text-primary">AI</span>
+                      </h1>
+                      <span className="text-2xl sm:text-3xl font-extrabold text-slate-300 block mt-1">
+                        Environmental Intelligence. Reimagined.
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
 
-          {/* Section 2: Predict */}
-          <section className="py-24 border-t border-slate-900 relative">
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              {/* Graphic container */}
-              <div className="lg:col-span-7 lg:order-2 flex flex-col gap-6">
-                <div className="bg-[#0b101d] border border-slate-900 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-2xl text-left">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 font-mono tracking-wider">XGBoost Forecast Matrix</span>
-                  <div className="flex flex-col gap-4">
-                    {[
-                      { h: "24h Lead Forecast", val: "152 AQI", trend: "Rising load shares", conf: "93%" },
-                      { h: "48h Lead Forecast", val: "160 AQI", trend: "Thermal inversion warning", conf: "93%" },
-                      { h: "72h Lead Forecast", val: "138 AQI", trend: "Wind dispersion relief", conf: "90%" }
-                    ].map((item, idx) => (
-                      <div key={idx} className="bg-slate-950/80 border border-slate-900/60 p-4.5 rounded-2xl flex justify-between items-center">
-                        <div>
-                          <span className="text-xs font-bold text-white block">{item.h}</span>
-                          <span className="text-[10.5px] text-slate-400 block mt-1">{item.trend}</span>
+                    <p className="text-slate-400 text-sm md:text-base leading-relaxed">
+                      A premium decision intelligence platform monitoring air loads, predicting future dispersion grids, and sandboxing local policies.
+                    </p>
+
+                    {/* Tagline rotation indicators */}
+                    <div className="h-6 flex items-center overflow-hidden">
+                      <span className="text-xs font-mono font-bold text-accent transition-all duration-500 animate-pulse">
+                        {taglineIdx === 0 && "➔ Real-Time Air Quality Intelligence"}
+                        {taglineIdx === 1 && "➔ AI-Powered Forecasting"}
+                        {taglineIdx === 2 && "➔ Digital Environmental Twin"}
+                        {taglineIdx === 3 && "➔ Smart City Insights"}
+                        {taglineIdx === 4 && "➔ Live Pollution Analytics"}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-4 mt-2 w-full sm:w-auto">
+                      <button
+                        onClick={() => {
+                          setTargetRedirect("dashboard");
+                          setFlow("booting");
+                        }}
+                        className="btn-primary py-3.5 px-8 text-xs font-bold shadow-lg shadow-emerald-500/25 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto cursor-pointer"
+                      >
+                        Launch Mission Control
+                      </button>
+                      <button
+                        onClick={() => {
+                          setTargetRedirect("map");
+                          setFlow("booting");
+                        }}
+                        className="bg-white/5 hover:bg-white/10 border border-white/10 text-white py-3.5 px-8 text-xs font-semibold rounded-xl hover:scale-105 active:scale-95 transition-all w-full sm:w-auto cursor-pointer"
+                      >
+                        View Live Environmental Map
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Hero Right: Rotating Earth Visuals */}
+                  <div className="lg:col-span-6 flex justify-center items-center relative w-full h-[400px]">
+                    {/* Outer Glow */}
+                    <div className="absolute w-72 h-72 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" />
+
+                    {/* Orbital Rings */}
+                    <div className="absolute w-[360px] h-[360px] rounded-full border border-slate-800 animate-spin" style={{ animationDuration: '40s' }} />
+                    <div className="absolute w-[300px] h-[300px] rounded-full border border-dashed border-emerald-500/10 animate-spin" style={{ animationDuration: '20s', animationDirection: 'reverse' }} />
+                    <div className="absolute w-[240px] h-[240px] rounded-full border border-cyan-500/10 animate-spin" style={{ animationDuration: '12s' }} />
+
+                    {/* Globe Sphere */}
+                    <div className="absolute w-48 h-48 rounded-full bg-[#0d1d33] border border-white/10 shadow-2xl flex items-center justify-center overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/25 via-cyan-500/10 to-transparent z-10" />
+                      <div className="absolute inset-[3px] rounded-full bg-[#070e17] flex items-center justify-center">
+                        <Wind className="w-12 h-12 text-emerald-500/15 animate-pulse" />
+                      </div>
+                      <div className="absolute w-40 h-[1px] bg-white/5 rotate-12" />
+                      <div className="absolute w-40 h-[1px] bg-white/5 -rotate-45" />
+                      <div className="absolute w-[1px] h-40 bg-white/5" />
+                    </div>
+
+                    {/* Floating Metric Tags */}
+                    <div className="absolute top-[8%] -left-6 bg-slate-900/90 border border-white/10 rounded-2xl p-4 shadow-xl flex items-center gap-3 animate-bounce" style={{ animationDuration: "5s" }}>
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/25 flex items-center justify-center text-emerald-400">
+                        <Activity className="w-4.5 h-4.5" />
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-500 block">IT Corridor AQI</span>
+                        <span className="text-xs font-black text-white">{selectedWard.aqi} - {getAQIBadge(selectedWard.aqi)}</span>
+                      </div>
+                    </div>
+
+                    <div className="absolute bottom-[8%] -right-6 bg-slate-900/90 border border-white/10 rounded-2xl p-4 shadow-xl flex items-center gap-3 animate-bounce" style={{ animationDuration: "6s", animationDelay: "1.2s" }}>
+                      <div className="w-8 h-8 rounded-lg bg-cyan-500/25 flex items-center justify-center text-cyan-400">
+                        <Sun className="w-4.5 h-4.5" />
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase font-bold text-slate-500 block">Weather Pattern</span>
+                        <span className="text-xs font-black text-white">{formatTemp(selectedWard.temperature)} · {weatherLabel}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scroll Indicator */}
+                <div className="absolute bottom-6 flex flex-col items-center gap-1.5 opacity-60">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-slate-400">Scroll to Explore</span>
+                  <div className="w-1 h-3.5 bg-slate-600 rounded-full relative overflow-hidden">
+                    <div className="w-full h-1/2 bg-primary rounded-full absolute top-0 animate-bounce" />
+                  </div>
+                </div>
+              </section>
+
+              {/* Section 1: Monitor */}
+              <section className="py-24 border-t border-slate-900 bg-slate-950/40 relative">
+                <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                  <div className="lg:col-span-5 flex flex-col gap-5 text-left">
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">01 / Real-time sensing</span>
+                    <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                      Monitor Urban Air Loads Instantly.
+                    </h2>
+                    <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                      Continuous sensor updates compile particulate levels, humidity indices, and meteorological telemetry. Our localized spatial grid traces details down to the sector centroid.
+                    </p>
+                    <div className="flex flex-col gap-2 mt-2">
+                      {[
+                        "Live multi-station geofenced mapping feed.",
+                        "Attribution of particulate counts to traffic and construction zones.",
+                        "Immediate threshold alert warnings."
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex gap-2 text-xs text-slate-300 font-semibold items-center">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                          <span>{item}</span>
                         </div>
-                        <div className="text-right">
-                          <span className="text-sm font-extrabold text-primary block">{item.val}</span>
-                          <span className="text-[9px] text-slate-500 block mt-0.5">Confidence: {item.conf}</span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Graphic container */}
+                  <div className="lg:col-span-7 bg-[#0b101d] border border-slate-900 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-2xl">
+                    <div className="flex justify-between items-center border-b border-slate-900 pb-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-ping" />
+                        <span className="text-xs font-extrabold text-white">Live Hyd Corridor Nodes</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-500">6 Sensors Online</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {MOCK_WARDS.slice(0, 4).map((w) => (
+                        <div key={w.id} className="bg-slate-950/80 border border-slate-900/60 p-4 rounded-2xl flex justify-between items-center">
+                          <div>
+                            <span className="text-xs font-bold text-white block">{w.name}</span>
+                            <span className="text-[10px] text-slate-500 mt-1 block">PM2.5: {w.pm2_5} µg/m³</span>
+                          </div>
+                          <span className={cn(
+                            "text-xs font-black px-2 py-0.5 rounded border",
+                            w.aqi > 150
+                              ? "text-red-400 border-red-500/20 bg-red-500/5"
+                              : w.aqi > 100
+                                ? "text-amber-400 border-amber-500/20 bg-amber-500/5"
+                                : "text-emerald-400 border-emerald-500/20 bg-emerald-500/5"
+                          )}>
+                            {w.aqi} AQI
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Section 2: Predict */}
+              <section className="py-24 border-t border-slate-900 relative">
+                <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                  {/* Graphic container */}
+                  <div className="lg:col-span-7 lg:order-2 flex flex-col gap-6">
+                    <div className="bg-[#0b101d] border border-slate-900 rounded-3xl p-6 sm:p-8 flex flex-col gap-6 shadow-2xl text-left">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 font-mono tracking-wider">AI Forecast Matrix</span>
+                      <div className="flex flex-col gap-4">
+                        {[
+                          { h: "24h Lead Forecast", val: "152 AQI", trend: "Rising load shares", conf: "93%" },
+                          { h: "48h Lead Forecast", val: "160 AQI", trend: "Thermal inversion warning", conf: "93%" },
+                          { h: "72h Lead Forecast", val: "138 AQI", trend: "Wind dispersion relief", conf: "90%" }
+                        ].map((item, idx) => (
+                          <div key={idx} className="bg-slate-950/80 border border-slate-900/60 p-4.5 rounded-2xl flex justify-between items-center">
+                            <div>
+                              <span className="text-xs font-bold text-white block">{item.h}</span>
+                              <span className="text-[10.5px] text-slate-400 block mt-1">{item.trend}</span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-sm font-extrabold text-primary block">{item.val}</span>
+                              <span className="text-[9px] text-slate-500 block mt-0.5">Confidence: {item.conf}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-5 flex flex-col gap-5 text-left lg:order-1">
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">02 / AI Forecasting</span>
+                    <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                      Predict Future Spikes & Cycles.
+                    </h2>
+                    <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                      Leverages custom gradient-boosted decision tree algorithms to map future particulate dispersals. Anticipate localized AQI trends 72 hours before they manifest.
+                    </p>
+                    <div className="flex flex-col gap-2.5 mt-2">
+                      {[
+                        "Hourly forecasts updated with live barometric logs.",
+                        "Atmospheric boundary layer simulation models.",
+                        "Strategic traffic load shift projections."
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex gap-2 text-xs text-slate-300 font-semibold items-center">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Section 3: Analyze */}
+              <section className="py-24 border-t border-slate-900 bg-slate-950/40 relative">
+                <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                  <div className="lg:col-span-5 flex flex-col gap-5 text-left">
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">03 / Causal Attribution</span>
+                    <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                      Isolate Environmental Drivers.
+                    </h2>
+                    <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
+                      Explainability engines evaluate particulate contributions from diesel traffic commute, real estate dust, and industrial emissions. Compare spatial grids across temporal ranges.
+                    </p>
+                    <div className="flex flex-col gap-2 mt-2">
+                      {[
+                        "Explainable causality models (SHAP values integration).",
+                        "Historical comparative trend lines.",
+                        "Geospatial cluster hotspot indicators."
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex gap-2 text-xs text-slate-300 font-semibold items-center">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recharts AreaChart Card */}
+                  <div className="lg:col-span-7 bg-[#0b101d] border border-slate-900 rounded-3xl p-6 shadow-2xl flex flex-col gap-6">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[10px] uppercase font-bold text-slate-500 font-mono">Weekly Historical AQI Comparison</span>
+                      <span className="text-[9px] text-emerald-400 bg-emerald-500/5 border border-emerald-500/20 px-2 py-0.5 rounded">Active Ward Baseline</span>
+                    </div>
+                    <div className="h-48 w-full text-xs font-mono">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={[
+                          { name: "Mon", aqi: 120, baseline: 110 },
+                          { name: "Tue", aqi: 145, baseline: 115 },
+                          { name: "Wed", aqi: 182, baseline: 130 },
+                          { name: "Thu", aqi: 198, baseline: 140 },
+                          { name: "Fri", aqi: 168, baseline: 125 },
+                          { name: "Sat", aqi: 125, baseline: 110 },
+                          { name: "Sun", aqi: 110, baseline: 105 }
+                        ]}>
+                          <defs>
+                            <linearGradient id="landingAqi" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3} />
+                              <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
+                          <XAxis dataKey="name" stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
+                          <YAxis stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
+                          <Area type="monotone" dataKey="aqi" stroke="var(--primary)" strokeWidth={2} fillOpacity={1} fill="url(#landingAqi)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Section 4: Act */}
+              <section className="py-24 border-t border-slate-900 relative">
+                <div className="max-w-7xl mx-auto px-6 flex flex-col items-center gap-12 text-center">
+                  <div className="max-w-2xl flex flex-col gap-4">
+                    <span className="text-xs font-bold uppercase tracking-widest text-primary">04 / Decision Support</span>
+                    <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+                      Proactive Policy Sandboxing.
+                    </h2>
+                    <p className="text-slate-400 text-xs sm:text-sm">
+                      PranaAI links predictive metrics directly to administrative advisories. Simulate policy enforcement runs and generate executive audits immediately.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left">
+                    {[
+                      { title: "Restrict Heavy Vehicles", desc: "Divert commercial diesel transport from junctions during office commute traffic spikes.", impact: "-22 AQI Points", priority: "High" },
+                      { title: "Water Sprinkling", desc: "Deploy sprinkler trucks across high-rise construction zones to restrict particulate dust.", impact: "-18 AQI Points", priority: "High" },
+                      { title: "Increase Electric Transit", desc: "Boost state electric bus runs near IT clusters to cut private commute volume.", impact: "-12 AQI Points", priority: "Medium" }
+                    ].map((act, idx) => (
+                      <div key={idx} className="bg-[#0b101d] border border-slate-900 rounded-2xl p-6 flex flex-col gap-4 shadow-xl">
+                        <div className="flex justify-between items-center">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Action Plan</span>
+                          <span className="text-[9px] uppercase font-extrabold text-primary px-2 py-0.5 rounded bg-primary/5 border border-primary/20">{act.priority}</span>
+                        </div>
+                        <div>
+                          <h4 className="font-extrabold text-sm text-white">{act.title}</h4>
+                          <p className="text-xs text-slate-400 mt-2 leading-relaxed">{act.desc}</p>
+                        </div>
+                        <div className="border-t border-slate-900 pt-4 mt-auto">
+                          <span className="text-[10px] text-slate-500 block">Est. Impact Rating</span>
+                          <span className="text-xs font-black text-emerald-400 mt-1 block">{act.impact}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <div className="lg:col-span-5 flex flex-col gap-5 text-left lg:order-1">
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">02 / AI Forecasting</span>
-                <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  Predict Future Spikes & Cycles.
-                </h2>
-                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
-                  Leverages custom gradient-boosted decision tree algorithms to map future particulate dispersals. Anticipate localized AQI trends 72 hours before they manifest.
-                </p>
-                <div className="flex flex-col gap-2.5 mt-2">
-                  {[
-                    "Hourly forecasts updated with live barometric logs.",
-                    "Atmospheric boundary layer simulation models.",
-                    "Strategic traffic load shift projections."
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex gap-2 text-xs text-slate-300 font-semibold items-center">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
+              {/* Final CTA */}
+              <section className="py-28 border-t border-slate-900 bg-gradient-to-t from-slate-950 to-transparent relative overflow-hidden">
+                {/* Background Light */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
 
-          {/* Section 3: Analyze */}
-          <section className="py-24 border-t border-slate-900 bg-slate-950/40 relative">
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-              <div className="lg:col-span-5 flex flex-col gap-5 text-left">
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">03 / Causal Attribution</span>
-                <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  Isolate Environmental Drivers.
-                </h2>
-                <p className="text-slate-400 text-xs sm:text-sm leading-relaxed">
-                  Explainability engines evaluate particulate contributions from diesel traffic commute, real estate dust, and industrial emissions. Compare spatial grids across temporal ranges.
-                </p>
-                <div className="flex flex-col gap-2 mt-2">
-                  {[
-                    "Explainable causality models (SHAP values integration).",
-                    "Historical comparative trend lines.",
-                    "Geospatial cluster hotspot indicators."
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex gap-2 text-xs text-slate-300 font-semibold items-center">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recharts AreaChart Card */}
-              <div className="lg:col-span-7 bg-[#0b101d] border border-slate-900 rounded-3xl p-6 shadow-2xl flex flex-col gap-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 font-mono">Weekly Historical AQI Comparison</span>
-                  <span className="text-[9px] text-emerald-400 bg-emerald-500/5 border border-emerald-500/20 px-2 py-0.5 rounded">Active Ward Baseline</span>
-                </div>
-                <div className="h-48 w-full text-xs font-mono">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={[
-                      { name: "Mon", aqi: 120, baseline: 110 },
-                      { name: "Tue", aqi: 145, baseline: 115 },
-                      { name: "Wed", aqi: 182, baseline: 130 },
-                      { name: "Thu", aqi: 198, baseline: 140 },
-                      { name: "Fri", aqi: 168, baseline: 125 },
-                      { name: "Sat", aqi: 125, baseline: 110 },
-                      { name: "Sun", aqi: 110, baseline: 105 }
-                    ]}>
-                      <defs>
-                        <linearGradient id="landingAqi" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                      <XAxis dataKey="name" stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
-                      <YAxis stroke="#6b7280" fontSize={10} axisLine={false} tickLine={false} />
-                      <Area type="monotone" dataKey="aqi" stroke="var(--primary)" strokeWidth={2} fillOpacity={1} fill="url(#landingAqi)" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Section 4: Act */}
-          <section className="py-24 border-t border-slate-900 relative">
-            <div className="max-w-7xl mx-auto px-6 flex flex-col items-center gap-12 text-center">
-              <div className="max-w-2xl flex flex-col gap-4">
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">04 / Decision Support</span>
-                <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  Proactive Policy Sandboxing.
-                </h2>
-                <p className="text-slate-400 text-xs sm:text-sm">
-                  PranaAI links predictive metrics directly to administrative advisories. Simulate policy enforcement runs and generate executive audits immediately.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full text-left">
-                {[
-                  { title: "Restrict Heavy Vehicles", desc: "Divert commercial diesel transport from junctions during office commute traffic spikes.", impact: "-22 AQI Points", priority: "High" },
-                  { title: "Water Sprinkling", desc: "Deploy sprinkler trucks across high-rise construction zones to restrict particulate dust.", impact: "-18 AQI Points", priority: "High" },
-                  { title: "Increase Electric Transit", desc: "Boost state electric bus runs near IT clusters to cut private commute volume.", impact: "-12 AQI Points", priority: "Medium" }
-                ].map((act, idx) => (
-                  <div key={idx} className="bg-[#0b101d] border border-slate-900 rounded-2xl p-6 flex flex-col gap-4 shadow-xl">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Action Plan</span>
-                      <span className="text-[9px] uppercase font-extrabold text-primary px-2 py-0.5 rounded bg-primary/5 border border-primary/20">{act.priority}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-extrabold text-sm text-white">{act.title}</h4>
-                      <p className="text-xs text-slate-400 mt-2 leading-relaxed">{act.desc}</p>
-                    </div>
-                    <div className="border-t border-slate-900 pt-4 mt-auto">
-                      <span className="text-[10px] text-slate-500 block">Est. Impact Rating</span>
-                      <span className="text-xs font-black text-emerald-400 mt-1 block">{act.impact}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          {/* Final CTA */}
-          <section className="py-28 border-t border-slate-900 bg-gradient-to-t from-slate-950 to-transparent relative overflow-hidden">
-            {/* Background Light */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/10 blur-[120px] pointer-events-none" />
-            
-            <div className="max-w-3xl mx-auto px-6 text-center flex flex-col gap-8 items-center relative z-10">
-              <h2 className="text-3xl sm:text-5xl font-black text-white leading-tight">
-                Ready to explore your city's environmental intelligence?
-              </h2>
-              <p className="text-slate-400 text-xs sm:text-sm max-w-lg leading-relaxed">
-                Unlock the entire suite of predictive analytics, real-time spatial sensors, historical briefs, and AI advisory copilot. No authentication required.
-              </p>
-              <button 
-                onClick={() => {
-                  setTargetRedirect("dashboard");
-                  setFlow("booting");
-                }}
-                className="btn-primary py-4 px-10 text-sm font-bold shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-              >
-                Launch Mission Control Corridor
-              </button>
-            </div>
-          </section>
-
-          {/* Footer */}
-          <footer className="w-full border-t border-slate-900 py-6 bg-slate-950/80 backdrop-blur-md relative z-10 text-xs text-slate-500">
-            <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-              <span>&copy; 2026 PranaAI. Predict. Explain. Act.</span>
-              <div className="flex gap-4">
-                <span>Active Nodes: 6 Wards</span>
-                <span>Centroid: {selectedRegion.focus}</span>
-              </div>
-            </div>
-          </footer>
-
-        </div>
-      )}
-
-
-
-      {/* 3. OS BOOT SEQUENCE SCREEN */}
-      {flow === "booting" && (
-        <BootLayout
-          progress={bootingProgress}
-          completedSteps={bootingStepLogs}
-          activeStep={bootingActiveStep}
-        />
-      )}
-
-      {/* 4. MISSION CONTROL OPERATIONAL CANVAS */}
-      {flow === "dashboard" && (
-        <div className={cn(
-          "min-h-screen flex bg-transparent transition-colors duration-500 relative prana-shell overflow-hidden",
-          selectedWard.aqi <= 50 ? "bg-weather-good" : selectedWard.aqi <= 100 ? "bg-weather-moderate" : selectedWard.aqi <= 170 ? "bg-weather-poor" : "bg-weather-severe",
-          weatherShellClass
-        )}>
-          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-            <div className={cn(
-              "absolute top-[-10%] left-[10%] h-[26rem] w-[26rem] rounded-full blur-[140px] animate-pulse",
-              selectedWard.aqi <= 50 ? "bg-emerald-400/14" : selectedWard.aqi <= 100 ? "bg-sky-400/14" : selectedWard.aqi <= 170 ? "bg-amber-400/14" : "bg-rose-400/18"
-            )} style={{ animationDuration: "13s" }} />
-            <div className={cn(
-              "absolute bottom-[-14%] right-[8%] h-[34rem] w-[34rem] rounded-full blur-[160px] animate-pulse",
-              selectedWard.aqi <= 50 ? "bg-cyan-300/10" : selectedWard.aqi <= 100 ? "bg-sky-500/10" : selectedWard.aqi <= 170 ? "bg-orange-400/12" : "bg-red-500/14"
-            )} style={{ animationDuration: "17s" }} />
-            <div className="absolute inset-0 bg-grid-pattern opacity-[0.035]" />
-          </div>
-          
-          {/* SIDEBAR NAVIGATION BAR PANEL */}
-          <aside className={cn(
-            "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-border transition-all duration-300 transform",
-            isSidebarCollapsed ? "w-16" : "w-64",
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-          )}>
-            
-            {/* Sidebar Logo */}
-            <div className={cn(
-              "p-4 flex items-center justify-between border-b border-border min-h-[65px]",
-              isSidebarCollapsed && "justify-center px-2"
-            )}>
-              {isSidebarCollapsed ? (
-                <button 
-                  onClick={() => setIsSidebarCollapsed(false)}
-                  className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shrink-0 shadow-theme hover:scale-105 transition-transform cursor-pointer"
-                  title="Expand Sidebar"
-                >
-                  <Activity className="w-4.5 h-4.5 text-white" />
-                </button>
-              ) : (
-                <>
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shrink-0 shadow-theme">
-                      <Activity className="w-4.5 h-4.5 text-white" />
-                    </div>
-                    <span className="font-extrabold text-base text-foreground tracking-tight">
-                      Prana<span className="text-primary font-black">AI</span>
-                    </span>
-                  </div>
-                  <button 
-                    onClick={() => setIsSidebarCollapsed(true)}
-                    className="hidden lg:flex p-1 rounded-lg text-muted hover:bg-muted/10 transition-colors cursor-pointer"
-                    aria-label="Collapse Sidebar"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Sidebar Navigation Items */}
-            <nav className="flex-grow p-3 flex flex-col gap-1 overflow-y-auto">
-              {[
-                { id: "dashboard", label: t("dashboard"), icon: Activity },
-                { id: "map", label: t("map"), icon: MapIcon },
-                { id: "prediction", label: t("prediction"), icon: TrendingUp },
-                { id: "reports", label: t("reports"), icon: FileText },
-                { id: "copilot", label: t("copilot"), icon: MessageSquare },
-                { id: "settings", label: t("settings"), icon: Settings },
-                { id: "About", label: t("About"), icon: Info }
-              ].map((tab) => {
-                const isActive = activePage === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabClick(tab.id)}
-                    className={cn(
-                      "flex items-center gap-3 p-2.5 rounded-xl text-xs font-semibold transition-all w-full text-left cursor-pointer",
-                      isSidebarCollapsed ? "justify-center px-0" : "px-2.5",
-                      isActive 
-                        ? "bg-primary/10 text-primary font-bold" 
-                        : "text-muted hover:text-foreground hover:bg-muted/10"
-                    )}
-                    title={isSidebarCollapsed ? tab.label : undefined}
-                  >
-                    <tab.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : "text-muted")} />
-                    {!isSidebarCollapsed && <span>{tab.label}</span>}
-                  </button>
-                );
-              })}
-            </nav>
-
-            {!isSidebarCollapsed && (
-              <div className="p-3 border-t border-border flex flex-col gap-2">
-                <div className="p-3 bg-muted/5 rounded-xl text-[10px] text-muted font-medium border border-border/40">
-                  Centroid Node: <strong>{selectedCity}</strong>
-                </div>
-              </div>
-            )}
-          </aside>
-
-          {/* Mobile sidebar overlay backdrop */}
-          {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
-          )}
-
-          {/* MAIN PAGE CONTAINER WRAPPER */}
-          <div className={cn(
-            "flex-1 flex flex-col min-h-screen transition-all duration-300",
-            isSidebarCollapsed ? "lg:pl-16" : "lg:pl-64"
-          )}>
-            
-            {/* STICKY TOP NAVIGATION HEADER */}
-            <header className="sticky top-0 z-40 border-b border-border bg-navbar/80 backdrop-blur-md min-h-[65px] flex items-center">
-              <div className="w-full px-4 sm:px-6 flex items-center justify-between gap-3 flex-nowrap overflow-visible">
-
-                <div className="flex items-center gap-3 min-w-0 flex-nowrap overflow-hidden">
-                  <button 
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="p-1.5 rounded-lg text-muted hover:bg-muted/10 lg:hidden cursor-pointer shrink-0"
-                    aria-label="Toggle Mobile Menu"
-                  >
-                    <Menu className="w-5 h-5" />
-                  </button>
-
-                  <div className="flex items-center gap-2 min-w-0 whitespace-nowrap overflow-hidden">
-                    <div className="hidden md:flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-muted shrink-0">
-                      <span>Operational Area</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs font-black text-foreground min-w-0 truncate">
-                      <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span className="truncate">{selectedWard.name}, {selectedRegion.state}</span>
-                    </div>
-                    <span className="hidden md:inline-flex h-4 w-px bg-border/80" />
-                    <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-muted whitespace-nowrap">
-                      <Sun className="w-3.5 h-3.5 text-warning shrink-0" />
-                      <span>{formatTemp(selectedWard.temperature)} {weatherLabel}</span>
-                    </div>
-                    <span className="hidden lg:inline-flex h-4 w-px bg-border/80" />
-                    <div className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-muted whitespace-nowrap">
-                      <Clock className="w-3.5 h-3.5 text-muted shrink-0" />
-                      <span>{currentTimeStr}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 sm:gap-3 flex-grow md:flex-grow-0 justify-end shrink-0">
-                  
-                  {/* AUTOCOMPLETE LOCATION SEARCH INPUT */}
-                  <div className="relative w-40 sm:w-52 lg:w-60 shrink-0">
-                    <div className="relative">
-                      <Search className="w-4 h-4 text-muted absolute left-3 top-2.5" />
-                      <input 
-                        type="text" 
-                        placeholder="Search Focus Ward..."
-                        value={searchQuery}
-                        onChange={(e) => {
-                          setSearchQuery(e.target.value);
-                          setShowSuggestions(true);
-                        }}
-                        onFocus={() => setShowSuggestions(true)}
-                        className="w-full bg-muted/5 border border-border rounded-xl py-2 pl-9 pr-4 text-xs text-foreground focus:outline-none focus:border-primary"
-                      />
-                    </div>
-
-                    {/* Autocomplete suggestions dropdown panel */}
-                    {showSuggestions && searchQuery.trim() && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowSuggestions(false)}></div>
-                        <div className="absolute left-0 top-10 w-full bg-card border border-border rounded-xl shadow-theme p-1.5 z-50 flex flex-col gap-1 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
-                          {filteredSuggestions.length > 0 ? (
-                            filteredSuggestions.map((w) => (
-                              <button
-                                key={w.id}
-                                onClick={() => {
-                                  handleWardSelect(w);
-                                  setSearchQuery("");
-                                  setShowSuggestions(false);
-                                }}
-                                className="px-3 py-2 text-xs font-semibold rounded-lg hover:bg-muted/10 text-left text-foreground transition-colors w-full cursor-pointer flex justify-between items-center"
-                              >
-                                <span>{w.name}</span>
-                                <span className="text-[10px] text-primary">AQI {w.aqi}</span>
-                              </button>
-                            ))
-                          ) : (
-                            <span className="px-3 py-2 text-xs text-muted block italic">No matching wards found</span>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="p-2 rounded-xl border border-border bg-card hover:bg-muted/10 transition-all text-muted cursor-pointer shrink-0"
-                    aria-label="Toggle Theme"
-                  >
-                    {theme === "dark" ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4 text-slate-400" />}
-                  </button>
-
-                  {/* Globe Regional Language Selector */}
-                  <div className="relative shrink-0">
-                    <button
-                      onClick={() => setShowLangDropdown(!showLangDropdown)}
-                      className="flex items-center gap-1.5 p-2 rounded-xl border border-border bg-card hover:bg-muted/10 transition-all text-muted hover:text-foreground cursor-pointer text-xs font-bold"
-                      aria-label="Language Selector"
-                    >
-                      <Globe className="w-4 h-4" />
-                      <span className="hidden sm:inline">
-                        {SUPPORTED_LANGUAGES.find(l => l.code === language)?.nativeName}
-                      </span>
-                    </button>
-
-                    {showLangDropdown && (
-                      <>
-                        <div className="fixed inset-0 z-40" onClick={() => setShowLangDropdown(false)}></div>
-                        <div className="absolute right-0 top-11 w-40 bg-card border border-border rounded-xl shadow-theme p-1.5 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-top-1 duration-150">
-                          {SUPPORTED_LANGUAGES.map((l) => (
-                            <button
-                              key={l.code}
-                              onClick={() => {
-                                handleLanguageChange(l.code);
-                                setShowLangDropdown(false);
-                              }}
-                              className={cn(
-                                "px-3 py-2 text-xs font-semibold rounded-lg hover:bg-muted/10 text-left transition-colors w-full cursor-pointer flex justify-between items-center",
-                                language === l.code ? "text-primary bg-primary/5 font-extrabold" : "text-foreground"
-                              )}
-                            >
-                              <span>{l.nativeName}</span>
-                              <span className="text-[9px] uppercase tracking-wide text-muted">{l.code}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-
+                <div className="max-w-3xl mx-auto px-6 text-center flex flex-col gap-8 items-center relative z-10">
+                  <h2 className="text-3xl sm:text-5xl font-black text-white leading-tight">
+                    Ready to explore your city's environmental intelligence?
+                  </h2>
+                  <p className="text-slate-400 text-xs sm:text-sm max-w-lg leading-relaxed">
+                    Unlock the entire suite of predictive analytics, real-time spatial sensors, historical briefs, and AI advisory copilot. No authentication required.
+                  </p>
                   <button
                     onClick={() => {
-                      if (!checkActionPermission("Accessing user notifications drawer")) return;
-                      setShowNotifications(true);
+                      setTargetRedirect("dashboard");
+                      setFlow("booting");
                     }}
-                    className="p-2 rounded-xl border border-border bg-card hover:bg-muted/10 transition-all text-muted relative cursor-pointer"
+                    className="btn-primary py-4 px-10 text-sm font-bold shadow-xl shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
                   >
-                    <Bell className="w-4 h-4 text-muted" />
-                    {notifications.some(n => n.unread) && (
-                      <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-danger rounded-full animate-ping"></span>
-                    )}
+                    Launch Mission Control Corridor
                   </button>
-
                 </div>
+              </section>
 
+              {/* Footer */}
+              <footer className="w-full border-t border-slate-900 py-6 bg-slate-950/80 backdrop-blur-md relative z-10 text-xs text-slate-500">
+                <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+                  <span>&copy; 2026 PranaAI. Predict. Explain. Act.</span>
+                  <div className="flex gap-4">
+                    <span>Active Nodes: 6 Wards</span>
+                    <span>Centroid: {selectedRegion.focus}</span>
+                  </div>
+                </div>
+              </footer>
+
+            </div>
+          )}
+
+
+
+          {/* 3. OS BOOT SEQUENCE SCREEN */}
+          {flow === "booting" && (
+            <BootLayout
+              progress={bootingProgress}
+              completedSteps={bootingStepLogs}
+              activeStep={bootingActiveStep}
+            />
+          )}
+
+          {/* 4. MISSION CONTROL OPERATIONAL CANVAS */}
+          {flow === "dashboard" && (
+            <div className={cn(
+              "min-h-screen flex bg-transparent transition-colors duration-500 relative prana-shell overflow-hidden",
+              selectedWard.aqi <= 50 ? "bg-weather-good" : selectedWard.aqi <= 100 ? "bg-weather-moderate" : selectedWard.aqi <= 170 ? "bg-weather-poor" : "bg-weather-severe",
+              weatherShellClass
+            )}>
+              <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                <div className={cn(
+                  "absolute top-[-10%] left-[10%] h-[26rem] w-[26rem] rounded-full blur-[140px] animate-pulse",
+                  selectedWard.aqi <= 50 ? "bg-emerald-400/14" : selectedWard.aqi <= 100 ? "bg-sky-400/14" : selectedWard.aqi <= 170 ? "bg-amber-400/14" : "bg-rose-400/18"
+                )} style={{ animationDuration: "13s" }} />
+                <div className={cn(
+                  "absolute bottom-[-14%] right-[8%] h-[34rem] w-[34rem] rounded-full blur-[160px] animate-pulse",
+                  selectedWard.aqi <= 50 ? "bg-cyan-300/10" : selectedWard.aqi <= 100 ? "bg-sky-500/10" : selectedWard.aqi <= 170 ? "bg-orange-400/12" : "bg-red-500/14"
+                )} style={{ animationDuration: "17s" }} />
+                <div className="absolute inset-0 bg-grid-pattern opacity-[0.035]" />
               </div>
-            </header>
 
-            {/* ACTIVE OPERATIONAL AREA */}
-            <main className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8 flex-grow">
-              
-              {loading && (
-                <div className="flex justify-center items-center py-2 gap-2 text-primary">
-                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span className="text-xs font-semibold font-mono">Running Agent Operations...</span>
-                </div>
-              )}
+              {/* SIDEBAR NAVIGATION BAR PANEL */}
+              <aside className={cn(
+                "fixed inset-y-0 left-0 z-50 flex flex-col bg-sidebar border-r border-border transition-all duration-300 transform",
+                isSidebarCollapsed ? "w-16" : "w-64",
+                isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+              )}>
 
-              {/* A. MISSION CONTROL OPERATIONAL HUBS PAGE */}
-              {activePage === "dashboard" && (
-                <div className="flex flex-col gap-8">
-                  
-                  {/* Smart City Language Detection suggestion toast */}
-                  {langSuggestion && (
-                    <div className="bg-primary/10 border border-primary p-4 rounded-2xl flex justify-between items-center text-xs animate-in slide-in-from-top-2 fade-in duration-200">
-                      <div className="flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-primary shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
-                        <span className="font-semibold text-foreground">
-                          We noticed you selected {langSuggestion.city}. Would you like to switch the system workspace to{" "}
-                          <span className="font-bold text-primary font-sans">
-                            {SUPPORTED_LANGUAGES.find(l => l.code === langSuggestion.langCode)?.nativeName}
-                          </span>
-                          ?
+                {/* Sidebar Logo */}
+                <div className={cn(
+                  "p-4 flex items-center justify-between border-b border-border min-h-[65px]",
+                  isSidebarCollapsed && "justify-center px-2"
+                )}>
+                  {isSidebarCollapsed ? (
+                    <button
+                      onClick={() => setIsSidebarCollapsed(false)}
+                      className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shrink-0 shadow-theme hover:scale-105 transition-transform cursor-pointer"
+                      title="Expand Sidebar"
+                    >
+                      <Activity className="w-4.5 h-4.5 text-white" />
+                    </button>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shrink-0 shadow-theme">
+                          <Activity className="w-4.5 h-4.5 text-white" />
+                        </div>
+                        <span className="font-extrabold text-base text-foreground tracking-tight">
+                          Prana<span className="text-primary font-black">AI</span>
                         </span>
                       </div>
-                      <div className="flex gap-2 shrink-0">
-                        <button
-                          onClick={() => {
-                            handleLanguageChange(langSuggestion.langCode);
-                            setLangSuggestion(null);
-                          }}
-                          className="px-3.5 py-1.5 bg-primary text-white font-extrabold rounded-xl hover:bg-primary/95 transition-all text-[11px] cursor-pointer"
-                        >
-                          Switch Language
-                        </button>
-                        <button
-                          onClick={() => setLangSuggestion(null)}
-                          className="px-3.5 py-1.5 bg-card border border-border text-muted font-bold rounded-xl hover:bg-muted/10 transition-all text-[11px] cursor-pointer"
-                        >
-                          Dismiss
-                        </button>
+                      <button
+                        onClick={() => setIsSidebarCollapsed(true)}
+                        className="hidden lg:flex p-1 rounded-lg text-muted hover:bg-muted/10 transition-colors cursor-pointer"
+                        aria-label="Collapse Sidebar"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Sidebar Navigation Items */}
+                <nav className="flex-grow p-3 flex flex-col gap-1 overflow-y-auto">
+                  {[
+                    { id: "dashboard", label: t("dashboard"), icon: Activity },
+                    { id: "map", label: t("map"), icon: MapIcon },
+                    { id: "prediction", label: t("prediction"), icon: TrendingUp },
+                    { id: "reports", label: t("reports"), icon: FileText },
+                    { id: "copilot", label: t("copilot"), icon: MessageSquare },
+                    { id: "settings", label: t("settings"), icon: Settings },
+                    { id: "About", label: t("About"), icon: Info }
+                  ].map((tab) => {
+                    const isActive = activePage === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => handleTabClick(tab.id)}
+                        className={cn(
+                          "flex items-center gap-3 p-2.5 rounded-xl text-xs font-semibold transition-all w-full text-left cursor-pointer",
+                          isSidebarCollapsed ? "justify-center px-0" : "px-2.5",
+                          isActive
+                            ? "bg-primary/10 text-primary font-bold"
+                            : "text-muted hover:text-foreground hover:bg-muted/10"
+                        )}
+                        title={isSidebarCollapsed ? tab.label : undefined}
+                      >
+                        <tab.icon className={cn("w-4 h-4 shrink-0", isActive ? "text-primary" : "text-muted")} />
+                        {!isSidebarCollapsed && <span>{tab.label}</span>}
+                      </button>
+                    );
+                  })}
+                </nav>
+
+                {!isSidebarCollapsed && (
+                  <div className="p-3 border-t border-border flex flex-col gap-2">
+                    <div className="p-3 bg-muted/5 rounded-xl text-[10px] text-muted font-medium border border-border/40">
+                      Centroid Node: <strong>{selectedCity}</strong>
+                    </div>
+                  </div>
+                )}
+              </aside>
+
+              {/* Mobile sidebar overlay backdrop */}
+              {isMobileMenuOpen && (
+                <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden" onClick={() => setIsMobileMenuOpen(false)}></div>
+              )}
+
+              {/* MAIN PAGE CONTAINER WRAPPER */}
+              <div className={cn(
+                "flex-1 flex flex-col min-h-screen transition-all duration-300",
+                isSidebarCollapsed ? "lg:pl-16" : "lg:pl-64"
+              )}>
+
+                {/* STICKY TOP NAVIGATION HEADER */}
+                <header className="sticky top-0 z-40 border-b border-border bg-navbar/80 backdrop-blur-md min-h-[65px] flex items-center">
+                  <div className="w-full px-4 sm:px-6 flex items-center justify-between gap-3 flex-nowrap overflow-visible">
+
+                    <div className="flex items-center gap-3 min-w-0 flex-nowrap overflow-hidden">
+                      <button
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="p-1.5 rounded-lg text-muted hover:bg-muted/10 lg:hidden cursor-pointer shrink-0"
+                        aria-label="Toggle Mobile Menu"
+                      >
+                        <Menu className="w-5 h-5" />
+                      </button>
+
+                      <div className="flex items-center gap-2 min-w-0 whitespace-nowrap overflow-hidden">
+                        <div className="hidden md:flex items-center gap-1.5 text-[10px] uppercase font-bold tracking-widest text-muted shrink-0">
+                          <span>Operational Area</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs font-black text-foreground min-w-0 truncate">
+                          <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                          <span className="truncate">{selectedWard.name}, {selectedRegion.state}</span>
+                        </div>
+                        <span className="hidden md:inline-flex h-4 w-px bg-border/80" />
+                        <div className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-muted whitespace-nowrap">
+                          <Sun className="w-3.5 h-3.5 text-warning shrink-0" />
+                          <span>{formatTemp(selectedWard.temperature)} {weatherLabel}</span>
+                        </div>
+                        <span className="hidden lg:inline-flex h-4 w-px bg-border/80" />
+                        <div className="hidden lg:flex items-center gap-1.5 text-xs font-semibold text-muted whitespace-nowrap">
+                          <Clock className="w-3.5 h-3.5 text-muted shrink-0" />
+                          <span>{currentTimeStr}</span>
+                        </div>
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:gap-3 flex-grow md:flex-grow-0 justify-end shrink-0">
+
+                      {/* AUTOCOMPLETE LOCATION SEARCH INPUT */}
+                      <div className="relative w-40 sm:w-52 lg:w-60 shrink-0">
+                        <div className="relative">
+                          <Search className="w-4 h-4 text-muted absolute left-3 top-2.5" />
+                          <input
+                            type="text"
+                            placeholder="Search Focus Ward..."
+                            value={searchQuery}
+                            onChange={(e) => {
+                              setSearchQuery(e.target.value);
+                              setShowSuggestions(true);
+                            }}
+                            onFocus={() => setShowSuggestions(true)}
+                            className="w-full bg-muted/5 border border-border rounded-xl py-2 pl-9 pr-4 text-xs text-foreground focus:outline-none focus:border-primary"
+                          />
+                        </div>
+
+                        {/* Autocomplete suggestions dropdown panel */}
+                        {showSuggestions && searchQuery.trim() && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowSuggestions(false)}></div>
+                            <div className="absolute left-0 top-10 w-full bg-card border border-border rounded-xl shadow-theme p-1.5 z-50 flex flex-col gap-1 max-h-48 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150">
+                              {filteredSuggestions.length > 0 ? (
+                                filteredSuggestions.map((w) => (
+                                  <button
+                                    key={w.id}
+                                    onClick={() => {
+                                      handleWardSelect(w);
+                                      setSearchQuery("");
+                                      setShowSuggestions(false);
+                                    }}
+                                    className="px-3 py-2 text-xs font-semibold rounded-lg hover:bg-muted/10 text-left text-foreground transition-colors w-full cursor-pointer flex justify-between items-center"
+                                  >
+                                    <span>{w.name}</span>
+                                    <span className="text-[10px] text-primary">AQI {w.aqi}</span>
+                                  </button>
+                                ))
+                              ) : (
+                                <span className="px-3 py-2 text-xs text-muted block italic">No matching wards found</span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                        className="p-2 rounded-xl border border-border bg-card hover:bg-muted/10 transition-all text-muted cursor-pointer shrink-0"
+                        aria-label="Toggle Theme"
+                      >
+                        {theme === "dark" ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4 text-slate-400" />}
+                      </button>
+
+                      {/* Globe Regional Language Selector */}
+                      <div className="relative shrink-0">
+                        <button
+                          onClick={() => setShowLangDropdown(!showLangDropdown)}
+                          className="flex items-center gap-1.5 p-2 rounded-xl border border-border bg-card hover:bg-muted/10 transition-all text-muted hover:text-foreground cursor-pointer text-xs font-bold"
+                          aria-label="Language Selector"
+                        >
+                          <Globe className="w-4 h-4" />
+                          <span className="hidden sm:inline">
+                            {SUPPORTED_LANGUAGES.find(l => l.code === language)?.nativeName}
+                          </span>
+                        </button>
+
+                        {showLangDropdown && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setShowLangDropdown(false)}></div>
+                            <div className="absolute right-0 top-11 w-40 bg-card border border-border rounded-xl shadow-theme p-1.5 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-top-1 duration-150">
+                              {SUPPORTED_LANGUAGES.map((l) => (
+                                <button
+                                  key={l.code}
+                                  onClick={() => {
+                                    handleLanguageChange(l.code);
+                                    setShowLangDropdown(false);
+                                  }}
+                                  className={cn(
+                                    "px-3 py-2 text-xs font-semibold rounded-lg hover:bg-muted/10 text-left transition-colors w-full cursor-pointer flex justify-between items-center",
+                                    language === l.code ? "text-primary bg-primary/5 font-extrabold" : "text-foreground"
+                                  )}
+                                >
+                                  <span>{l.nativeName}</span>
+                                  <span className="text-[9px] uppercase tracking-wide text-muted">{l.code}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          if (!checkActionPermission("Accessing user notifications drawer")) return;
+                          setShowNotifications(true);
+                        }}
+                        className="p-2 rounded-xl border border-border bg-card hover:bg-muted/10 transition-all text-muted relative cursor-pointer"
+                      >
+                        <Bell className="w-4 h-4 text-muted" />
+                        {notifications.some(n => n.unread) && (
+                          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-danger rounded-full animate-ping"></span>
+                        )}
+                      </button>
+
+                    </div>
+
+                  </div>
+                </header>
+
+                {/* ACTIVE OPERATIONAL AREA */}
+                <main className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8 flex-grow">
+
+                  {loading && (
+                    <div className="flex justify-center items-center py-2 gap-2 text-primary">
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span className="text-xs font-semibold font-mono">Running Agent Operations...</span>
                     </div>
                   )}
 
+                  {/* A. MISSION CONTROL OPERATIONAL HUBS PAGE */}
+                  {activePage === "dashboard" && (
+                    <div className="flex flex-col gap-8">
 
-                  <div className="glass-card p-5 flex flex-col gap-4">
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div>
-                        <h4 className="text-sm font-black text-foreground">Metro AQI Beacons</h4>
-                        <p className="text-[10px] text-muted mt-1">Live AQI.in values mapped into a compact four-city row.</p>
-                      </div>
-                      <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted">
-                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-secondary"></span> Blue</span>
-                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-warning"></span> Yellow</span>
-                        <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-danger"></span> Red</span>
-                      </div>
-                    </div>
-
-                    <div className="flex gap-3 overflow-x-auto pb-1">
-                      {cityHotspots.map((city) => (
-                        <button
-                          key={city.name}
-                          onClick={() => handleCitySelect(city.name)}
-                          className={cn(
-                            "text-left p-3.5 rounded-2xl border transition-all cursor-pointer min-w-[14rem] shrink-0",
-                            city.name === selectedCity ? "bg-primary/10 border-primary/30 shadow-theme" : "bg-background/60 border-border hover:bg-muted/10"
-                          )}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div>
-                              <span className="text-xs font-black text-foreground block">{city.name}</span>
-                              <span className="text-[9px] text-muted block mt-0.5">{city.region.state}</span>
-                            </div>
-                            <span className={cn("text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border", city.toneClass)}>
-                              {city.tone}
+                      {/* Smart City Language Detection suggestion toast */}
+                      {langSuggestion && (
+                        <div className="bg-primary/10 border border-primary p-4 rounded-2xl flex justify-between items-center text-xs animate-in slide-in-from-top-2 fade-in duration-200">
+                          <div className="flex items-center gap-2">
+                            <Globe className="w-4 h-4 text-primary shrink-0 animate-spin" style={{ animationDuration: '6s' }} />
+                            <span className="font-semibold text-foreground">
+                              We noticed you selected {langSuggestion.city}. Would you like to switch the system workspace to{" "}
+                              <span className="font-bold text-primary font-sans">
+                                {SUPPORTED_LANGUAGES.find(l => l.code === langSuggestion.langCode)?.nativeName}
+                              </span>
+                              ?
                             </span>
                           </div>
-                          <div className="mt-3 flex items-center justify-between text-[10px] font-semibold text-muted">
-                            <span>Operational focus</span>
-                            <span className="text-foreground">AQI {city.aqi}</span>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => {
+                                handleLanguageChange(langSuggestion.langCode);
+                                setLangSuggestion(null);
+                              }}
+                              className="px-3.5 py-1.5 bg-primary text-white font-extrabold rounded-xl hover:bg-primary/95 transition-all text-[11px] cursor-pointer"
+                            >
+                              Switch Language
+                            </button>
+                            <button
+                              onClick={() => setLangSuggestion(null)}
+                              className="px-3.5 py-1.5 bg-card border border-border text-muted font-bold rounded-xl hover:bg-muted/10 transition-all text-[11px] cursor-pointer"
+                            >
+                              Dismiss
+                            </button>
                           </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+                        </div>
+                      )}
 
-                  {/* Today's AI Daily Briefing */}
-                  {(() => {
-                    const brief = getDynamicDailyBrief();
-                    return (
-                      <DailyBriefCard 
-                        currentSituation={brief.currentSituation}
-                        keyRisks={brief.keyRisks}
-                        forecast={brief.forecast}
-                        recommendedActions={brief.recommendedActions}
-                        expectedImprovement={`-${totalReduction > 0 ? totalReduction : 22} AQI`}
+
+                      <div className="glass-card p-5 flex flex-col gap-4">
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          <div>
+                            <h4 className="text-sm font-black text-foreground">Metro AQI Beacons</h4>
+                            <p className="text-[10px] text-muted mt-1">Live AQI.in values mapped into a compact four-city row.</p>
+                          </div>
+                          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted">
+                            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-secondary"></span> Blue</span>
+                            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-warning"></span> Yellow</span>
+                            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-danger"></span> Red</span>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 overflow-x-auto pb-1">
+                          {cityHotspots.map((city) => (
+                            <button
+                              key={city.name}
+                              onClick={() => handleCitySelect(city.name)}
+                              className={cn(
+                                "text-left p-3.5 rounded-2xl border transition-all cursor-pointer min-w-[14rem] shrink-0",
+                                city.name === selectedCity ? "bg-primary/10 border-primary/30 shadow-theme" : "bg-background/60 border-border hover:bg-muted/10"
+                              )}
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div>
+                                  <span className="text-xs font-black text-foreground block">{city.name}</span>
+                                  <span className="text-[9px] text-muted block mt-0.5">{city.region.state}</span>
+                                </div>
+                                <span className={cn("text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full border", city.toneClass)}>
+                                  {city.tone}
+                                </span>
+                              </div>
+                              <div className="mt-3 flex items-center justify-between text-[10px] font-semibold text-muted">
+                                <span>Operational focus</span>
+                                <span className="text-foreground">AQI {city.aqi}</span>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Today's AI Daily Briefing */}
+                      {(() => {
+                        const brief = getDynamicDailyBrief();
+                        return (
+                          <DailyBriefCard
+                            currentSituation={brief.currentSituation}
+                            keyRisks={brief.keyRisks}
+                            forecast={brief.forecast}
+                            recommendedActions={brief.recommendedActions}
+                            expectedImprovement={`-${totalReduction > 0 ? totalReduction : 22} AQI`}
+                            confidence={93}
+                          />
+                        );
+                      })()}
+
+                      {/* Today's AI Environmental Brief */}
+                      <ExecutiveBriefCard
+                        wardName={selectedWard.name}
+                        cityName={selectedCity}
+                        currentAqi={predictedAqi}
+                        primarySources={[
+                          { source: sourceAttributions[0].source, percentage: sourceAttributions[0].percentage },
+                          { source: sourceAttributions[1].source, percentage: sourceAttributions[1].percentage }
+                        ]}
+                        forecastText={
+                          language === "hi" ? `अगले 24 घंटों में एक्यूआई ${currentForecast[0].predicted_aqi} तक पहुंचने की उम्मीद है। प्राथमिक कारक: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) और ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%) हैं।` :
+                            language === "te" ? `రాబోయే 24 గంటల్లో AQI ${currentForecast[0].predicted_aqi} కి చేరే అవకాశం ఉంది. ప్రధాన కారకాలు: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) మరియు ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).` :
+                              language === "ta" ? `அடுத்த 24 மணிநேரத்தில் AQI ${currentForecast[0].predicted_aqi} ஆக உயரக்கூடும். முக்கிய காரணிகள்: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) மற்றும் ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).` :
+                                language === "kn" ? `ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ AQI ${currentForecast[0].predicted_aqi} ಗೆ ತಲುಪುವ ನಿರೀಕ್ಷೆಯಿದೆ. ಪ್ರಮುಖ ಅಂಶಗಳು: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) ಮತ್ತು ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).` :
+                                  `AQI expected to reach ${currentForecast[0].predicted_aqi} in the next 24 hours. Primary factors: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) and ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).`
+                        }
+                        recommendedActions={actionRecommendations.map(r => r.title)}
+                        expectedImprovement={totalReduction > 0 ? totalReduction : 22}
                         confidence={93}
                       />
-                    );
-                  })()}
 
-                  {/* Today's AI Environmental Brief */}
-                  <ExecutiveBriefCard
-                    wardName={selectedWard.name}
-                    cityName={selectedCity}
-                    currentAqi={predictedAqi}
-                    primarySources={[
-                      { source: sourceAttributions[0].source, percentage: sourceAttributions[0].percentage },
-                      { source: sourceAttributions[1].source, percentage: sourceAttributions[1].percentage }
-                    ]}
-                    forecastText={
-                      language === "hi" ? `अगले 24 घंटों में एक्यूआई ${currentForecast[0].predicted_aqi} तक पहुंचने की उम्मीद है। प्राथमिक कारक: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) और ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%) हैं।` :
-                      language === "te" ? `రాబోయే 24 గంటల్లో AQI ${currentForecast[0].predicted_aqi} కి చేరే అవకాశం ఉంది. ప్రధాన కారకాలు: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) మరియు ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).` :
-                      language === "ta" ? `அடுத்த 24 மணிநேரத்தில் AQI ${currentForecast[0].predicted_aqi} ஆக உயரக்கூடும். முக்கிய காரணிகள்: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) மற்றும் ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).` :
-                      language === "kn" ? `ಮುಂದಿನ 24 ಗಂಟೆಗಳಲ್ಲಿ AQI ${currentForecast[0].predicted_aqi} ಗೆ ತಲುಪುವ ನಿರೀಕ್ಷೆಯಿದೆ. ಪ್ರಮುಖ ಅಂಶಗಳು: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) ಮತ್ತು ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).` :
-                      `AQI expected to reach ${currentForecast[0].predicted_aqi} in the next 24 hours. Primary factors: ${sourceAttributions[0].source} (${sourceAttributions[0].percentage}%) and ${sourceAttributions[1].source} (${sourceAttributions[1].percentage}%).`
-                    }
-                    recommendedActions={actionRecommendations.map(r => r.title)}
-                    expectedImprovement={totalReduction > 0 ? totalReduction : 22}
-                    confidence={93}
-                  />
+                      {/* Top Zone: 70% Map | 30% Insights Panel */}
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                  {/* Top Zone: 70% Map | 30% Insights Panel */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    {/* Left hero: Digital Twin map taking 70% width */}
-                    <div className="lg:col-span-8 flex flex-col gap-4">
-                      <div className="glass-card p-6 flex flex-col gap-4 min-h-[460px] relative">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <h3 className="font-bold text-base flex items-center gap-2">
-                              <MapIcon className="w-5 h-5 text-primary" /> Digital Twin GIS Map
-                            </h3>
-                            <p className="text-[11px] text-muted mt-1">Operational view mapping live particulate hotspots inside {selectedRegion.focus}.</p>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
+                        {/* Left hero: Digital Twin map taking 70% width */}
+                        <div className="lg:col-span-8 flex flex-col gap-4">
+                          <div className="glass-card p-6 flex flex-col gap-4 min-h-[460px] relative">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <h3 className="font-bold text-base flex items-center gap-2">
+                                  <MapIcon className="w-5 h-5 text-primary" /> Digital Twin GIS Map
+                                </h3>
+                                <p className="text-[11px] text-muted mt-1">Operational view mapping live particulate hotspots inside {selectedRegion.focus}.</p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-bold text-success bg-success/10 px-2 py-0.5 rounded border border-success/20 flex items-center gap-1">
                                   <Layers className="w-3.5 h-3.5" /> Sensors Active
                                 </span>
                               </div>
-                        </div>
+                            </div>
 
-                        {/* Leaflet map container */}
-                        <div className="flex-1 w-full bg-background min-h-[320px] rounded-xl border border-border relative overflow-hidden">
-                          <div id="mission-map-canvas" className="absolute inset-0 w-full h-full rounded-xl z-0"></div>
+                            {/* Leaflet map container */}
+                            <div className="flex-1 w-full bg-background min-h-[320px] rounded-xl border border-border relative overflow-hidden">
+                              <div id="mission-map-canvas" className="absolute inset-0 w-full h-full rounded-xl z-0"></div>
 
-                          {/* Map color-coded AQI legend */}
-                          <div className="absolute bottom-3 right-3 bg-card/90 backdrop-blur-md border border-border p-2.5 rounded-lg z-10 text-[9px] font-semibold flex flex-col gap-1.5 shadow-theme">
-                            <span className="text-[8px] uppercase tracking-wider font-extrabold text-muted block mb-0.5">AQI Index Scale</span>
-                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-success"></div> <span>Good (0-50)</span></div>
-                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-secondary"></div> <span>Satisfactory (51-100)</span></div>
-                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-warning"></div> <span>Moderate (101-200)</span></div>
-                            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-danger"></div> <span>Severe (201+)</span></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right hero: Live Insights taking 30% width */}
-                    <div className="lg:col-span-4 flex flex-col gap-6">
-                      
-                      {/* Environmental Health Index Card */}
-                      <EnvironmentalHealthIndexCard 
-                        score={selectedWard.environmental_health_score}
-                        trend={predictedAqi > selectedWard.aqi ? "up" : "down"}
-                        confidence={93}
-                        explanation={`Atmospheric indicators track cumulative parameters inside ${selectedWard.name} centroid nodes.`}
-                        humidity={selectedWard.humidity}
-                        greenCover={selectedWard.name === "Gachibowli" ? 38 : selectedWard.name === "Madhapur" ? 22 : 45}
-                        exposureFactor={Math.min(100, Math.floor(predictedAqi / 2.2))}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Citizen Health Risks - Horizontal Layout Grid */}
-                  <div className="glass-card p-6 flex flex-col gap-6 text-left">
-                    <div>
-                      <h4 className="text-xs font-bold text-muted uppercase tracking-widest leading-none font-extrabold flex items-center justify-between">
-                        <span className="text-foreground flex items-center gap-1.5 text-sm font-black">
-                          <Users className="w-5 h-5 text-primary" /> {t("citizenHealthRisksTitle")}
-                        </span>
-                        <span className="text-[9px] font-bold bg-danger/10 border border-danger/20 text-danger px-1.5 py-0.5 rounded">{t("advisoryActiveLabel")}</span>
-                      </h4>
-                      <span className="text-[10px] text-muted mt-1 block">{t("citizenHealthRisksSub")}</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-                      <HealthRiskCard 
-                        targetGroup="Senior Citizens"
-                        currentRisk={predictedAqi > 180 ? "Critical" : predictedAqi > 120 ? "High" : "Moderate"}
-                        forecastRisk="Rising loading expected near traffic sectors."
-                        recommendation="Limit outdoor physical exposure between 1 PM and 5 PM."
-                        confidence={95}
-                        priority="Critical"
-                        icon={<Users className="w-4 h-4" />}
-                      />
-                      <HealthRiskCard 
-                        targetGroup="Asthma Patients"
-                        currentRisk={predictedAqi > 160 ? "Critical" : predictedAqi > 110 ? "High" : "Moderate"}
-                        forecastRisk="Particulate density exceeds safe aerosol levels."
-                        recommendation="Keep rescue inhalers accessible; prefer indoor active paths."
-                        confidence={96}
-                        priority="Critical"
-                        icon={<Heart className="w-4 h-4" />}
-                      />
-                      <HealthRiskCard 
-                        targetGroup="Outdoor Workers"
-                        currentRisk={predictedAqi > 140 ? "High" : "Moderate"}
-                        forecastRisk="Soot accumulations from combustion source emissions."
-                        recommendation="Wear certified N95 respirators during high-transit shifts."
-                        confidence={94}
-                        priority="High"
-                        icon={<Activity className="w-4 h-4" />}
-                      />
-                      <HealthRiskCard 
-                        targetGroup="Children & Schools"
-                        currentRisk={predictedAqi > 120 ? "High" : "Moderate"}
-                        forecastRisk="Fine particulates remain suspended under calm winds."
-                        recommendation="Divert outdoor physical education activities to clean indoor courts."
-                        confidence={94}
-                        priority="High"
-                        icon={<Users className="w-4 h-4" />}
-                      />
-                    </div>
-                  </div>
-
-
-                  {/* Middle Zone: Analytics charts */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    {/* Recharts trend comparison chart */}
-                    <div className="lg:col-span-8 glass-card p-6 flex flex-col gap-6">
-                      <h4 className="font-bold text-sm flex items-center gap-2">
-                        <TrendingUp className="w-4.5 h-4.5 text-primary" /> {
-                          language === "hi" ? "एक्यूआई पूर्वानुमान समयरेखा (72 घंटे का पूर्वानुमान)" :
-                          language === "te" ? "AQI అంచనా కాలక్రమం (72 గంటల అంచనా)" :
-                          language === "ta" ? "AQI கணிப்பு காலவரிசை (72 மணிநேர கணிப்பு)" :
-                          language === "kn" ? "AQI ಮುನ್ಸೂಚನೆ ಕಾಲಸೂಚಿ (72 ಗಂಟೆಗಳ ಮುನ್ಸೂಚನೆ)" :
-                          "AQI Predictive Timeline (72h Forecast Horizon)"
-                        }
-                      </h4>
-
-                      <div className="h-[240px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={[
-                            { name: 'Current', aqi: currentAqi, simulatedAqi: predictedAqi },
-                            { name: '+24h', aqi: currentForecast[0].predicted_aqi, simulatedAqi: Math.max(10, currentForecast[0].predicted_aqi - totalReduction) },
-                            { name: '+48h', aqi: currentForecast[1].predicted_aqi, simulatedAqi: Math.max(10, currentForecast[1].predicted_aqi - totalReduction) },
-                            { name: '+72h', aqi: currentForecast[2].predicted_aqi, simulatedAqi: Math.max(10, currentForecast[2].predicted_aqi - totalReduction) }
-                          ]}>
-                            <defs>
-                              <linearGradient id="colorAqiMission" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.35}/>
-                                <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                            <XAxis dataKey="name" stroke="var(--muted)" fontSize={10} />
-                            <YAxis stroke="var(--muted)" fontSize={10} />
-                            <ChartTooltip contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)' }} />
-                            <Area type="monotone" dataKey="aqi" name={
-                              language === "hi" ? "आधारभूत एक्यूआई" :
-                              language === "te" ? "బేస్‌లైన్ AQI" :
-                              language === "ta" ? "அடிப்படை AQI" :
-                              language === "kn" ? "ಮೂಲ AQI" :
-                              "Baseline AQI"
-                            } stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorAqiMission)" />
-                            {isSimulating && (
-                              <Area type="monotone" dataKey="simulatedAqi" name={
-                                language === "hi" ? "सिम्युलेटेड एक्यूआई" :
-                                language === "te" ? "సిమ్యులేటెడ్ AQI" :
-                                language === "ta" ? "உருவகப்படுத்தப்பட்ட AQI" :
-                                language === "kn" ? "ಸಿಮ್ಯುಲೇಟೆಡ್ AQI" :
-                                "Simulated AQI"
-                              } stroke="var(--accent)" strokeWidth={2.5} strokeDasharray="5 5" fill="transparent" />
-                            )}
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </div>
-                    </div>
-
-                    <div className="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
-                      <h4 className="font-bold text-sm">
-                        {language === "hi" ? "प्रति घंटा पूर्वानुमानित समयसीमा" :
-                         language === "te" ? "గంటల వారీ అంచనా పరిధులు" :
-                         language === "ta" ? "மணிநேர முன்னறிவிப்பு எல்லைகள்" :
-                         language === "kn" ? "ಗಂಟೆವಾರು ಮುನ್ಸೂಚನೆ ವ್ಯಾಪ್ತಿಗಳು" :
-                         "Hourly forecast horizons"}
-                      </h4>
-                      <div className="flex flex-col gap-2.5 mt-2">
-                        {currentForecast.map((f, i) => (
-                          <div key={i} className="flex justify-between items-center text-xs bg-muted/5 border border-border p-3 rounded-xl">
-                            <div>
-                              <span className="font-semibold text-foreground block">
-                                {language === "hi" ? `समयसीमा +${f.horizon_hours} घंटे` :
-                                 language === "te" ? `సమయం +${f.horizon_hours} గంటలు` :
-                                 language === "ta" ? `எல்லை +${f.horizon_hours} மணிநேரம்` :
-                                 language === "kn" ? `ವ್ಯಾಪ್ತಿ +${f.horizon_hours} ಗಂಟೆಗಳು` :
-                                 `Horizon +${f.horizon_hours} Hours`}
-                              </span>
-                              <span className="text-[9px] text-muted block mt-0.5">
-                                {language === "hi" ? `विश्वास सूचकांक: ${f.confidence_score * 100}%` :
-                                 language === "te" ? `విశ్వసనీయత సూచిక: ${f.confidence_score * 100}%` :
-                                 language === "ta" ? `நம்பிக்கை குறியீடு: ${f.confidence_score * 100}%` :
-                                 language === "kn" ? `ವಿಶ್ವಾಸಾರ್ಹತೆ ಸೂಚ್ಯಂಕ: ${f.confidence_score * 100}%` :
-                                 `Confidence index: ${f.confidence_score * 100}%`}
-                              </span>
+                              {/* Map color-coded AQI legend */}
+                              <div className="absolute bottom-3 right-3 bg-card/90 backdrop-blur-md border border-border p-2.5 rounded-lg z-10 text-[9px] font-semibold flex flex-col gap-1.5 shadow-theme">
+                                <span className="text-[8px] uppercase tracking-wider font-extrabold text-muted block mb-0.5">AQI Index Scale</span>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-success"></div> <span>Good (0-50)</span></div>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-secondary"></div> <span>Satisfactory (51-100)</span></div>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-warning"></div> <span>Moderate (101-200)</span></div>
+                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-danger"></div> <span>Severe (201+)</span></div>
+                              </div>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    </div>
+                        </div>
 
-                  </div>
+                        {/* Right hero: Live Insights taking 30% width */}
+                        <div className="lg:col-span-4 flex flex-col gap-6">
 
-
-                  {/* FEATURE 3: MULTI-CITY INTELLIGENCE COMPARISON */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    {/* Left: City Comparison cards & rank (col-span-8) */}
-                    <div className="lg:col-span-8 glass-card p-6 flex flex-col gap-6 text-left">
-                      <div>
-                        <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                          <Users className="w-4.5 h-4.5 text-primary" /> {
-                            language === "hi" ? "मेट्रो एक्यूआई तुलना" :
-                            language === "te" ? "మెట్రో నగరాల AQI పోలిక" :
-                            language === "ta" ? "பெருநகர AQI ஒப்பீடு" :
-                            language === "kn" ? "ಮೆಟ್ರೋ ನಗರಗಳ AQI ಹೋಲಿಕೆ" :
-                            "Metro AQI Comparison"
-                          }
-                        </h4>
-                        <span className="text-[10px] text-muted mt-1 block">
-                          {language === "hi" ? "लघु-अवधि पूर्वानुमान ओवरले के साथ AQI.in लाइव मान" :
-                           language === "te" ? "స్వల్పకాలిక అంచనాలతో కూడిన AQI.in ప్రత్యక్ష విలువలు" :
-                           language === "ta" ? "குறுகிய கால கணிப்புகளுடன் கூடிய AQI.in நேரடி மதிப்புகள்" :
-                           language === "kn" ? "ಅಲ್ಪಾವಧಿಯ ಮುನ್ಸೂಚನೆಯೊಂದಿಗೆ AQI.in ನೈಜ ಮೌಲ್ಯಗಳು" :
-                           "AQI.in live values with short-horizon forecast overlays"}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                        {AQI_IN_METRO_CITIES.map((c) => (
-                          <CityComparisonCard 
-                            key={c.name}
-                            city={`${c.name}`}
-                            aqi={c.aqi}
-                            forecast={c.forecast}
-                            envScore={c.envScore}
-                            trend={c.trend}
-                            confidence={c.confidence}
-                            isSelected={selectedCity === c.name}
-                            onClick={() => handleCitySelect(c.name)}
+                          {/* Environmental Health Index Card */}
+                          <EnvironmentalHealthIndexCard
+                            score={selectedWard.environmental_health_score}
+                            trend={predictedAqi > selectedWard.aqi ? "up" : "down"}
+                            confidence={93}
+                            explanation={`Atmospheric indicators track cumulative parameters inside ${selectedWard.name} centroid nodes.`}
+                            humidity={selectedWard.humidity}
+                            greenCover={selectedWard.name === "Gachibowli" ? 38 : selectedWard.name === "Madhapur" ? 22 : 45}
+                            exposureFactor={Math.min(100, Math.floor(predictedAqi / 2.2))}
                           />
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Right: Scorecard Matrix (col-span-4) */}
-                    <div className="lg:col-span-4">
-                      <EnvironmentalScoreCard score={85} />
-                    </div>
-
-                  </div>
-
-                  {/* FEATURE 8: POLICY IMPACT ANALYTICS */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    
-                    {/* Policy Impact cards (col-span-12) */}
-                    <div className="lg:col-span-12 glass-card p-6 flex flex-col gap-6 text-left">
-                      <div>
-                        <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                          <Activity className="w-4.5 h-4.5 text-primary" /> {t("policyImpactTitle")}
-                        </h4>
-                        <span className="text-[10px] text-muted mt-1 block">{t("policyImpactSub")}</span>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                        <PolicyImpactCard 
-                          policyName="Heavy Diesel Traffic Restriction"
-                          status="Enforced"
-                          expectedImprovement={22}
-                          measuredImprovement={simulatedTraffic > 0 ? trafficReductionPoints : 18}
-                          confidence={94}
-                          cost={24500}
-                          duration="4 hours"
-                          successRate={85}
-                        />
-                        <PolicyImpactCard 
-                          policyName="Real Estate Demolition Abatement"
-                          status="Active Inspector Alert"
-                          expectedImprovement={9}
-                          measuredImprovement={simulatedConstruction > 0 ? constructionReductionPoints : 8}
-                          confidence={91}
-                          cost={8200}
-                          duration="2 hours"
-                          successRate={92}
-                        />
-                        <PolicyImpactCard 
-                          policyName="Local Dust Sprinkling Fleet Run"
-                          status="Deploying Vehicles"
-                          expectedImprovement={6}
-                          measuredImprovement={simulatedSprinkling > 0 ? sprinklingReductionPoints : 5}
-                          confidence={88}
-                          cost={1500}
-                          duration="3 hours"
-                          successRate={78}
-                        />
+                      {/* Citizen Health Risks - Horizontal Layout Grid */}
+                      <div className="glass-card p-6 flex flex-col gap-6 text-left">
+                        <div>
+                          <h4 className="text-xs font-bold text-muted uppercase tracking-widest leading-none font-extrabold flex items-center justify-between">
+                            <span className="text-foreground flex items-center gap-1.5 text-sm font-black">
+                              <Users className="w-5 h-5 text-primary" /> {t("citizenHealthRisksTitle")}
+                            </span>
+                            <span className="text-[9px] font-bold bg-danger/10 border border-danger/20 text-danger px-1.5 py-0.5 rounded">{t("advisoryActiveLabel")}</span>
+                          </h4>
+                          <span className="text-[10px] text-muted mt-1 block">{t("citizenHealthRisksSub")}</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                          <HealthRiskCard
+                            targetGroup="Senior Citizens"
+                            currentRisk={predictedAqi > 180 ? "Critical" : predictedAqi > 120 ? "High" : "Moderate"}
+                            forecastRisk="Rising loading expected near traffic sectors."
+                            recommendation="Limit outdoor physical exposure between 1 PM and 5 PM."
+                            confidence={95}
+                            priority="Critical"
+                            icon={<Users className="w-4 h-4" />}
+                          />
+                          <HealthRiskCard
+                            targetGroup="Asthma Patients"
+                            currentRisk={predictedAqi > 160 ? "Critical" : predictedAqi > 110 ? "High" : "Moderate"}
+                            forecastRisk="Particulate density exceeds safe aerosol levels."
+                            recommendation="Keep rescue inhalers accessible; prefer indoor active paths."
+                            confidence={96}
+                            priority="Critical"
+                            icon={<Heart className="w-4 h-4" />}
+                          />
+                          <HealthRiskCard
+                            targetGroup="Outdoor Workers"
+                            currentRisk={predictedAqi > 140 ? "High" : "Moderate"}
+                            forecastRisk="Soot accumulations from combustion source emissions."
+                            recommendation="Wear certified N95 respirators during high-transit shifts."
+                            confidence={94}
+                            priority="High"
+                            icon={<Activity className="w-4 h-4" />}
+                          />
+                          <HealthRiskCard
+                            targetGroup="Children & Schools"
+                            currentRisk={predictedAqi > 120 ? "High" : "Moderate"}
+                            forecastRisk="Fine particulates remain suspended under calm winds."
+                            recommendation="Divert outdoor physical education activities to clean indoor courts."
+                            confidence={94}
+                            priority="High"
+                            icon={<Users className="w-4 h-4" />}
+                          />
+                        </div>
                       </div>
-                    </div>
-
-                  </div>
 
 
+                      {/* Middle Zone: Analytics charts */}
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
+                        {/* Recharts trend comparison chart */}
+                        <div className="lg:col-span-8 glass-card p-6 flex flex-col gap-6">
+                          <h4 className="font-bold text-sm flex items-center gap-2">
+                            <TrendingUp className="w-4.5 h-4.5 text-primary" /> {
+                              language === "hi" ? "एक्यूआई पूर्वानुमान समयरेखा (72 घंटे का पूर्वानुमान)" :
+                                language === "te" ? "AQI అంచనా కాలక్రమం (72 గంటల అంచనా)" :
+                                  language === "ta" ? "AQI கணிப்பு காலவரிசை (72 மணிநேர கணிப்பு)" :
+                                    language === "kn" ? "AQI ಮುನ್ಸೂಚನೆ ಕಾಲಸೂಚಿ (72 ಗಂಟೆಗಳ ಮುನ್ಸೂಚನೆ)" :
+                                      "AQI Predictive Timeline (72h Forecast Horizon)"
+                            }
+                          </h4>
 
-                </div>
-              )}
-
-              {/* B. DIGITAL TWIN GIS LAYERS MAP VIEW */}
-              {activePage === "map" && (
-                <DigitalTwin 
-                  wards={activeWards}
-                  selectedWard={selectedWard}
-                  onSelectWard={handleWardSelect}
-                  recommendations={recommendations}
-                  onExecutePolicy={handleExecutePolicy}
-                />
-              )}
-
-              {/* C. PREDICTIVE FORECAST HORIZONS TAB */}
-              {activePage === "prediction" && (
-                <ForecastCenter
-                  wards={activeWards}
-                  selectedWard={selectedWard}
-                  onSelectWard={handleWardSelect}
-                  onGenerateBulletin={() => handleGenerateReport("Weekly")}
-                  onNavigateToMap={() => handleTabClick("map")}
-                  narrativeExplanation={narrativeExplanation}
-                />
-              )}
-
-
-
-              {/* E. BOARDROOM REPORTS BULLETINS TAB */}
-              {activePage === "reports" && (
-                <ReportsDashboard
-                  selectedWard={selectedWard}
-                  predictedAqi={predictedAqi}
-                  simulatedTraffic={simulatedTraffic}
-                  setSimulatedTraffic={setSimulatedTraffic}
-                  simulatedConstruction={simulatedConstruction}
-                  setSimulatedConstruction={setSimulatedConstruction}
-                  simulatedIndustrial={simulatedIndustrial}
-                  setSimulatedIndustrial={setSimulatedIndustrial}
-                  simulatedSprinkling={simulatedSprinkling}
-                  setSimulatedSprinkling={setSimulatedSprinkling}
-                  simulatedWasteBurning={simulatedWasteBurning}
-                  setSimulatedWasteBurning={setSimulatedWasteBurning}
-                  estimatedCost={estimatedCost}
-                  estimatedTime={estimatedTime}
-                  environmentalImpact={environmentalImpact}
-                  totalReduction={totalReduction}
-                  sourceAttributions={sourceAttributions}
-                  dynamicExplanation={dynamicExplanation}
-                  actionRecommendations={actionRecommendations}
-                  setActionRecommendations={setActionRecommendations}
-                  feedItems={feedItems}
-                  checkActionPermission={checkActionPermission}
-                />
-              )}
-
-              {/* F. FULL SCREEN PRANAAI COPILOT INTERACTIVE CONSOLE */}
-              {activePage === "copilot" && (
-                <CopilotConsole
-                  selectedWard={selectedWard}
-                  onGenerateReport={() => handleGenerateReport("Weekly")}
-                  onViewTwin={() => handleTabClick("map")}
-                  onOpenForecast={() => handleTabClick("prediction")}
-                  onNavigate={handleTabClick}
-                />
-              )}
-
-              {/* G. CONFIGURATION SETTINGS TAB */}
-              {activePage === "settings" && (
-                <SettingsLayout />
-              )}
-
-              {/* H. ABOUT THE OPERATING SYSTEM TAB */}
-              {activePage === "About" && (
-                <div className="glass-card p-8 flex flex-col gap-6">
-                  <div>
-                    <h2 className="text-xl font-extrabold text-foreground">About PranaAI</h2>
-                    <p className="text-xs text-muted mt-1">Version 1.0.0 ({selectedRegion.state} MVP)</p>
-                  </div>
-
-                  <div className="text-muted text-xs flex flex-col gap-4 border-t border-border pt-6 leading-relaxed font-sans">
-                    <p>
-                      PranaAI is designed as an Urban Environmental Decision Intelligence Platform. Standard AQI monitoring tools only show historical values. PranaAI leverages machine learning regressors (XGBoost) and a coordinate geofenced multi-agent architecture to predict futures, trace features, and simulate structural adjustments before municipal deployment.
-                    </p>
-                    <p>
-                      Designed with a premium SaaS dark/light aesthetic, it targets the selected city's high-development corridor for high-impact decision support.
-                    </p>
-                    <p className="font-semibold text-muted">
-                      Developed by Team PranaAI. Predict. Explain. Act.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-            </main>
-          </div>
-        </div>
-      )}
-
-      {/* 5. SLIDE-OUT NOTIFICATION HUB DRAWER */}
-      {showNotifications && (
-        <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-200">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowNotifications(false)}></div>
-          <div className="w-full max-w-sm bg-card border-l border-border h-full relative z-10 p-6 flex flex-col gap-6 shadow-theme animate-in slide-in-from-right duration-250">
-            <div className="flex justify-between items-center">
-              <h3 className="font-bold text-foreground text-base">Notification Hub</h3>
-              <button onClick={() => setShowNotifications(false)} className="text-xs font-bold text-muted hover:text-foreground cursor-pointer">Close</button>
-            </div>
-            
-            <div className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1">
-              {notifications.map((n) => (
-                <div key={n.id} className="bg-muted/5 border border-border p-4 rounded-xl relative">
-                  {n.unread && <span className="absolute top-4 right-4 w-1.5 h-1.5 bg-primary rounded-full"></span>}
-                  <span className="text-[10px] text-muted font-bold block">{n.time}</span>
-                  <h4 className="font-bold text-xs text-foreground mt-1">{n.title}</h4>
-                  <p className="text-xs text-muted mt-1 leading-normal">{n.text}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 6. FLOATING PERPLEXITY-STYLE AI COPILOT OVERLAY (STILL ACCESSIBLE) */}
-      <div className="fixed bottom-6 right-6 z-45">
-        <button
-          onClick={() => {
-            if (!checkActionPermission("Accessing PranaAI Copilot Dialog Dashboard", "dashboard")) return;
-            setShowCopilot(!showCopilot);
-          }}
-          className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-accent text-white flex items-center justify-center shadow-theme cursor-pointer hover:scale-105 active:scale-95 transition-all"
-        >
-          <MessageSquare className="w-6 h-6 text-white" />
-        </button>
-
-        {showCopilot && (
-          <div className="absolute bottom-16 right-0 w-[380px] md:w-[450px] glass-card p-6 flex flex-col gap-4 shadow-theme z-50">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 bg-success rounded-full animate-ping"></div>
-                <h3 className="font-bold text-foreground text-sm">PranaAI Copilot</h3>
-              </div>
-              <button onClick={() => setShowCopilot(false)} className="text-xs text-muted hover:text-foreground cursor-pointer">Close</button>
-            </div>
-
-            <div className="h-[250px] bg-muted/5 border border-border rounded-xl p-3 overflow-y-auto flex flex-col gap-3">
-              {chatMessages.map((msg, index) => (
-                <div key={index} className={`flex flex-col max-w-[85%] ${msg.sender === "user" ? "self-end items-end" : "self-start items-start"}`}>
-                  <div className={cn(
-                    "p-2.5 rounded-xl text-xs leading-normal",
-                    msg.sender === "user" 
-                      ? "bg-primary text-white font-semibold" 
-                      : "bg-card border border-border text-foreground"
-                  )}>
-                    {msg.text}
-
-                    {msg.routes && (
-                      <div className="mt-3 border-t border-border pt-2 flex flex-col gap-1.5">
-                        <span className="text-[9px] uppercase font-bold text-primary">Recommended Routes:</span>
-                        {msg.routes.map((r: any, idx: number) => (
-                          <div key={idx} className="bg-background p-2 rounded border border-border flex justify-between items-center text-[10px]">
-                            <div>
-                              <span className="font-bold text-foreground block">{r.name}</span>
-                              <span className="text-[8px] text-muted block">{r.reason}</span>
-                            </div>
-                            <span className="font-extrabold text-success">AQI {r.aqi}</span>
+                          <div className="h-[240px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={[
+                                { name: 'Current', aqi: currentAqi, simulatedAqi: predictedAqi },
+                                { name: '+24h', aqi: currentForecast[0].predicted_aqi, simulatedAqi: Math.max(10, currentForecast[0].predicted_aqi - totalReduction) },
+                                { name: '+48h', aqi: currentForecast[1].predicted_aqi, simulatedAqi: Math.max(10, currentForecast[1].predicted_aqi - totalReduction) },
+                                { name: '+72h', aqi: currentForecast[2].predicted_aqi, simulatedAqi: Math.max(10, currentForecast[2].predicted_aqi - totalReduction) }
+                              ]}>
+                                <defs>
+                                  <linearGradient id="colorAqiMission" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.35} />
+                                    <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
+                                  </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                                <XAxis dataKey="name" stroke="var(--muted)" fontSize={10} />
+                                <YAxis stroke="var(--muted)" fontSize={10} />
+                                <ChartTooltip contentStyle={{ background: 'var(--card)', borderColor: 'var(--border)' }} />
+                                <Area type="monotone" dataKey="aqi" name={
+                                  language === "hi" ? "आधारभूत एक्यूआई" :
+                                    language === "te" ? "బేస్‌లైన్ AQI" :
+                                      language === "ta" ? "அடிப்படை AQI" :
+                                        language === "kn" ? "ಮೂಲ AQI" :
+                                          "Baseline AQI"
+                                } stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorAqiMission)" />
+                                {isSimulating && (
+                                  <Area type="monotone" dataKey="simulatedAqi" name={
+                                    language === "hi" ? "सिम्युलेटेड एक्यूआई" :
+                                      language === "te" ? "సిమ్యులేటెడ్ AQI" :
+                                        language === "ta" ? "உருவகப்படுத்தப்பட்ட AQI" :
+                                          language === "kn" ? "ಸಿಮ್ಯುಲೇಟೆಡ್ AQI" :
+                                            "Simulated AQI"
+                                  } stroke="var(--accent)" strokeWidth={2.5} strokeDasharray="5 5" fill="transparent" />
+                                )}
+                              </AreaChart>
+                            </ResponsiveContainer>
                           </div>
-                        ))}
+                        </div>
+
+                        <div className="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
+                          <h4 className="font-bold text-sm">
+                            {language === "hi" ? "प्रति घंटा पूर्वानुमानित समयसीमा" :
+                              language === "te" ? "గంటల వారీ అంచనా పరిధులు" :
+                                language === "ta" ? "மணிநேர முன்னறிவிப்பு எல்லைகள்" :
+                                  language === "kn" ? "ಗಂಟೆವಾರು ಮುನ್ಸೂಚನೆ ವ್ಯಾಪ್ತಿಗಳು" :
+                                    "Hourly forecast horizons"}
+                          </h4>
+                          <div className="flex flex-col gap-2.5 mt-2">
+                            {currentForecast.map((f, i) => (
+                              <div key={i} className="flex justify-between items-center text-xs bg-muted/5 border border-border p-3 rounded-xl">
+                                <div>
+                                  <span className="font-semibold text-foreground block">
+                                    {language === "hi" ? `समयसीमा +${f.horizon_hours} घंटे` :
+                                      language === "te" ? `సమయం +${f.horizon_hours} గంటలు` :
+                                        language === "ta" ? `எல்லை +${f.horizon_hours} மணிநேரம்` :
+                                          language === "kn" ? `ವ್ಯಾಪ್ತಿ +${f.horizon_hours} ಗಂಟೆಗಳು` :
+                                            `Horizon +${f.horizon_hours} Hours`}
+                                  </span>
+                                  <span className="text-[9px] text-muted block mt-0.5">
+                                    {language === "hi" ? `विश्वास सूचकांक: ${f.confidence_score * 100}%` :
+                                      language === "te" ? `విశ్వసనీయత సూచిక: ${f.confidence_score * 100}%` :
+                                        language === "ta" ? `நம்பிக்கை குறியீடு: ${f.confidence_score * 100}%` :
+                                          language === "kn" ? `ವಿಶ್ವಾಸಾರ್ಹತೆ ಸೂಚ್ಯಂಕ: ${f.confidence_score * 100}%` :
+                                            `Confidence index: ${f.confidence_score * 100}%`}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
                       </div>
-                    )}
-                  </div>
+
+
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+                        {/* Policy Impact cards (col-span-12) */}
+                        <div className="lg:col-span-12 glass-card p-6 flex flex-col gap-6 text-left">
+                          <div>
+                            <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                              <Activity className="w-4.5 h-4.5 text-primary" /> {t("policyImpactTitle")}
+                            </h4>
+                            <span className="text-[10px] text-muted mt-1 block">{t("policyImpactSub")}</span>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                            <PolicyImpactCard
+                              policyName="Heavy Diesel Traffic Restriction"
+                              status="Enforced"
+                              expectedImprovement={22}
+                              measuredImprovement={simulatedTraffic > 0 ? trafficReductionPoints : 18}
+                              confidence={94}
+                              cost={24500}
+                              duration="4 hours"
+                              successRate={85}
+                            />
+                            <PolicyImpactCard
+                              policyName="Real Estate Demolition Abatement"
+                              status="Active Inspector Alert"
+                              expectedImprovement={9}
+                              measuredImprovement={simulatedConstruction > 0 ? constructionReductionPoints : 8}
+                              confidence={91}
+                              cost={8200}
+                              duration="2 hours"
+                              successRate={92}
+                            />
+                            <PolicyImpactCard
+                              policyName="Local Dust Sprinkling Fleet Run"
+                              status="Deploying Vehicles"
+                              expectedImprovement={6}
+                              measuredImprovement={simulatedSprinkling > 0 ? sprinklingReductionPoints : 5}
+                              confidence={88}
+                              cost={1500}
+                              duration="3 hours"
+                              successRate={78}
+                            />
+                          </div>
+                        </div>
+
+                      </div>
+
+
+
+
+                    </div>
+                  )}
+
+                  {/* B. DIGITAL TWIN GIS LAYERS MAP VIEW */}
+                  {activePage === "map" && (
+                    <DigitalTwin
+                      wards={activeWards}
+                      selectedWard={selectedWard}
+                      onSelectWard={handleWardSelect}
+                      recommendations={recommendations}
+                      onExecutePolicy={handleExecutePolicy}
+                    />
+                  )}
+
+                  {/* C. PREDICTIVE FORECAST HORIZONS TAB */}
+                  {activePage === "prediction" && (
+                    <ForecastCenter
+                      wards={activeWards}
+                      selectedWard={selectedWard}
+                      onSelectWard={handleWardSelect}
+                      onGenerateBulletin={() => handleGenerateReport("Weekly")}
+                      onNavigateToMap={() => handleTabClick("map")}
+                      narrativeExplanation={narrativeExplanation}
+                    />
+                  )}
+
+
+
+                  {/* E. BOARDROOM REPORTS BULLETINS TAB */}
+                  {activePage === "reports" && (
+                    <ReportsDashboard
+                      selectedWard={selectedWard}
+                      predictedAqi={predictedAqi}
+                      simulatedTraffic={simulatedTraffic}
+                      setSimulatedTraffic={setSimulatedTraffic}
+                      simulatedConstruction={simulatedConstruction}
+                      setSimulatedConstruction={setSimulatedConstruction}
+                      simulatedIndustrial={simulatedIndustrial}
+                      setSimulatedIndustrial={setSimulatedIndustrial}
+                      simulatedSprinkling={simulatedSprinkling}
+                      setSimulatedSprinkling={setSimulatedSprinkling}
+                      simulatedWasteBurning={simulatedWasteBurning}
+                      setSimulatedWasteBurning={setSimulatedWasteBurning}
+                      estimatedCost={estimatedCost}
+                      estimatedTime={estimatedTime}
+                      environmentalImpact={environmentalImpact}
+                      totalReduction={totalReduction}
+                      sourceAttributions={sourceAttributions}
+                      dynamicExplanation={dynamicExplanation}
+                      actionRecommendations={actionRecommendations}
+                      setActionRecommendations={setActionRecommendations}
+                      feedItems={feedItems}
+                      checkActionPermission={checkActionPermission}
+                    />
+                  )}
+
+                  {/* F. FULL SCREEN PRANAAI COPILOT INTERACTIVE CONSOLE */}
+                  {activePage === "copilot" && (
+                    <CopilotConsole
+                      selectedWard={selectedWard}
+                      onGenerateReport={() => handleGenerateReport("Weekly")}
+                      onViewTwin={() => handleTabClick("map")}
+                      onOpenForecast={() => handleTabClick("prediction")}
+                      onNavigate={handleTabClick}
+                    />
+                  )}
+
+                  {/* G. CONFIGURATION SETTINGS TAB */}
+                  {activePage === "settings" && (
+                    <SettingsLayout />
+                  )}
+
+                  {/* H. ABOUT THE OPERATING SYSTEM TAB */}
+                  {activePage === "About" && (
+                    <div className="glass-card p-8 flex flex-col gap-6">
+                      <div>
+                        <h2 className="text-xl font-extrabold text-foreground">About PranaAI</h2>
+                        <p className="text-xs text-muted mt-1">Version 1.0.0 ({selectedRegion.state} MVP)</p>
+                      </div>
+
+                      <div className="text-muted text-xs flex flex-col gap-4 border-t border-border pt-6 leading-relaxed font-sans">
+                        <p>
+                          PranaAI is designed as an Urban Environmental Decision Intelligence Platform. Standard AQI monitoring tools only show historical values. PranaAI leverages machine learning regressors and a coordinate geofenced multi-agent architecture to predict futures, trace features, and simulate structural adjustments before municipal deployment.
+                        </p>
+                        <p>
+                          Designed with a premium SaaS dark/light aesthetic, it targets the selected city's high-development corridor for high-impact decision support.
+                        </p>
+                        <p className="font-semibold text-muted">
+                          Developed by Team PranaAI. Predict. Explain. Act.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                </main>
+              </div>
+            </div>
+          )}
+
+          {/* 5. SLIDE-OUT NOTIFICATION HUB DRAWER */}
+          {showNotifications && (
+            <div className="fixed inset-0 z-50 flex justify-end animate-in fade-in duration-200">
+              <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowNotifications(false)}></div>
+              <div className="w-full max-w-sm bg-card border-l border-border h-full relative z-10 p-6 flex flex-col gap-6 shadow-theme animate-in slide-in-from-right duration-250">
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-foreground text-base">Notification Hub</h3>
+                  <button onClick={() => setShowNotifications(false)} className="text-xs font-bold text-muted hover:text-foreground cursor-pointer">Close</button>
                 </div>
-              ))}
+
+                <div className="flex flex-col gap-4 flex-1 overflow-y-auto pr-1">
+                  {notifications.map((n) => (
+                    <div key={n.id} className="bg-muted/5 border border-border p-4 rounded-xl relative">
+                      {n.unread && <span className="absolute top-4 right-4 w-1.5 h-1.5 bg-primary rounded-full"></span>}
+                      <span className="text-[10px] text-muted font-bold block">{n.time}</span>
+                      <h4 className="font-bold text-xs text-foreground mt-1">{n.title}</h4>
+                      <p className="text-xs text-muted mt-1 leading-normal">{n.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+          )}
 
-            <div className="flex gap-1.5 flex-wrap">
-              <button onClick={() => handleSendMessage(undefined, "Can I jog tomorrow in Gachibowli?")} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted/10 border border-border text-muted transition-all font-semibold cursor-pointer">🏃 Run Jog Test</button>
-              <button onClick={() => handleSendMessage(undefined, "Is it safe in Madhapur today?")} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted/10 border border-border text-muted transition-all font-semibold cursor-pointer">🏡 Exposure Risk</button>
-            </div>
-
-            <form onSubmit={handleSendMessage} className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Ask environmental triggers..."
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
-              />
-              <button type="submit" className="btn-primary p-2 px-3 flex items-center justify-center shadow-none cursor-pointer">
-                <Send className="w-3.5 h-3.5 text-white" />
-              </button>
-            </form>
-          </div>
-        )}
-      </div>
-
-      {/* 7. INTERCEPT LOGIN DIALOG FOR DEMO VISITORS */}
-      <Modal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        title="Authentication Required"
-      >
-        <div className="flex flex-col gap-4 text-center">
-          <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto mb-2">
-            <Lock className="w-5 h-5" />
-          </div>
-          <div>
-            <h4 className="font-bold text-sm text-foreground leading-snug">Sign In Required</h4>
-            <p className="text-xs text-muted mt-2 leading-relaxed">
-              You clicked on a personalized feature: <strong className="text-primary">"{authModalReason}"</strong>. Connect or create an account to unlock custom alerts, download audit summaries, and save configurations.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 mt-4">
-            <Button
-              variant="primary"
+          {/* 6. FLOATING PERPLEXITY-STYLE AI COPILOT OVERLAY (STILL ACCESSIBLE) */}
+          <div className="fixed bottom-6 right-6 z-45">
+            <button
               onClick={() => {
-                setShowAuthModal(false);
-                setFlow("auth");
+                if (!checkActionPermission("Accessing PranaAI Copilot Dialog Dashboard", "dashboard")) return;
+                setShowCopilot(!showCopilot);
               }}
-              className="w-full justify-center py-2.5 font-bold text-xs"
+              className="w-14 h-14 rounded-full bg-gradient-to-tr from-primary to-accent text-white flex items-center justify-center shadow-theme cursor-pointer hover:scale-105 active:scale-95 transition-all"
             >
-              Sign In to Account
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setShowAuthModal(false)}
-              className="w-full justify-center text-xs font-semibold"
-            >
-              Cancel & Continue Demo
-            </Button>
+              <MessageSquare className="w-6 h-6 text-white" />
+            </button>
+
+            {showCopilot && (
+              <div className="absolute bottom-16 right-0 w-[380px] md:w-[450px] glass-card p-6 flex flex-col gap-4 shadow-theme z-50">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 bg-success rounded-full animate-ping"></div>
+                    <h3 className="font-bold text-foreground text-sm">PranaAI Copilot</h3>
+                  </div>
+                  <button onClick={() => setShowCopilot(false)} className="text-xs text-muted hover:text-foreground cursor-pointer">Close</button>
+                </div>
+
+                <div className="h-[250px] bg-muted/5 border border-border rounded-xl p-3 overflow-y-auto flex flex-col gap-3">
+                  {chatMessages.map((msg, index) => (
+                    <div key={index} className={`flex flex-col max-w-[85%] ${msg.sender === "user" ? "self-end items-end" : "self-start items-start"}`}>
+                      <div className={cn(
+                        "p-2.5 rounded-xl text-xs leading-normal",
+                        msg.sender === "user"
+                          ? "bg-primary text-white font-semibold"
+                          : "bg-card border border-border text-foreground"
+                      )}>
+                        {msg.text}
+
+                        {msg.routes && (
+                          <div className="mt-3 border-t border-border pt-2 flex flex-col gap-1.5">
+                            <span className="text-[9px] uppercase font-bold text-primary">Recommended Routes:</span>
+                            {msg.routes.map((r: any, idx: number) => (
+                              <div key={idx} className="bg-background p-2 rounded border border-border flex justify-between items-center text-[10px]">
+                                <div>
+                                  <span className="font-bold text-foreground block">{r.name}</span>
+                                  <span className="text-[8px] text-muted block">{r.reason}</span>
+                                </div>
+                                <span className="font-extrabold text-success">AQI {r.aqi}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex gap-1.5 flex-wrap">
+                  <button onClick={() => handleSendMessage(undefined, "Can I jog tomorrow in Gachibowli?")} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted/10 border border-border text-muted transition-all font-semibold cursor-pointer">🏃 Run Jog Test</button>
+                  <button onClick={() => handleSendMessage(undefined, "Is it safe in Madhapur today?")} className="text-[10px] px-2.5 py-1.5 rounded-lg bg-card hover:bg-muted/10 border border-border text-muted transition-all font-semibold cursor-pointer">🏡 Exposure Risk</button>
+                </div>
+
+                <form onSubmit={handleSendMessage} className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ask environmental triggers..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    className="flex-1 bg-card border border-border rounded-xl px-3 py-2 text-xs text-foreground focus:outline-none focus:border-primary"
+                  />
+                  <button type="submit" className="btn-primary p-2 px-3 flex items-center justify-center shadow-none cursor-pointer">
+                    <Send className="w-3.5 h-3.5 text-white" />
+                  </button>
+                </form>
+              </div>
+            )}
           </div>
-        </div>
-      </Modal>
 
-      {/* 8. WATCH DEMO MODAL DIALOG */}
-      <Modal
-        isOpen={showDemoDialog}
-        onClose={() => setShowDemoDialog(false)}
-        title="PranaAI Platform Walkthrough"
-      >
-        <div className="flex flex-col gap-4">
-          <div className="aspect-video w-full rounded-xl bg-background border border-border flex flex-col items-center justify-center text-center p-4">
-            <Compass className="w-10 h-10 text-primary animate-pulse" />
-            <span className="text-xs font-bold text-foreground mt-4">Demo video stream mapping {selectedRegion.focus}</span>
-            <span className="type-caption mt-1 text-muted">Walkthrough mapping sensors calibration, SHAP explanations, and sandboxed policy runs.</span>
-          </div>
+          {/* 7. INTERCEPT LOGIN DIALOG FOR DEMO VISITORS */}
+          <Modal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+            title="Authentication Required"
+          >
+            <div className="flex flex-col gap-4 text-center">
+              <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto mb-2">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-foreground leading-snug">Sign In Required</h4>
+                <p className="text-xs text-muted mt-2 leading-relaxed">
+                  You clicked on a personalized feature: <strong className="text-primary">"{authModalReason}"</strong>. Connect or create an account to unlock custom alerts, download audit summaries, and save configurations.
+                </p>
+              </div>
 
-          <p className="text-xs leading-relaxed text-muted">
-            PranaAI evaluates environmental datasets using XGBoost models to predict particulate accumulation up to 72 hours, helping city operators simulate truck curbs and sprinkler deployment.
-          </p>
+              <div className="flex flex-col gap-2 mt-4">
+                <Button
+                  variant="primary"
+                  onClick={() => {
+                    setShowAuthModal(false);
+                    setFlow("auth");
+                  }}
+                  className="w-full justify-center py-2.5 font-bold text-xs"
+                >
+                  Sign In to Account
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowAuthModal(false)}
+                  className="w-full justify-center text-xs font-semibold"
+                >
+                  Cancel & Continue Demo
+                </Button>
+              </div>
+            </div>
+          </Modal>
 
-          <Button variant="primary" className="w-full justify-center font-bold text-xs" onClick={() => setShowDemoDialog(false)}>
-            Close Video
-          </Button>
-        </div>
-      </Modal>
+          {/* 8. WATCH DEMO MODAL DIALOG */}
+          <Modal
+            isOpen={showDemoDialog}
+            onClose={() => setShowDemoDialog(false)}
+            title="PranaAI Platform Walkthrough"
+          >
+            <div className="flex flex-col gap-4">
+              <div className="aspect-video w-full rounded-xl bg-background border border-border flex flex-col items-center justify-center text-center p-4">
+                <Compass className="w-10 h-10 text-primary animate-pulse" />
+                <span className="text-xs font-bold text-foreground mt-4">Demo video stream mapping {selectedRegion.focus}</span>
+                <span className="type-caption mt-1 text-muted">Walkthrough mapping sensors calibration, SHAP explanations, and sandboxed policy runs.</span>
+              </div>
+
+              <p className="text-xs leading-relaxed text-muted">
+                PranaAI evaluates environmental datasets using AI models to predict particulate accumulation up to 72 hours, helping city operators simulate truck curbs and sprinkler deployment.
+              </p>
+
+              <Button variant="primary" className="w-full justify-center font-bold text-xs" onClick={() => setShowDemoDialog(false)}>
+                Close Video
+              </Button>
+            </div>
+          </Modal>
 
         </div>
       </div>

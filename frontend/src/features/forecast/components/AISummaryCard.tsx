@@ -6,6 +6,7 @@ import {
   translateTrendText, 
   translateAttentionArea 
 } from "../../../utils/i18n_extra";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface AISummaryCardProps {
   overviewText: string;
@@ -20,7 +21,8 @@ export function AISummaryCard({
   riskLevel,
   attentionAreas
 }: AISummaryCardProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
   
   const getRiskColor = (level: string) => {

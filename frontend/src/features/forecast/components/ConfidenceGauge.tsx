@@ -26,7 +26,7 @@ export function ConfidenceGauge({
       {/* Header */}
       <div>
         <h4 className="font-bold text-sm text-foreground">Confidence Matrix</h4>
-        <span className="text-[9px] text-muted mt-1 block">XGBoost model confidence evaluation parameters</span>
+        <span className="text-[9px] text-muted mt-1 block">AI model confidence evaluation parameters</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center mt-4">

@@ -1,13 +1,15 @@
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as ChartTooltip, ResponsiveContainer } from "recharts";
 import { BarChart3, Bell, TrendingUp } from "lucide-react";
 import { extraTranslations } from "../../../utils/i18n_extra";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface BottomAnalyticsProps {
   ward: any;
 }
 
 export function BottomAnalytics({ ward }: BottomAnalyticsProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
 
   const mockTimelineData = [

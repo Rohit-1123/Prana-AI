@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, Check } from "lucide-react";
 import { cn } from "../../utils/cn";
+import { useSettings } from "../../contexts/SettingsContext";
+import { localizedBootSteps } from "../../utils/i18n";
 
 // Custom hook to detect browser reduced motion setting
 function useReducedMotion() {
@@ -61,8 +63,33 @@ export function BootBackground() {
   );
 }
 
+const logoTranslations: Record<"en" | "hi" | "te" | "ta" | "kn", Record<string, string>> = {
+  en: {
+    tagline: "Environmental Intelligence. Reimagined.",
+    version: "Version 1.0 (Hyderabad MVP Corridor)"
+  },
+  hi: {
+    tagline: "पर्यावरणीय खुफिया। नए रूप में।",
+    version: "संस्करण १.० (हैदराबाद एमवीपी कॉरिडोर)"
+  },
+  te: {
+    tagline: "పర్యావరణ మేధస్సు. సరికొత్తగా.",
+    version: "వెర్షన్ 1.0 (హైదరాబాద్ MVP కారిడార్)"
+  },
+  ta: {
+    tagline: "சுற்றுச்சூழல் நுண்ணறிவு. புதிய வடிவில்.",
+    version: "பதிப்பு 1.0 (ஹைதராபாத் MVP காரிடார்)"
+  },
+  kn: {
+    tagline: "ಪರಿಸರ ಬುದ್ಧಿವಂತಿಕೆ. ಮರುಚಿಂತನೆ.",
+    version: "ಆವೃತ್ತಿ 1.0 (ಹೈದರಾಬಾದ್ MVP ಕಾರಿಡಾರ್)"
+  }
+};
+
 export function BootLogo() {
   const isReduced = useReducedMotion();
+  const { language } = useSettings();
+  const tLogo = logoTranslations[language] || logoTranslations["en"];
 
   const logoVariants = {
     hidden: { opacity: 0, scale: isReduced ? 1 : 0.92 },
@@ -89,10 +116,10 @@ export function BootLogo() {
           Prana<span className="text-primary font-black">AI</span>
         </h2>
         <span className="text-[9px] uppercase tracking-widest font-extrabold text-muted block mt-2">
-          Environmental Intelligence. Reimagined.
+          {tLogo.tagline}
         </span>
         <span className="text-[8px] text-muted font-bold block mt-1">
-          Version 1.0 (Hyderabad MVP Corridor)
+          {tLogo.version}
         </span>
       </div>
     </motion.div>
@@ -191,17 +218,8 @@ export function StatusIndicator({ text }: StatusIndicatorProps) {
 }
 
 export function BootLayout({ progress, completedSteps, activeStep }: BootSequenceProps) {
-  
-  const allSteps = [
-    "Initializing Platform",
-    "Connecting AQI Services",
-    "Connecting Weather Network",
-    "Loading Environmental Intelligence",
-    "Preparing Digital Twin",
-    "Loading Forecast Engine",
-    "Preparing AI Copilot",
-    "Finalizing Mission Control"
-  ];
+  const { language } = useSettings();
+  const allSteps = localizedBootSteps[language] || localizedBootSteps["en"];
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background select-none">

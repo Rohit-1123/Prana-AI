@@ -9,6 +9,7 @@ import { cn } from "../../utils/cn";
 import { AIConfidenceRing } from "./ExplainabilityComponents";
 
 import { type LanguageCode } from "../../utils/i18n";
+import { useSettings } from "../../contexts/SettingsContext";
 
 const urbanTranslations: Record<LanguageCode, Record<string, string>> = {
   en: {
@@ -477,7 +478,8 @@ export function HealthRiskCard({
   priority,
   icon
 }: HealthRiskCardProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const translations = urbanTranslations[activeLanguage] || urbanTranslations["en"];
 
   const getLocalizedRisk = (risk: string) => {
@@ -761,7 +763,8 @@ interface EnvironmentalScoreCardProps {
 }
 
 export function EnvironmentalScoreCard({ score }: EnvironmentalScoreCardProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const translations = urbanTranslations[activeLanguage] || urbanTranslations["en"];
 
   const items = [
@@ -839,7 +842,8 @@ export function DailyBriefCard({
   expectedImprovement,
   confidence
 }: DailyBriefCardProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const translations = urbanTranslations[activeLanguage] || urbanTranslations["en"];
 
   return (
@@ -922,7 +926,8 @@ export function PolicyImpactCard({
   duration,
   successRate
 }: PolicyImpactCardProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const translations = urbanTranslations[activeLanguage] || urbanTranslations["en"];
 
   const percentage = Math.min(100, (measuredImprovement / expectedImprovement) * 100);

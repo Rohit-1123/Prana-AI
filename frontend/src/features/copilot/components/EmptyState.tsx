@@ -9,7 +9,7 @@ interface EmptyStateProps {
 export function EmptyState({ questions, onClickQuestion }: EmptyStateProps) {
   
   const steps = [
-    { title: "Calibrated sensor grids context", desc: "XGBoost regression models maps 72h lead predictions dynamically.", icon: Compass },
+    { title: "Calibrated sensor grids context", desc: "AI regression models map 72h lead predictions dynamically.", icon: Compass },
     { title: "Causal SHAP explanation vectors", desc: "Trace feature attribution shares (commuters, silt transport, construction).", icon: ShieldCheck },
     { title: "Sandboxed sandbox intervention policy", desc: "Simulate structural adjustments before real municipal deployments.", icon: Zap }
   ];

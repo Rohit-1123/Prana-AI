@@ -19,36 +19,36 @@ export const extraTranslations: Record<LanguageCode, Record<string, string>> = {
     evidenceSourcesUsed: "Evidence Sources Used",
     estimatedDecisionImpact: "Estimated Decision Impact",
     aqiPoints: "AQI Points",
-    
+
     // Risks
     trafficAndConstruction: "Traffic & Construction",
     trafficAndDust: "Traffic & Dust",
     coastalWindsTraffic: "Coastal Winds & Traffic",
     industrialSiltDust: "Industrial & Silt Dust",
     maritimeBoundaryTraffic: "Maritime Boundary & Traffic",
-    
+
     // Impacts
     veryHighImpact: "Very High Impact",
     highImpact: "High Impact",
     moderateImpact: "Moderate Impact",
     criticalImpact: "Critical Impact",
-    
+
     // Reliability
     stable: "Stable",
     moderate: "Moderate",
-    
+
     // Sources
     nodesRadarGis: "6 Nodes, Radar, GIS",
     wardsSatelliteGis: "5 Wards, Satellite, GIS",
     nodesMarineBuoys: "4 Nodes, Marine Buoys",
     nodesLidarsGis: "7 Nodes, Lidars, GIS",
     nodesCoastalRadar: "6 Nodes, Coastal Radar",
-    
+
     // SourceAttributionCard
     aiSourceAttributionTitle: "AI Pollution Source Attribution",
     realtimeSourceSub: "Real-time source fingerprinting analysis",
     explainabilityEngine: "Explainability Engine",
-    
+
     // WhatIfSimulator
     whatIfTitle: "What-If Scenario Simulator",
     whatIfSub: "Simulate administrative policies and evaluate future outcomes",
@@ -69,7 +69,7 @@ export const extraTranslations: Record<LanguageCode, Record<string, string>> = {
     good: "Good",
     excellent: "Excellent",
     outstanding: "Outstanding",
-    
+
     // RecommendedActions
     aiRecommendedActions: "AI Recommended Actions",
     prescribedMitigationSub: "Prescribed mitigation interventions optimized for local drivers",
@@ -85,7 +85,7 @@ export const extraTranslations: Record<LanguageCode, Record<string, string>> = {
     supportingEvidence: "Supporting Evidence Matrix",
     transmittedToMuni: "Transmitted to Municipality",
     transmitOperationalDir: "Transmit Operational Directive",
-    
+
     // Evidence Chips
     trafficDensity: "Traffic Density",
     heavyCommute: "Heavy Commute",
@@ -107,7 +107,7 @@ export const extraTranslations: Record<LanguageCode, Record<string, string>> = {
     stackNominal: "Stack Nominal",
     windConditions: "Wind Conditions",
     calmAir: "Calm Air",
-    
+
     // BottomAnalytics
     bottomAnalyticsTitle: "Neighborhood Environmental Analytics & Alerts Timeline",
     sevenDayAnalysis: "7-Day Analysis",
@@ -120,7 +120,7 @@ export const extraTranslations: Record<LanguageCode, Record<string, string>> = {
     constructionDustWarning: "Construction Dust Warning",
     particulateDriftDesc: "Local building sites particulate drift warning.",
     oneDayAgo: "1 day ago",
-    
+
     // ForecastTable
     forecastLedgerGrid: "Forecast Ledger Grid",
     forecastLedgerSub: "Chronological ledgers showing predictive parameters targets",
@@ -136,7 +136,7 @@ export const extraTranslations: Record<LanguageCode, Record<string, string>> = {
     horizon24h: "Horizon +24h",
     horizon48h: "Horizon +48h",
     horizon72h: "Horizon +72h",
-    
+
     // AISummaryCard
     aiPredictiveAssessment: "AI Predictive Assessment",
     riskScale: "Risk Scale",
@@ -890,7 +890,7 @@ export function translateNarrativeExplanation(text: string, lang: string): strin
     const aqi = match[2];
     const pm25 = match[3];
     const factor = match[4];
-    
+
     if (lang === "hi") {
       const transFactor = factor.includes("commute") ? "भारी आवागमन यातायात" : "उच्च रियल एस्टेट विकास";
       return `${wardName} में वायु गुणवत्ता ${aqi} (PM2.5: ${pm25} µg/m³) मापी गई है। स्पष्टीकरण इंजन इस वृद्धि का कारण ${transFactor} को मानते हैं, और प्रदूषकों का फैलाव हल्की स्थानीय हवाओं के कारण सीमित है।`;
@@ -979,7 +979,7 @@ export function translateFeedItem(text: string, lang: string): string {
 
 export function translateFeedTime(time: string, lang: string): string {
   if (lang === "en" || !time) return time;
-  
+
   if (lang === "hi") {
     if (time.includes("mins ago")) return time.replace("mins ago", "मिनट पहले");
     if (time.includes("1 hour ago")) return "1 घंटा पहले";

@@ -133,7 +133,7 @@ export function CopilotConsole({
   onOpenForecast,
   onNavigate
 }: CopilotConsoleProps) {
-  const { formatTemp, formatWind } = useSettings();
+  const { language, formatTemp, formatWind } = useSettings();
   
   // Suggested Questions Prompt Chips
   const suggestedQuestions = [
@@ -180,7 +180,7 @@ export function CopilotConsole({
       let structuredData: any = undefined;
 
       const lowerText = text.toLowerCase();
-      const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+      const activeLanguage = language;
       const translations = localizedCopilotReplies[activeLanguage] || localizedCopilotReplies["en"];
 
       // Determine city and corresponding ward target

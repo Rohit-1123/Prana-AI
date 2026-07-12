@@ -27,8 +27,8 @@ export function DigitalTwin({
   recommendations,
   onExecutePolicy
 }: DigitalTwinProps) {
-  const { formatTemp, formatWind } = useSettings();
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language, formatTemp, formatWind } = useSettings();
+  const activeLanguage = language;
   const translations = uiTranslations[activeLanguage] || uiTranslations["en"];
   const currentAqi = selectedWard.aqi;
 

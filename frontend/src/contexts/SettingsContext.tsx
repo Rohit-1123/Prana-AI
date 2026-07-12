@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { type LanguageCode } from "../utils/i18n";
 
 export type MeasurementUnit = "metric" | "imperial";
 export type SystemTimezone = "IST" | "UTC";
@@ -6,8 +7,10 @@ export type SystemTimezone = "IST" | "UTC";
 interface SettingsContextType {
   measurementUnit: MeasurementUnit;
   systemTimezone: SystemTimezone;
+  language: LanguageCode;
   setMeasurementUnit: (unit: MeasurementUnit) => void;
   setSystemTimezone: (tz: SystemTimezone) => void;
+  setLanguage: (lang: LanguageCode) => void;
   formatTemp: (celsius: number) => string;
   formatWind: (mps: number) => string;
 }
@@ -21,6 +24,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [systemTimezone, setSystemTimezoneState] = useState<SystemTimezone>(() => {
     return (localStorage.getItem("system_timezone") as SystemTimezone) || "IST";
   });
+  const [language, setLanguageState] = useState<LanguageCode>(() => {
+    return (localStorage.getItem("language") as LanguageCode) || "en";
+  });
 
   const setMeasurementUnit = (unit: MeasurementUnit) => {
     setMeasurementUnitState(unit);
@@ -30,6 +36,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const setSystemTimezone = (tz: SystemTimezone) => {
     setSystemTimezoneState(tz);
     localStorage.setItem("system_timezone", tz);
+  };
+
+  const setLanguage = (lang: LanguageCode) => {
+    setLanguageState(lang);
+    localStorage.setItem("language", lang);
   };
 
   const formatTemp = (celsius: number) => {
@@ -57,6 +68,9 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       if (e.key === "system_timezone") {
         setSystemTimezoneState((e.newValue as SystemTimezone) || "IST");
       }
+      if (e.key === "language") {
+        setLanguageState((e.newValue as LanguageCode) || "en");
+      }
     };
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
@@ -66,8 +80,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     <SettingsContext.Provider value={{
       measurementUnit,
       systemTimezone,
+      language,
       setMeasurementUnit,
       setSystemTimezone,
+      setLanguage,
       formatTemp,
       formatWind
     }}>

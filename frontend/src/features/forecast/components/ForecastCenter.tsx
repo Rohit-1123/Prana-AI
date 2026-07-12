@@ -29,9 +29,9 @@ export function ForecastCenter({
   onNavigateToMap,
   narrativeExplanation
 }: ForecastCenterProps) {
-  const { formatTemp, formatWind } = useSettings();
+  const { language, formatTemp, formatWind } = useSettings();
   // i18n localization definitions
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const activeLanguage = language;
 
   // Workspace Filters
   const [selectedLocation, setSelectedLocation] = useState(selectedWard.name);
@@ -277,7 +277,7 @@ export function ForecastCenter({
               title={activeLanguage === "hi" ? "72 घंटे का पूर्वानुमान" : activeLanguage === "te" ? "72 గంటల అంచనా" : activeLanguage === "ta" ? "72 மணி நேர முன்னறிவிப்பு" : activeLanguage === "kn" ? "72 ಗಂಟೆಗಳ ಮುನ್ಸೂಚನೆ" : "72 Hour Lead"} 
               value={forecast72Aqi} 
               trend={forecast72Aqi > currentAqi ? "up" : "down"} 
-              subtitle="XGBoost regression trend" 
+              subtitle="AI regression trend"
               factors={factors72h} 
             />
             <ForecastSummaryCard 
@@ -287,7 +287,7 @@ export function ForecastCenter({
               colorClass="border-primary/20 text-primary bg-primary/5" 
               subtitle="Weighted safety index scale" 
             />
-            <ForecastSummaryCard title="Prediction Confidence" value="93.4%" badgeText="High" colorClass="border-secondary/20 text-secondary bg-secondary/5" subtitle="XGBoost validation score" />
+                            <ForecastSummaryCard title="Prediction Confidence" value="93.4%" badgeText="High" colorClass="border-secondary/20 text-secondary bg-secondary/5" subtitle="AI validation score" />
           </div>
         );
       })()}

@@ -8,8 +8,8 @@ interface ForecastTableProps {
 }
 
 export function ForecastTable({ data }: ForecastTableProps) {
-  const { formatTemp, formatWind } = useSettings();
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language, formatTemp, formatWind } = useSettings();
+  const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
 
   const getAQIColorClass = (aqi: number) => {

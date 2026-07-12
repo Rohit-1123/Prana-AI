@@ -3,9 +3,7 @@ import {
   WhatIfSimulator,
   RecommendedActions
 } from "../../dashboard/components/DecisionIntelligence";
-import {
-  InsightTimeline
-} from "../../../components/ui/ExplainabilityComponents";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface ReportsDashboardProps {
   selectedWard: any;
@@ -57,7 +55,8 @@ export function ReportsDashboard({
   checkActionPermission
 }: ReportsDashboardProps) {
 
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
 
   return (
     <div className="flex flex-col gap-8 select-none">
@@ -114,10 +113,10 @@ export function ReportsDashboard({
         </div>
       </div>
 
-      {/* Row 2: AI Recommended Actions & Environmental Insights Feed */}
+      {/* Row 2: AI Recommended Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left: Policy Recommendations Panel */}
-        <div className="lg:col-span-8">
+        {/* Policy Recommendations Panel */}
+        <div className="lg:col-span-12">
           <RecommendedActions
             actions={actionRecommendations}
             onExecuteAction={(id, title) => {
@@ -126,11 +125,6 @@ export function ReportsDashboard({
               alert(`Policy directive "${title}" has been transmitted to municipal authorities.`);
             }}
           />
-        </div>
-
-        {/* Right: Live AI Insights chronological Feed */}
-        <div className="lg:col-span-4 flex flex-col gap-4">
-          <InsightTimeline feedItems={feedItems} />
         </div>
       </div>
 

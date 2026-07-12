@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { cn } from "../../utils/cn";
 import { translateFeedItem, translateFeedTime, translateFeedCategory } from "../../utils/i18n_extra";
+import { useSettings } from "../../contexts/SettingsContext";
 
 // ==========================================
 // 1. AI CONFIDENCE RING
@@ -116,7 +117,7 @@ export function AIConfidenceRing({
               <span className="text-[10px] font-extrabold uppercase text-white">Confidence Formula</span>
             </div>
             <p className="text-[10px] text-slate-300 leading-normal">
-              Computed dynamically by our XGBoost classifier, combining historic accuracy validation (40%), data feed availability (30%), and weather boundary volatility (30%).
+              Computed dynamically by our AI classifier, combining historic accuracy validation (40%), data feed availability (30%), and weather boundary volatility (30%).
             </p>
           </motion.div>
         )}
@@ -278,7 +279,8 @@ interface InsightTimelineProps {
 }
 
 export function InsightTimeline({ feedItems }: InsightTimelineProps) {
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
 
   return (
     <div className="glass-card p-6 flex flex-col gap-6 h-full text-left">

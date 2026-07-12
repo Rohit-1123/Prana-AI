@@ -1,6 +1,7 @@
 import { FileText, Download, Printer, Share2, Compass } from "lucide-react";
 import { type ReportTemplate } from "./ReportCard";
 import { uiTranslations, localizedBriefs } from "../../../utils/i18n";
+import { useSettings } from "../../../contexts/SettingsContext";
 
 interface ReportPreviewProps {
   report: ReportTemplate | null;
@@ -10,7 +11,8 @@ interface ReportPreviewProps {
 export function ReportPreview({ report, onClose }: ReportPreviewProps) {
   if (!report) return null;
 
-  const activeLanguage = (localStorage.getItem("language") as "en" | "hi" | "te" | "ta" | "kn") || "en";
+  const { language } = useSettings();
+  const activeLanguage = language;
   const translations = uiTranslations[activeLanguage] || uiTranslations["en"];
 
   const handlePrint = () => {
