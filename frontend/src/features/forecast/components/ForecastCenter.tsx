@@ -393,8 +393,8 @@ export function ForecastCenter({
               </div>
 
               {/* Side-by-side Table */}
-              <div className="border border-border rounded-xl overflow-hidden bg-muted/5">
-                <table className="w-full border-collapse text-[11px] leading-normal text-foreground">
+              <div className="border border-border rounded-xl overflow-x-auto w-full bg-muted/5">
+                <table className="w-full border-collapse text-[11px] leading-normal text-foreground min-w-[500px]">
                   <thead>
                     <tr className="bg-card border-b border-border/85 text-muted font-bold">
                       <th className="px-4 py-2.5 text-left">Ward Name</th>

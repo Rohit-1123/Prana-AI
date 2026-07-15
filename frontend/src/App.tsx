@@ -2147,7 +2147,7 @@ function PranaApp() {
                     <div className="flex items-center gap-2 sm:gap-3 flex-grow md:flex-grow-0 justify-end shrink-0">
 
                       {/* AUTOCOMPLETE LOCATION SEARCH INPUT */}
-                      <div className="relative w-40 sm:w-52 lg:w-60 shrink-0">
+                      <div className="relative hidden sm:block w-40 sm:w-52 lg:w-60 shrink-0">
                         <div className="relative">
                           <Search className="w-4 h-4 text-muted absolute left-3 top-2.5" />
                           <input
@@ -2255,8 +2255,20 @@ function PranaApp() {
                   </div>
                 </header>
 
+                {/* Mobile subheader containing weather and time details to ensure matching parity with desktop layout info */}
+                <div className="flex lg:hidden items-center justify-between px-5 py-2.5 border-b border-border bg-navbar/60 backdrop-blur-md text-[10px] font-bold text-muted select-none shrink-0">
+                  <div className="flex items-center gap-1.5 md:hidden">
+                    <Sun className="w-3.5 h-3.5 text-warning shrink-0" />
+                    <span>{formatTemp(selectedWard.temperature)} {weatherLabel}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-muted shrink-0" />
+                    <span>{currentTimeStr}</span>
+                  </div>
+                </div>
+
                 {/* ACTIVE OPERATIONAL AREA */}
-                <main className="p-8 max-w-7xl w-full mx-auto flex flex-col gap-8 flex-grow">
+                <main className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto flex flex-col gap-4 sm:gap-6 lg:gap-8 flex-grow">
 
                   {loading && (
                     <div className="flex justify-center items-center py-2 gap-2 text-primary">
@@ -2303,7 +2315,7 @@ function PranaApp() {
                       )}
 
 
-                      <div className="glass-card p-5 flex flex-col gap-4">
+                      <div className="glass-card p-4 sm:p-5 flex flex-col gap-3 sm:gap-4">
                         <div className="flex items-center justify-between gap-3 flex-wrap">
                           <div>
                             <h4 className="text-sm font-black text-foreground">Metro AQI Beacons</h4>
@@ -2322,7 +2334,7 @@ function PranaApp() {
                               key={city.name}
                               onClick={() => handleCitySelect(city.name)}
                               className={cn(
-                                "text-left p-3.5 rounded-2xl border transition-all cursor-pointer min-w-[14rem] shrink-0",
+                                "text-left p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all cursor-pointer min-w-[12rem] sm:min-w-[14rem] shrink-0",
                                 city.name === selectedCity ? "bg-primary/10 border-primary/30 shadow-theme" : "bg-background/60 border-border hover:bg-muted/10"
                               )}
                             >
@@ -2385,7 +2397,7 @@ function PranaApp() {
 
                         {/* Left hero: Digital Twin map taking 70% width */}
                         <div className="lg:col-span-8 flex flex-col gap-4">
-                          <div className="glass-card p-6 flex flex-col gap-4 min-h-[460px] relative">
+                          <div className="glass-card p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 min-h-[460px] relative">
                             <div className="flex justify-between items-center">
                               <div>
                                 <h3 className="font-bold text-base flex items-center gap-2">
@@ -2434,7 +2446,7 @@ function PranaApp() {
                       </div>
 
                       {/* Citizen Health Risks - Horizontal Layout Grid */}
-                      <div className="glass-card p-6 flex flex-col gap-6 text-left">
+                      <div className="glass-card p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 text-left">
                         <div>
                           <h4 className="text-xs font-bold text-muted uppercase tracking-widest leading-none font-extrabold flex items-center justify-between">
                             <span className="text-foreground flex items-center gap-1.5 text-sm font-black">
@@ -2490,7 +2502,7 @@ function PranaApp() {
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
                         {/* Recharts trend comparison chart */}
-                        <div className="lg:col-span-8 glass-card p-6 flex flex-col gap-6">
+                        <div className="lg:col-span-8 glass-card p-4 sm:p-6 flex flex-col gap-4 sm:gap-6">
                           <h4 className="font-bold text-sm flex items-center gap-2">
                             <TrendingUp className="w-4.5 h-4.5 text-primary" /> {
                               language === "hi" ? "एक्यूआई पूर्वानुमान समयरेखा (72 घंटे का पूर्वानुमान)" :
@@ -2540,7 +2552,7 @@ function PranaApp() {
                           </div>
                         </div>
 
-                        <div className="lg:col-span-4 glass-card p-6 flex flex-col gap-4">
+                        <div className="lg:col-span-4 glass-card p-4 sm:p-6 flex flex-col gap-3 sm:gap-4">
                           <h4 className="font-bold text-sm">
                             {language === "hi" ? "प्रति घंटा पूर्वानुमानित समयसीमा" :
                               language === "te" ? "గంటల వారీ అంచనా పరిధులు" :
@@ -2578,7 +2590,7 @@ function PranaApp() {
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
                         {/* Policy Impact cards (col-span-12) */}
-                        <div className="lg:col-span-12 glass-card p-6 flex flex-col gap-6 text-left">
+                        <div className="lg:col-span-12 glass-card p-4 sm:p-6 flex flex-col gap-4 sm:gap-6 text-left">
                           <div>
                             <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
                               <Activity className="w-4.5 h-4.5 text-primary" /> {t("policyImpactTitle")}

@@ -202,12 +202,12 @@ export function ExecutiveBriefCard({
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      className="glass-card relative overflow-hidden p-6 border-l-4 border-l-primary shadow-lg bg-gradient-to-r from-card via-card to-primary/5 text-left"
+      className="glass-card relative overflow-hidden p-4 sm:p-6 border-l-4 border-l-primary shadow-lg bg-gradient-to-r from-card via-card to-primary/5 text-left"
     >
       {/* Background soft lighting */}
       <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
       
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4 sm:gap-5">
         {/* Header */}
         <div className="flex justify-between items-start flex-wrap gap-4">
           <div className="flex items-center gap-2.5">
@@ -227,7 +227,7 @@ export function ExecutiveBriefCard({
         {/* Content Layout Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-stretch">
           {/* Situation Box */}
-          <div className="bg-muted/5 border border-border rounded-xl p-4 flex flex-col justify-between min-h-[120px] relative overflow-hidden group">
+          <div className="bg-muted/5 border border-border rounded-xl p-3 sm:p-4 flex flex-col justify-between min-h-[120px] relative overflow-hidden group">
             <div>
               <span className="text-[9px] uppercase tracking-wider font-extrabold text-muted block">{tExtra.currentSituation}</span>
               <div className="flex items-baseline gap-2 mt-2">
@@ -241,7 +241,7 @@ export function ExecutiveBriefCard({
           </div>
 
           {/* Primary Contributors */}
-          <div className="bg-muted/5 border border-border rounded-xl p-4 flex flex-col min-h-[120px]">
+          <div className="bg-muted/5 border border-border rounded-xl p-3 sm:p-4 flex flex-col min-h-[120px]">
             <span className="text-[9px] uppercase tracking-wider font-extrabold text-muted block">{tExtra.primaryPollutionSources}</span>
             <div className="flex flex-col gap-2 mt-3 flex-1 justify-center">
               {primarySources.slice(0, 2).map((src, idx) => (
@@ -257,7 +257,7 @@ export function ExecutiveBriefCard({
           </div>
 
           {/* Forecast Box */}
-          <div className="bg-muted/5 border border-border rounded-xl p-4 flex flex-col justify-between min-h-[120px]">
+          <div className="bg-muted/5 border border-border rounded-xl p-3 sm:p-4 flex flex-col justify-between min-h-[120px]">
             <div>
               <span className="text-[9px] uppercase tracking-wider font-extrabold text-muted block">{tExtra.aiForecastHorizon}</span>
               <p className="text-xs text-foreground mt-2.5 font-medium leading-relaxed">
@@ -267,7 +267,7 @@ export function ExecutiveBriefCard({
           </div>
 
           {/* Directives & Target Improvements */}
-          <div className="bg-muted/5 border border-border rounded-xl p-4 flex flex-col justify-between min-h-[120px]">
+          <div className="bg-muted/5 border border-border rounded-xl p-3 sm:p-4 flex flex-col justify-between min-h-[120px]">
             <div>
               <span className="text-[9px] uppercase tracking-wider font-extrabold text-muted block">{tExtra.advisoryImpact}</span>
               <p className="text-[11px] text-muted mt-2 font-medium leading-relaxed truncate">
@@ -284,10 +284,10 @@ export function ExecutiveBriefCard({
         </div>
 
         {/* FEATURE 6 — EXECUTIVE METRICS (KPI Cards) */}
-        <div className="border-t border-border/80 pt-5 mt-1">
+        <div className="border-t border-border/80 pt-4 sm:pt-5 mt-1">
           <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-primary block mb-3.5">{tExtra.executiveDecisionIndicators}</span>
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-4">
-            <div className="bg-muted/5 border border-border/60 p-3 rounded-xl text-center flex flex-col justify-center">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 sm:gap-4">
+            <div className="bg-muted/5 border border-border/60 p-2.5 sm:p-3 rounded-xl text-center flex flex-col justify-center">
               <span className="text-[8px] text-muted block font-extrabold uppercase tracking-wide">{tExtra.overallConfidence}</span>
               <span className="text-[11.5px] font-black text-foreground mt-1.5 block">{localizedMetrics.confidenceText}</span>
             </div>

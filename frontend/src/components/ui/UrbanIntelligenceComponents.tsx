@@ -519,7 +519,7 @@ export function HealthRiskCard({
         : "border-success/25 bg-success/5 text-success";
 
   return (
-    <div className={cn("border p-4 rounded-xl flex flex-col justify-between text-left h-full transition-all hover:scale-[1.01] hover:bg-card/30 duration-300", colorClasses)}>
+    <div className={cn("border p-3 sm:p-4 rounded-xl flex flex-col justify-between text-left h-full transition-all hover:scale-[1.01] hover:bg-card/30 duration-300", colorClasses)}>
       <div className="flex justify-between items-start gap-2">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-white/10 border border-white/15 flex items-center justify-center text-current shrink-0">
@@ -538,18 +538,18 @@ export function HealthRiskCard({
         </span>
       </div>
 
-      <div className="mt-3.5 flex-1 flex flex-col gap-2">
+      <div className="mt-2.5 sm:mt-3.5 flex-1 flex flex-col gap-1.5 sm:gap-2">
         <div className="flex justify-between items-center text-[10px]">
           <span className="text-muted">{translations.forecastTrend}</span>
           <span className="font-extrabold text-foreground">{translateForecastRisk(forecastRisk, activeLanguage)}</span>
         </div>
-        <div className="bg-background/20 p-2.5 rounded-lg border border-border/30">
+        <div className="bg-background/20 p-2 sm:p-2.5 rounded-lg border border-border/30">
           <span className="text-[8.5px] uppercase tracking-wide font-black text-muted block">{translations.aiRecommendation}</span>
           <p className="text-[10px] text-foreground font-semibold mt-1 leading-normal">{translateRecommendation(recommendation, activeLanguage)}</p>
         </div>
       </div>
 
-      <div className="flex justify-between items-center border-t border-border/40 pt-2.5 mt-3 text-[9px] font-bold">
+      <div className="flex justify-between items-center border-t border-border/40 pt-2 sm:pt-2.5 mt-2.5 sm:mt-3 text-[9px] font-bold">
         <span className="text-muted flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5 text-success" /> {translations.advisoryConfirmed}
         </span>
@@ -582,7 +582,7 @@ export function EnvironmentalHealthIndexCard({
   exposureFactor
 }: EHIProps) {
   return (
-    <div className="glass-card p-6 flex flex-col gap-5 text-left h-full">
+    <div className="glass-card p-4 sm:p-6 flex flex-col gap-4 sm:gap-5 text-left h-full">
       <div className="flex justify-between items-start">
         <div>
           <h4 className="font-bold text-sm text-foreground flex items-center gap-1.5">
@@ -594,7 +594,7 @@ export function EnvironmentalHealthIndexCard({
       </div>
 
       {/* Main Score Layout */}
-      <div className="flex items-center gap-5 bg-muted/5 border border-border p-4 rounded-xl">
+      <div className="flex items-center gap-3 sm:gap-5 bg-muted/5 border border-border p-3 sm:p-4 rounded-xl">
         <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
           <svg className="absolute w-full h-full transform -rotate-90">
             <circle cx="40" cy="40" r="32" stroke="var(--border)" strokeWidth="6.5" fill="transparent" />
@@ -638,7 +638,7 @@ export function EnvironmentalHealthIndexCard({
       </div>
 
       {/* Secondary Factor bars */}
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2 sm:gap-2.5">
         <div className="flex flex-col gap-1 text-[10px]">
           <div className="flex justify-between items-center text-muted font-bold">
             <span>IT Corridor Green Cover Index</span>
@@ -847,7 +847,7 @@ export function DailyBriefCard({
   const translations = urbanTranslations[activeLanguage] || urbanTranslations["en"];
 
   return (
-    <div className="glass-card p-6 border-l-4 border-l-primary flex flex-col gap-4 text-left relative overflow-hidden bg-gradient-to-r from-card via-card to-primary/5">
+    <div className="glass-card p-4 sm:p-6 border-l-4 border-l-primary flex flex-col gap-3 sm:gap-4 text-left relative overflow-hidden bg-gradient-to-r from-card via-card to-primary/5">
       {/* soft light */}
       <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
@@ -867,7 +867,7 @@ export function DailyBriefCard({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2 relative z-10">
-        <div className="bg-background/40 border border-border/40 p-4 rounded-xl">
+        <div className="bg-background/40 border border-border/40 p-3 sm:p-4 rounded-xl">
           <span className="text-[9px] uppercase font-black text-primary block">{translations.currentSituation}</span>
           <p className="text-[11.5px] text-foreground font-semibold mt-1.5 leading-relaxed">{currentSituation}</p>
         </div>
@@ -953,7 +953,7 @@ export function PolicyImpactCard({
   };
 
   return (
-    <div className="bg-background/40 border border-border/40 p-4 rounded-xl flex flex-col justify-between text-left h-full transition-all duration-300 hover:border-border">
+    <div className="bg-background/40 border border-border/40 p-3 sm:p-4 rounded-xl flex flex-col justify-between text-left h-full transition-all duration-300 hover:border-border">
       <div className="flex justify-between items-start gap-4">
         <div>
           <h5 className="font-bold text-foreground text-xs leading-none">{translatePolicyName(policyName, activeLanguage)}</h5>
@@ -964,7 +964,7 @@ export function PolicyImpactCard({
         </span>
       </div>
 
-      <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border/40">
+      <div className="flex flex-col gap-1.5 sm:gap-2 mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-border/40">
         <div className="flex justify-between items-center text-[10px] font-semibold text-muted">
           <span>{translations.expectedVsMeasured}</span>
           <span className="text-success">-{measuredImprovement} AQI ({translations.target}: -{expectedImprovement})</span>
@@ -974,7 +974,7 @@ export function PolicyImpactCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-4 text-center border-t border-border/40 pt-3">
+      <div className="grid grid-cols-3 gap-1 sm:gap-2 mt-3 sm:mt-4 text-center border-t border-border/40 pt-2.5 sm:pt-3">
         <div>
           <span className="text-[7.5px] uppercase tracking-wide font-extrabold text-muted block">{translations.budgetCost}</span>
           <span className="text-[10px] font-black text-foreground mt-0.5 block">
