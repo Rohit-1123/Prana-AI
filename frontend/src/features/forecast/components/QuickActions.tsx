@@ -15,7 +15,7 @@ export function QuickActions({
   const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   return (
-    <div className="flex gap-3 flex-wrap items-center relative select-none z-30">
+    <div className="flex gap-3 flex-wrap items-center relative z-30">
       
       {/* Export Forecast Button with Dropdown Workflow */}
       <div className="relative">

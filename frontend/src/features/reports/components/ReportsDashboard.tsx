@@ -26,8 +26,6 @@ interface ReportsDashboardProps {
   dynamicExplanation: string;
   actionRecommendations: any[];
   setActionRecommendations: React.Dispatch<React.SetStateAction<any[]>>;
-  feedItems: any[];
-  checkActionPermission: (actionName: string, targetTab?: string) => boolean;
 }
 
 export function ReportsDashboard({
@@ -50,20 +48,18 @@ export function ReportsDashboard({
   sourceAttributions,
   dynamicExplanation,
   actionRecommendations,
-  setActionRecommendations,
-  feedItems,
-  checkActionPermission
+  setActionRecommendations
 }: ReportsDashboardProps) {
 
   const { language } = useSettings();
   const activeLanguage = language;
 
   return (
-    <div className="flex flex-col gap-8 select-none">
+    <div className="flex flex-col gap-8">
       
       {/* Header */}
       <div>
-        <h2 className="text-xl font-black text-foreground">
+        <h2 className="text-3xl sm:text-4xl font-extralight tracking-tight text-foreground">
           {activeLanguage === "hi" ? "पर्यावरण खुफिया रिपोर्ट" :
            activeLanguage === "te" ? "పర్యావరణ మేధస్సు నివేదికలు" :
            activeLanguage === "ta" ? "சுற்றுச்சூழல் நுண்ணறிவு அறிக்கைகள்" :
@@ -100,7 +96,6 @@ export function ReportsDashboard({
             estimatedTime={estimatedTime}
             environmentalImpact={environmentalImpact}
             estimatedImprovement={totalReduction}
-            confidence={92}
           />
         </div>
         {/* Right: Source Attribution Card */}
@@ -108,7 +103,6 @@ export function ReportsDashboard({
           <SourceAttributionCard
             attributions={sourceAttributions}
             explanation={dynamicExplanation}
-            overallConfidence={93}
           />
         </div>
       </div>
@@ -120,9 +114,8 @@ export function ReportsDashboard({
           <RecommendedActions
             actions={actionRecommendations}
             onExecuteAction={(id, title) => {
-              if (!checkActionPermission(`Executing policy directive: "${title}"`)) return;
               setActionRecommendations(prev => prev.map(rec => rec.id === id ? { ...rec, executed: true } : rec));
-              alert(`Policy directive "${title}" has been transmitted to municipal authorities.`);
+              alert(`Policy directive "${title}" marked as actioned in this session.`);
             }}
           />
         </div>

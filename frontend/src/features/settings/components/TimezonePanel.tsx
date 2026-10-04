@@ -101,7 +101,7 @@ export function TimezonePanel() {
           className="py-2 px-6 font-bold text-xs"
         >
           {isSaved ? (
-            <span className="flex items-center gap-1.5"><Check className="w-4 h-4 text-white" /> {t.saved}</span>
+            <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> {t.saved}</span>
           ) : (
             t.saveBtn
           )}

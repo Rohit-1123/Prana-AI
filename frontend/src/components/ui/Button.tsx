@@ -28,21 +28,21 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyle = "inline-flex items-center justify-center font-sans type-button rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/50 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
-    
+    const baseStyle = "inline-flex items-center justify-center gap-2 font-sans type-button rounded-full transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:opacity-50 disabled:pointer-events-none cursor-pointer";
+
     const variants = {
-      primary: "bg-[var(--primary)] text-white hover:brightness-105 border border-transparent shadow-soft",
-      secondary: "bg-[var(--surface)] text-[var(--text-primary)] border border-[var(--border)] hover:bg-slate-50 dark:hover:bg-white/5 shadow-soft",
-      accent: "bg-[var(--accent)] text-[#07111F] hover:brightness-105 border border-transparent",
-      danger: "bg-[var(--danger)] text-white hover:brightness-105 border border-transparent",
-      success: "bg-[var(--success)] text-white hover:brightness-105 border border-transparent",
-      ghost: "bg-transparent text-[var(--text-primary)] hover:bg-slate-100 dark:hover:bg-white/5 border border-transparent"
+      primary: "btn-primary border border-transparent",
+      secondary: "btn-ghost",
+      accent: "bg-accent text-on-primary hover:brightness-105 border border-transparent",
+      danger: "bg-danger text-on-primary hover:brightness-105 border border-transparent",
+      success: "bg-success text-on-primary hover:brightness-105 border border-transparent",
+      ghost: "bg-transparent text-foreground hover:bg-foreground/5 border border-transparent"
     };
 
     const sizes = {
-      sm: "px-3 py-1.5 text-xs rounded-md",
-      md: "px-4 py-2 text-sm rounded-lg",
-      lg: "px-6 py-3 text-base rounded-xl"
+      sm: "px-3.5 py-1.5 text-xs",
+      md: "px-5 py-2.5 text-sm",
+      lg: "px-7 py-3.5 text-base"
     };
 
     return (
@@ -62,9 +62,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
           </svg>
         )}
-        {!isLoading && leftIcon && <span className="mr-2 inline-flex">{leftIcon}</span>}
+        {!isLoading && leftIcon && <span className="inline-flex">{leftIcon}</span>}
         {children}
-        {!isLoading && rightIcon && <span className="ml-2 inline-flex">{rightIcon}</span>}
+        {!isLoading && rightIcon && <span className="inline-flex">{rightIcon}</span>}
       </motion.button>
     );
   }
@@ -77,11 +77,11 @@ export interface IconButtonProps extends ButtonProps {
 }
 
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
-  ({ icon, children, className, ...props }, ref) => {
+  ({ icon, className, ...props }, ref) => {
     return (
       <Button
         ref={ref}
-        className={cn("p-2 rounded-lg aspect-square", className)}
+        className={cn("p-2.5 aspect-square", className)}
         {...props}
       >
         {icon}

@@ -80,7 +80,7 @@ export function ForecastTable({ data }: ForecastTableProps) {
               <th className="p-3.5 pr-4 text-center">{tempLabel}</th>
               <th className="p-3.5 pr-4 text-center">{humidityLabel}</th>
               <th className="p-3.5 pr-4 text-center">{tExtra.windVectors}</th>
-              <th className="p-3.5 pr-4 text-center">{tExtra.confidence}</th>
+              <th className="p-3.5 pr-4 text-center">PM2.5</th>
               <th className="p-3.5 pr-4 text-center">{tExtra.trends}</th>
             </tr>
           </thead>
@@ -93,7 +93,7 @@ export function ForecastTable({ data }: ForecastTableProps) {
                 <td className="p-3.5 text-center font-medium">{formatTemp(row.temp)}</td>
                 <td className="p-3.5 text-center font-medium">{row.humidity}%</td>
                 <td className="p-3.5 text-center font-medium">{formatWind(row.wind)}</td>
-                <td className="p-3.5 text-center font-black text-primary">{row.confidence}%</td>
+                <td className="p-3.5 text-center font-medium">{row.pm2_5} µg/m³</td>
                 <td className="p-3.5 text-center font-semibold text-muted">
                   <div className="flex items-center justify-center gap-1">
                     {row.trend === "rising" ? (

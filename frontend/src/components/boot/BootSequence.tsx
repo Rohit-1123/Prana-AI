@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { BrandMark } from "../shell/AppShell";
 import { cn } from "../../utils/cn";
 import { useSettings } from "../../contexts/SettingsContext";
 import { localizedBootSteps } from "../../utils/i18n";
@@ -22,45 +23,6 @@ interface BootSequenceProps {
   progress: number;
   completedSteps: string[];
   activeStep: string;
-}
-
-export function ThemeAwareGradient() {
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-      {/* radial gradients */}
-      <div className="absolute inset-0 bg-background transition-colors duration-500" />
-      <div className="absolute top-1/4 left-1/4 w-[40rem] h-[40rem] rounded-full bg-primary/5 blur-[120px] animate-pulse" style={{ animationDuration: "8s" }} />
-      <div className="absolute bottom-1/4 right-1/4 w-[45rem] h-[45rem] rounded-full bg-secondary/5 blur-[130px] animate-pulse" style={{ animationDuration: "10s" }} />
-      
-      {/* Subtle grid pattern overlay */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-10 dark:opacity-[0.03]" />
-    </div>
-  );
-}
-
-export function BootBackground() {
-  return (
-    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-      <ThemeAwareGradient />
-      
-      {/* Floating dust particles */}
-      <div className="absolute inset-0">
-        {[1, 2, 3, 4, 5].map((p) => (
-          <div
-            key={p}
-            className={cn(
-              "absolute w-1 h-1 rounded-full bg-primary/20 animate-float",
-              p === 1 && "top-1/3 left-1/4 delay-100 duration-1000",
-              p === 2 && "top-1/2 left-2/3 delay-300 duration-1200",
-              p === 3 && "top-2/3 left-1/3 delay-700 duration-1500",
-              p === 4 && "top-1/4 left-3/4 delay-200 duration-800",
-              p === 5 && "top-3/4 left-1/2 delay-500 duration-1100"
-            )}
-          />
-        ))}
-      </div>
-    </div>
-  );
 }
 
 const logoTranslations: Record<"en" | "hi" | "te" | "ta" | "kn", Record<string, string>> = {
@@ -107,18 +69,16 @@ export function BootLogo() {
       variants={logoVariants}
       className="flex flex-col items-center gap-3 relative z-10"
     >
-      <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-theme">
-        <Activity className="w-8 h-8 text-white" />
-      </div>
+      <BrandMark className="w-14 h-14" />
       
       <div className="text-center mt-2">
-        <h2 className="text-2xl font-black tracking-tight text-foreground leading-none">
-          Prana<span className="text-primary font-black">AI</span>
+        <h2 className="text-3xl font-extralight tracking-tight text-foreground leading-none">
+          PranaAI
         </h2>
-        <span className="text-[9px] uppercase tracking-widest font-extrabold text-muted block mt-2">
+        <span className="eyebrow block mt-3">
           {tLogo.tagline}
         </span>
-        <span className="text-[8px] text-muted font-bold block mt-1">
+        <span className="text-[11px] text-muted block mt-1.5">
           {tLogo.version}
         </span>
       </div>
@@ -148,7 +108,7 @@ export function InitializationStep({ label, isCompleted }: InitializationStepPro
       initial="hidden"
       animate="visible"
       variants={stepVariants}
-      className="flex items-center gap-2 text-[11px] font-semibold text-foreground"
+      className="flex items-center gap-2.5 text-xs text-foreground"
     >
       <div className={cn(
         "w-3.5 h-3.5 rounded-full flex items-center justify-center transition-all duration-300",
@@ -196,7 +156,7 @@ interface ProgressBarProps {
 
 export function ProgressBar({ value }: ProgressBarProps) {
   return (
-    <div className="w-full max-w-xs bg-muted/20 h-1 rounded-full overflow-hidden relative z-10">
+    <div className="w-full max-w-xs bg-foreground/10 h-[3px] rounded-full overflow-hidden relative z-10">
       <div 
         className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-300"
         style={{ width: `${value}%` }}
@@ -211,7 +171,7 @@ interface StatusIndicatorProps {
 
 export function StatusIndicator({ text }: StatusIndicatorProps) {
   return (
-    <div className="text-[10px] font-mono text-primary font-bold uppercase tracking-widest relative z-10 animate-pulse">
+    <div className="text-xs text-primary relative z-10 animate-pulse">
       {text}
     </div>
   );
@@ -222,10 +182,8 @@ export function BootLayout({ progress, completedSteps, activeStep }: BootSequenc
   const allSteps = localizedBootSteps[language] || localizedBootSteps["en"];
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background select-none">
-      <BootBackground />
-      
-      <div className="w-full max-w-sm flex flex-col items-center gap-6 relative px-6 py-10">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4">
+      <div className="glass-strong rounded-[2.25rem] w-full max-w-sm flex flex-col items-center gap-6 relative px-8 py-10">
         <BootLogo />
         <ProgressBar value={progress} />
         <StatusIndicator text={activeStep} />

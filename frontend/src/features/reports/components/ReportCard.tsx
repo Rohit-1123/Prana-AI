@@ -36,7 +36,7 @@ export function ReportCard({ report, onGenerate, onPreview }: ReportCardProps) {
           onClick={() => onGenerate(report.id)}
           className="flex-1 btn-primary py-2 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1 cursor-pointer"
         >
-          <Play className="w-3 h-3 text-white fill-white shrink-0" />
+          <Play className="w-3 h-3 fill-current shrink-0" />
           <span>Compile</span>
         </button>
         <button

@@ -55,7 +55,6 @@ export function FilterPanel({
           >
             <option value="AQI" className="bg-card text-foreground">Air Quality Index (AQI)</option>
             <option value="PM2.5" className="bg-card text-foreground">Particulate PM2.5</option>
-            <option value="PM10" className="bg-card text-foreground">Particulate PM10</option>
           </select>
         </div>
 

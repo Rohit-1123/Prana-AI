@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   TrendingUp, 
   TrendingDown, 
-  Info, 
   Clock, 
   Activity, 
   HelpCircle,
@@ -17,114 +16,8 @@ import { useSettings } from "../../contexts/SettingsContext";
 // ==========================================
 // 1. AI CONFIDENCE RING
 // ==========================================
-interface AIConfidenceRingProps {
-  confidence: number; // e.g. 94
-  size?: "sm" | "md" | "lg";
-  showLabel?: boolean;
-}
 
 
-export function AIConfidenceRing({
-  confidence,
-  size = "md",
-  showLabel = true
-}: AIConfidenceRingProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
-
-  const dimensions = {
-    sm: { radius: 14, strokeWidth: 2.5, svgSize: 34, textClass: "text-[8.5px]" },
-    md: { radius: 20, strokeWidth: 3.5, svgSize: 48, textClass: "text-[11px]" },
-    lg: { radius: 28, strokeWidth: 5, svgSize: 68, textClass: "text-[14px]" }
-  }[size];
-
-  const circumference = 2 * Math.PI * dimensions.radius;
-  const strokeDashoffset = circumference * (1 - confidence / 100);
-
-  // Dynamic colors
-  const strokeColor = confidence >= 90 
-    ? "stroke-primary" 
-    : confidence >= 75 
-      ? "stroke-warning" 
-      : "stroke-danger";
-
-  const textColor = confidence >= 90 
-    ? "text-primary" 
-    : confidence >= 75 
-      ? "text-warning" 
-      : "text-danger";
-
-  return (
-    <div className="relative inline-flex items-center gap-2 select-none group">
-      <div 
-        className="relative flex items-center justify-center cursor-help"
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        onClick={() => setShowTooltip(!showTooltip)}
-      >
-        <svg 
-          width={dimensions.svgSize} 
-          height={dimensions.svgSize} 
-          className="transform -rotate-90"
-        >
-          <circle 
-            cx={dimensions.svgSize / 2} 
-            cy={dimensions.svgSize / 2} 
-            r={dimensions.radius} 
-            stroke="var(--border)" 
-            strokeWidth={dimensions.strokeWidth} 
-            fill="transparent" 
-          />
-          <motion.circle 
-            cx={dimensions.svgSize / 2} 
-            cy={dimensions.svgSize / 2} 
-            r={dimensions.radius} 
-            stroke="currentColor" 
-            strokeWidth={dimensions.strokeWidth} 
-            fill="transparent" 
-            className={strokeColor}
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            strokeLinecap="round"
-          />
-        </svg>
-        <span className={cn("absolute font-black text-foreground", dimensions.textClass)}>
-          {confidence}%
-        </span>
-      </div>
-
-      {showLabel && (
-        <div className="flex flex-col text-left">
-          <span className="text-[8px] uppercase tracking-wider font-extrabold text-muted leading-none">AI Confidence</span>
-          <span className={cn("text-[9.5px] font-extrabold leading-none mt-1", textColor)}>
-            {confidence >= 90 ? "Verified High" : confidence >= 75 ? "Satisfactory" : "Unstable"}
-          </span>
-        </div>
-      )}
-
-      {/* Tooltip explaining confidence calculation */}
-      <AnimatePresence>
-        {showTooltip && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 z-55 w-60 p-3 bg-slate-900/95 backdrop-blur-md border border-white/10 rounded-xl shadow-xl text-left"
-          >
-            <div className="flex items-center gap-1.5 border-b border-white/5 pb-1.5 mb-1.5">
-              <Info className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[10px] font-extrabold uppercase text-white">Confidence Formula</span>
-            </div>
-            <p className="text-[10px] text-slate-300 leading-normal">
-              Computed dynamically by our AI classifier, combining historic accuracy validation (40%), data feed availability (30%), and weather boundary volatility (30%).
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 // ==========================================
 // 2. EVIDENCE CHIP
@@ -438,7 +331,7 @@ export function ForecastExplanationCard({ factors }: ForecastExplanationCardProp
           e.stopPropagation();
           setIsOpen(true);
         }}
-        className="w-full flex justify-between items-center text-[10px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer select-none"
+        className="w-full flex justify-between items-center text-[10px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
       >
         <span className="flex items-center gap-1">
           <HelpCircle className="w-3.5 h-3.5" /> WHY THIS FORECAST?

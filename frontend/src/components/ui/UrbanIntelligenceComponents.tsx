@@ -6,7 +6,6 @@ import {
   Heart
 } from "lucide-react";
 import { cn } from "../../utils/cn";
-import { AIConfidenceRing } from "./ExplainabilityComponents";
 
 import { type LanguageCode } from "../../utils/i18n";
 import { useSettings } from "../../contexts/SettingsContext";
@@ -464,7 +463,6 @@ interface HealthRiskCardProps {
   currentRisk: "Low" | "Moderate" | "High" | "Critical";
   forecastRisk: string;
   recommendation: string;
-  confidence: number;
   priority: string;
   icon: React.ReactNode;
 }
@@ -474,7 +472,6 @@ export function HealthRiskCard({
   currentRisk,
   forecastRisk,
   recommendation,
-  confidence,
   priority,
   icon
 }: HealthRiskCardProps) {
@@ -553,7 +550,6 @@ export function HealthRiskCard({
         <span className="text-muted flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5 text-success" /> {translations.advisoryConfirmed}
         </span>
-        <span className="text-primary font-black">{translations.aiConf}: {confidence}%</span>
       </div>
     </div>
   );
@@ -565,7 +561,6 @@ export function HealthRiskCard({
 interface EHIProps {
   score: number;
   trend: "up" | "down" | "stable";
-  confidence: number;
   explanation: string;
   humidity: number;
   greenCover: number;
@@ -575,7 +570,6 @@ interface EHIProps {
 export function EnvironmentalHealthIndexCard({
   score,
   trend,
-  confidence,
   explanation,
   humidity,
   greenCover,
@@ -590,7 +584,6 @@ export function EnvironmentalHealthIndexCard({
           </h4>
           <span className="text-[10px] text-muted mt-1 block">Weighted exposed safety index scale (cumulative factors)</span>
         </div>
-        <AIConfidenceRing confidence={confidence} size="sm" showLabel={true} />
       </div>
 
       {/* Main Score Layout */}
@@ -682,7 +675,6 @@ interface CityComparisonCardProps {
   forecast: number;
   envScore: number;
   trend: "up" | "down" | "stable";
-  confidence: number;
   isSelected: boolean;
   onClick: () => void;
 }
@@ -693,7 +685,6 @@ export function CityComparisonCard({
   forecast,
   envScore,
   trend,
-  confidence,
   isSelected,
   onClick
 }: CityComparisonCardProps) {
@@ -710,7 +701,7 @@ export function CityComparisonCard({
     <div 
       onClick={onClick}
       className={cn(
-        "border rounded-2xl p-4 flex flex-col justify-between text-left h-full transition-all duration-300 relative overflow-hidden cursor-pointer select-none",
+        "border rounded-2xl p-4 flex flex-col justify-between text-left h-full transition-all duration-300 relative overflow-hidden cursor-pointer",
         isSelected 
           ? "bg-primary/10 border-primary shadow-lg scale-[1.01]" 
           : "bg-muted/5 border-border hover:bg-muted/8"
@@ -719,7 +710,7 @@ export function CityComparisonCard({
       <div className="flex justify-between items-start">
         <div>
           <h5 className="font-bold text-foreground text-xs">{city}</h5>
-          <span className="text-[8px] uppercase tracking-wider font-extrabold text-muted block mt-0.5">Reliability: {confidence}%</span>
+          
         </div>
         <div className="flex items-center gap-1 text-[10px] font-bold">
           {trend === "up" ? (
@@ -831,7 +822,6 @@ interface DailyBriefCardProps {
   forecast: string;
   recommendedActions: string[];
   expectedImprovement: string;
-  confidence: number;
 }
 
 export function DailyBriefCard({
@@ -840,7 +830,6 @@ export function DailyBriefCard({
   forecast,
   recommendedActions,
   expectedImprovement,
-  confidence
 }: DailyBriefCardProps) {
   const { language } = useSettings();
   const activeLanguage = language;
@@ -860,9 +849,6 @@ export function DailyBriefCard({
             <h4 className="font-bold text-sm text-foreground leading-none">{translations.todaysBrief}</h4>
             <span className="text-[9.5px] text-muted mt-1 block">{translations.dailyOverview}</span>
           </div>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <AIConfidenceRing confidence={confidence} size="sm" showLabel={true} />
         </div>
       </div>
 
@@ -910,7 +896,6 @@ interface PolicyImpactCardProps {
   status: string;
   expectedImprovement: number;
   measuredImprovement: number;
-  confidence: number;
   cost: number;
   duration: string;
   successRate: number;
@@ -921,7 +906,6 @@ export function PolicyImpactCard({
   status,
   expectedImprovement,
   measuredImprovement,
-  confidence,
   cost,
   duration,
   successRate
@@ -959,9 +943,6 @@ export function PolicyImpactCard({
           <h5 className="font-bold text-foreground text-xs leading-none">{translatePolicyName(policyName, activeLanguage)}</h5>
           <span className="text-[8.5px] uppercase tracking-wider font-extrabold text-muted block mt-1">{translations.status}: {translatePolicyStatus(status, activeLanguage)}</span>
         </div>
-        <span className="text-[8.5px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded font-extrabold">
-          {translations.aiConf}: {confidence}%
-        </span>
       </div>
 
       <div className="flex flex-col gap-1.5 sm:gap-2 mt-3 sm:mt-4 pt-2.5 sm:pt-3 border-t border-border/40">

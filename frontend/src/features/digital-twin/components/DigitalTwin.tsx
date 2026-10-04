@@ -1,3 +1,4 @@
+import { aqiLabel } from "../../../utils/aqi";
 import { MapView } from "./MapView";
 import { BottomAnalytics } from "./BottomAnalytics";
 import { 
@@ -39,15 +40,12 @@ export function DigitalTwin({
     return "text-danger border-danger/20 bg-danger/5";
   };
 
-  const getAQIBadgeText = (aqi: number) => {
-    if (aqi <= 50) return "Good";
-    if (aqi <= 100) return "Satisfactory";
-    if (aqi <= 200) return "Moderate";
-    return "Poor / Severe";
-  };
+  const getAQIBadgeText = aqiLabel;
+  const next24 = selectedWard.forecast?.[0]?.predicted_aqi;
+  const trendLabel = typeof next24 !== "number" ? "Live" : next24 > currentAqi + 10 ? "Rising" : next24 < currentAqi - 10 ? "Improving" : "Steady";
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start select-none">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
       
       {/* Left Area (70% on desktop): Digital Twin Map */}
       <div className="lg:col-span-8 flex flex-col gap-6">
@@ -75,11 +73,8 @@ export function DigitalTwin({
             <Compass className="w-5 h-5 text-primary shrink-0" /> {selectedWard.name}
           </h3>
           <p className="text-[10px] text-muted mt-2 leading-relaxed">
-            {activeLanguage === "hi" ? "केंद्रक फोकस निर्देशांक गतिशील रूप से संरेखित हैं। मुख्य पर्यावरणीय संकेतक हर 60 सेकंड में सिंक होते हैं।" :
-             activeLanguage === "te" ? "కేంద్ర బిందువు కోఆర్డినేట్లు స్వయంచాలకంగా సమలేఖనం చేయబడ్డాయి. ప్రతి 60 సెకన్లకు సూచికలు నవీకరించబడతాయి." :
-             activeLanguage === "ta" ? "குவிய ஒருங்கிணைப்புகள் தானாகவே சீரமைக்கப்படுகின்றன. சுற்றுச்சூழல் குறிகாட்டிகள் ஒவ்வொரு 60 விநாடிகளுக்கும் ஒத்திசைக்கப்படுகின்றன." :
-             activeLanguage === "kn" ? "ಕೇಂದ್ರೀಕೃತ ನಿರ್ದೇಶಾಂಕಗಳು ಕ್ರಿಯಾತ್ಮಕವಾಗಿ ಹೊಂದಾಣಿಕೆಯಾಗುತ್ತವೆ. ಪರಿಸರ ಸೂಚಕಗಳು ಪ್ರತಿ 60 ಸೆಕೆಂಡಿಗೆ ನವೀಕರಣಗೊಳ್ಳುತ್ತವೆ." :
-             "Centroid focus coordinates aligned dynamically. Core environmental indicators sync every 60 seconds."}
+            {Number(selectedWard.latitude).toFixed(3)}°N, {Number(selectedWard.longitude).toFixed(3)}°E
+            {selectedWard.updated && ` · Updated ${new Date(selectedWard.updated).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
           </p>
         </div>
 
@@ -104,7 +99,7 @@ export function DigitalTwin({
             <div className="w-10 h-10 rounded-full bg-card flex items-center justify-center shadow-theme">
               <TrendingUp className="w-5 h-5 text-primary" />
             </div>
-            <span className="text-[9px] uppercase font-bold text-muted mt-1 font-bold">Stable</span>
+            <span className="text-[9px] uppercase font-bold text-muted mt-1 font-bold">{trendLabel}</span>
           </div>
         </div>
 
@@ -154,7 +149,7 @@ export function DigitalTwin({
                   </span>
                   <span className="text-xs font-black">{formatWind(selectedWard.wind_speed)} Speed</span>
                 </div>
-                <span className="text-[9px] font-bold text-success">Calm dispersion</span>
+                <span className={cn("text-[9px] font-bold", selectedWard.wind_speed < 2.5 ? "text-warning" : "text-success")}>{selectedWard.wind_speed < 2.5 ? "Slow dispersion" : selectedWard.wind_speed < 5 ? "Light breeze" : "Good dispersion"}</span>
               </div>
             </div>
           </div>
@@ -170,18 +165,19 @@ export function DigitalTwin({
                activeLanguage === "kn" ? "ನೀತಿ ಹಸ್ತಕ್ಷೇಪಗಳು" :
                "Policy Interventions"}
             </span>
-            <span className="text-[9px] font-bold bg-primary/10 border border-primary/20 text-primary px-1.5 py-0.5 rounded">Active</span>
+            <span className="text-[9px] font-bold bg-warning/10 border border-warning/30 text-warning px-1.5 py-0.5 rounded">Indicative</span>
           </h4>
 
           <div className="flex flex-col gap-3">
-            {recommendations.slice(0, 2).map((rec) => (
+            {currentAqi <= 100 && <p className="text-[11px] text-muted">No interventions needed: air quality is {getAQIBadgeText(currentAqi)} right now.</p>}
+            {currentAqi > 100 && recommendations.slice(0, 2).map((rec) => (
               <div key={rec.id} className="bg-muted/5 border border-border p-3 rounded-xl flex flex-col gap-2.5">
                 <div className="flex justify-between items-start gap-3">
                   <div>
                     <span className="font-extrabold text-[10.5px] text-foreground leading-snug block">{translateActionTitle(rec.id, rec.title, activeLanguage)}</span>
                     <span className="text-[9.5px] text-muted mt-1 leading-normal block">{translateActionDesc(rec.id, rec.desc, activeLanguage, selectedWard.name).slice(0, 70)}...</span>
                   </div>
-                  <span className="text-[9px] text-success font-extrabold shrink-0">{rec.impact}</span>
+                  
                 </div>
                 <button
                   onClick={() => onExecutePolicy(rec.id, rec.title)}

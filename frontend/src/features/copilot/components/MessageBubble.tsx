@@ -256,13 +256,13 @@ export function MessageBubble({ msg, onNavigate, onGenerateReport }: MessageBubb
   };
 
   let displayWelcome = msg.text;
-  if (msg.text === "Hello! I am your Citizen Advisory Agent. Ask me questions about Hyderabad's air quality, safe jogging hours, or clean exposure routes.") {
+  if (msg.text === "Hello! I am your Citizen Advisory Agent. Ask me about air quality, safe outdoor hours, or cleaner places nearby in any city on PranaAI.") {
     displayWelcome = translations.copilotWelcome || msg.text;
   }
 
   return (
     <div className={cn(
-      "flex gap-3 max-w-[92%] animate-in fade-in duration-200 select-none",
+      "flex gap-3 max-w-[92%] animate-in fade-in duration-200",
       isUser ? "self-end flex-row-reverse" : "self-start"
     )}>
       
@@ -271,7 +271,7 @@ export function MessageBubble({ msg, onNavigate, onGenerateReport }: MessageBubb
         "w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border shadow-md",
         isUser 
           ? "bg-primary/10 border-primary/20 text-primary" 
-          : "bg-gradient-to-tr from-primary to-accent border-transparent text-white"
+          : "bg-gradient-to-tr from-primary to-accent border-transparent text-on-primary"
       )}>
         {isUser ? <User className="w-5 h-5" /> : <Activity className="w-5 h-5" />}
       </div>
@@ -280,7 +280,7 @@ export function MessageBubble({ msg, onNavigate, onGenerateReport }: MessageBubb
         
         {/* User Plain Chat Bubble */}
         {isUser && (
-          <div className="p-3.5 rounded-2xl text-[12.5px] leading-relaxed font-sans font-semibold shadow-theme border bg-primary text-white border-transparent rounded-tr-none self-end max-w-lg">
+          <div className="p-3.5 rounded-2xl text-[12.5px] leading-relaxed font-sans font-semibold shadow-theme border bg-primary text-on-primary border-transparent rounded-tr-none self-end max-w-lg">
             {msg.text}
           </div>
         )}
@@ -474,7 +474,7 @@ export function MessageBubble({ msg, onNavigate, onGenerateReport }: MessageBubb
                       onNavigate(act.tab);
                     }
                   }}
-                  className="px-2.5 py-1.5 rounded-lg border border-border/80 bg-card hover:bg-muted/10 text-[9.5px] font-bold text-muted hover:text-white flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all duration-200"
+                  className="px-2.5 py-1.5 rounded-lg border border-border/80 bg-card hover:bg-muted/10 text-[9.5px] font-bold text-muted hover:text-foreground flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 transition-all duration-200"
                 >
                   <act.icon className="w-3 h-3 text-primary shrink-0" />
                   <span>{act.label}</span>

@@ -88,8 +88,8 @@ export const uiTranslations: Record<LanguageCode, Record<string, string>> = {
     
     recommendedActionsTitle: "AI Causal Recommended Directives",
     recommendedActionsSub: "Prescribed environmental control actions with live attribution sandboxing",
-    executeActionLabel: "Transmit Policy Directive",
-    executedLabel: "Transmitted",
+    executeActionLabel: "Mark as actioned",
+    executedLabel: "Actioned",
     estimatedCostLabel: "Estimated Implementation Budget",
     estimatedTimeLabel: "Est. Mobilization Time",
     impactReductionLabel: "Target Mitigation Impact",
@@ -102,7 +102,7 @@ export const uiTranslations: Record<LanguageCode, Record<string, string>> = {
     
     // Copilot
     copilotPlaceholder: "Ask PranaAI Copilot about air quality, exposure risks, or policy mitigation...",
-    copilotWelcome: "Hello! I am your Citizen Advisory Agent. Ask me questions about Hyderabad's air quality, safe jogging hours, or clean exposure routes.",
+    copilotWelcome: "Hello! I am your Citizen Advisory Agent. Ask me about air quality, safe outdoor hours, or cleaner places nearby in any city on PranaAI.",
     explainabilityAttribution: "AI Causal Attribution",
     advisoryInterventions: "Advisory Interventions",
     forecastHorizon: "AI Forecast Horizon",
@@ -188,7 +188,7 @@ export const uiTranslations: Record<LanguageCode, Record<string, string>> = {
     systemFeedActive: "टेलीमेट्री फीड सक्रिय",
     
     copilotPlaceholder: "वायु गुणवत्ता, जोखिम या नीति शमन के बारे में प्राणएआई कोपायलट से पूछें...",
-    copilotWelcome: "नमस्ते! मैं आपका नागरिक सलाहकार एजेंट हूँ। मुझसे हैदराबाद की वायु गुणवत्ता, सुरक्षित टहलने के घंटे, या स्वच्छ मार्ग के बारे में पूछें।",
+    copilotWelcome: "नमस्ते! मैं आपका नागरिक सलाहकार एजेंट हूँ। मुझसे किसी भी शहर की वायु गुणवत्ता, बाहर जाने के सुरक्षित समय, या आस-पास की स्वच्छ जगहों के बारे में पूछें।",
     explainabilityAttribution: "एआई कारण एट्रिब्यूशन",
     advisoryInterventions: "सलाहकारी हस्तक्षेप",
     forecastHorizon: "एआई पूर्वानुमान क्षितिज",
@@ -273,7 +273,7 @@ export const uiTranslations: Record<LanguageCode, Record<string, string>> = {
     systemFeedActive: "టెలిమెట్రీ ఫీడ్ యాక్టివ్‌గా ఉంది",
     
     copilotPlaceholder: "గాలి నాణ్యత, ప్రమాదాలు లేదా విధానాల గురించి ప్రాణAI కోపైలట్‌ను అడగండి...",
-    copilotWelcome: "నమస్తే! నేను మీ పౌర సలహా ఏజెంట్‌ను. హైదరాబాద్ గాలి నాణ్యత, సురక్షితమైన నడక గంటలు లేదా స్వచ్ఛమైన మార్గాల గురించి నన్ను అడగండి.",
+    copilotWelcome: "నమస్తే! నేను మీ పౌర సలహా ఏజెంట్‌ను. ఏ నగరంలోనైనా గాలి నాణ్యత, బయటకు వెళ్ళడానికి సురక్షితమైన సమయం లేదా దగ్గరలోని స్వచ్ఛమైన ప్రాంతాల గురించి నన్ను అడగండి.",
     explainabilityAttribution: "AI కారణ అట్రిబ్యూషన్",
     advisoryInterventions: "సలహా జోక్యాలు",
     forecastHorizon: "AI అంచనా పరిధి",
@@ -358,7 +358,7 @@ export const uiTranslations: Record<LanguageCode, Record<string, string>> = {
     systemFeedActive: "டெலிமெட்ரி ஃபீட் செயலில் உள்ளது",
     
     copilotPlaceholder: "காற்று தரம், பாதிப்புகள் அல்லது கொள்கைகள் பற்றி பிராணாஏஐ கோபைலட்டிடம் கேளுங்கள்...",
-    copilotWelcome: "வணக்கம்! நான் உங்கள் குடிமக்கள் ஆலோசனை முகவர். சென்னை காற்று தரம், பாதுகாப்பான நடைப்பயிற்சி நேரங்கள் அல்லது சுத்தமான பாதைகள் பற்றி என்னிடம் கேளுங்கள்.",
+    copilotWelcome: "வணக்கம்! நான் உங்கள் குடிமக்கள் ஆலோசனை முகவர். எந்த நகரத்தின் காற்று தரம், வெளியே செல்ல பாதுகாப்பான நேரம் அல்லது அருகிலுள்ள சுத்தமான இடங்கள் பற்றி என்னிடம் கேளுங்கள்.",
     explainabilityAttribution: "AI காரண பண்புக்கூறு",
     advisoryInterventions: "ஆலோசனை தலையீடுகள்",
     forecastHorizon: "AI முன்னறிவிப்பு வரம்பு",
@@ -443,7 +443,7 @@ export const uiTranslations: Record<LanguageCode, Record<string, string>> = {
     systemFeedActive: "ಟೆಲಿಮೆಟ್ರಿ ಫೀಡ್ ಸಕ್ರಿಯವಾಗಿದೆ",
     
     copilotPlaceholder: "ಗಾಳಿಯ ಗುಣಮಟ್ಟ, ಅಪಾಯಗಳು ಅಥವಾ ನೀತಿಗಳ ಬಗ್ಗೆ ಪ್ರಾಣಎಐ ಕೊಪೈಲಟ್‌ರನ್ನು ಕೇಳಿ...",
-    copilotWelcome: "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ನಾಗರಿಕ ಸಲಹಾ ಏಜೆಂಟ್. ಬೆಂಗಳೂರಿನ ಗಾಳಿ ಗುಣಮಟ್ಟ, ಸುರಕ್ಷಿತ ನಡಿಗೆಯ ಸಮಯ ಅಥವಾ ಸ್ವಚ್ಛ ಮಾರ್ಗಗಳ ಬಗ್ಗೆ ಕೇಳಿ.",
+    copilotWelcome: "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ನಾಗರಿಕ ಸಲಹಾ ಏಜೆಂಟ್. ಯಾವುದೇ ನಗರದ ಗಾಳಿ ಗುಣಮಟ್ಟ, ಹೊರಗೆ ಹೋಗಲು ಸುರಕ್ಷಿತ ಸಮಯ ಅಥವಾ ಹತ್ತಿರದ ಸ್ವಚ್ಛ ಸ್ಥಳಗಳ ಬಗ್ಗೆ ಕೇಳಿ.",
     explainabilityAttribution: "AI ಕಾರಣ ಅಟ್ರಿಬ್ಯೂಷನ್",
     advisoryInterventions: "ಸಲಹಾ ಮಧ್ಯಸ್ಥಿಕೆಗಳು",
     forecastHorizon: "AI ಮುನ್ಸೂಚನೆ ವ್ಯಾಪ್ತಿ",
@@ -530,93 +530,6 @@ export const localizedBriefs: Record<LanguageCode, LocalizedBrief> = {
   }
 };
 
-export const localizedCopilotReplies: Record<LanguageCode, { text: string; primaryCause: string; secondaryCause: string; weatherInfluence: string; forecast: string; recommendations: string[]; evidence: string[] }> = {
-  en: {
-    text: "I have compiled the structured environmental attribution breakdown. Commuter traffic flow peaks and dry wind particulate suspensions are the primary drivers.",
-    primaryCause: "Commuter Traffic Congestion",
-    secondaryCause: "Building Demolition Activity",
-    weatherInfluence: "Dry north-westerly wind vectors delaying dispersals.",
-    forecast: "AQI forecasted to rise to 162 AQI by 4:00 PM if no interventions are initiated.",
-    recommendations: [
-      "Restrict diesel transport near core office junctions.",
-      "Deploy localized sprinkler vehicles along the central ring road.",
-      "Alert construction site engineers to initiate dust covers."
-    ],
-    evidence: [
-      "Commute junction sensors: 65% capacity",
-      "Fugitive dust sensors: PM10 85 µg/m³",
-      "Wind telemetry: 5.5 m/s"
-    ]
-  },
-  hi: {
-    text: "मैंने संरचित पर्यावरणीय एट्रिब्यूशन विवरण तैयार किया है। आवागमन यातायात शिखर और शुष्क हवा कण निलंबन प्राथमिक चालक हैं।",
-    primaryCause: "यातायात भीड़",
-    secondaryCause: "भवन विध्वंस गतिविधि",
-    weatherInfluence: "शुष्क उत्तर-पश्चिमी हवाएं कणों के बिखराव में देरी कर रही हैं।",
-    forecast: "यदि कोई हस्तक्षेप नहीं किया गया, तो शाम 4:00 बजे तक एक्यूआई बढ़कर 162 होने का अनुमान है।",
-    recommendations: [
-      "मुख्य कार्यालय चौराहों के पास डीजल परिवहन को प्रतिबंधित करें।",
-      "केंद्रीय रिंग रोड पर स्थानीयकृत जल छिड़काव वाहन तैनात करें।",
-      "निर्माण स्थल इंजीनियरों को धूल कवर शुरू करने के लिए सचेत करें।"
-    ],
-    evidence: [
-      "यातायात सेंसर: 65% क्षमता",
-      "धूल सेंसर: पीएम10 85 µg/m³",
-      "हवा टेलीमेट्री: 5.5 m/s"
-    ]
-  },
-  te: {
-    text: "నేను కాలుష్య కారణాల అట్రిబ్యూషన్ విశ్లేషణను సిద్ధం చేశాను. వాహనాల రద్దీ మరియు పొడి గాలి ప్రభావం దీనికి ప్రధాన కారణాలు.",
-    primaryCause: "వాహనాల రద్దీ",
-    secondaryCause: "భవనాల నిర్మాణ ధూళి",
-    weatherInfluence: "పొడి వాయువ్య గాలుల వల్ల కాలుష్య ధూళి త్వరగా తొలగిపోవడం లేదు.",
-    forecast: "ఎటువంటి చర్యలు తీసుకోకపోతే సాయంత్రం 4:00 గంటలకల్లా సూచిక 162 AQI కి పెరిగే అవకాశం ఉంది.",
-    recommendations: [
-      "ప్రధాన కార్యాలయాల కూడళ్ల వద్ద డీజిల్ రవాణాను నియంత్రించండి.",
-      "రింగ్ రోడ్డు పొడవునా నీటిని చల్లే వాహనాలను రంగంలోకి దించండి.",
-      "నిర్ಮಾಣ సంస్థలు తప్పనిసరిగా ధూళి నియంత్రణ కవర్లను వాడేలా ఆదేశించండి."
-    ],
-    evidence: [
-      "రద్దీ సెన్సార్లు: 65% సామర్థ్యం",
-      "ధూళి సెన్సార్లు: PM10 85 µg/m³",
-      "గాలి టెలిమెట్రీ: 5.5 m/s"
-    ]
-  },
-  ta: {
-    text: "காற்றின் மாசுபாட்டிற்கான காரணிகளின் ஒப்பீட்டு பகுப்பாய்வை நான் தயாரித்துள்ளேன். போக்குவரத்து நெரிசல் மற்றும் வறண்ட காற்று ஆகியவை முக்கிய காரணங்கள்.",
-    primaryCause: "போக்குவரத்து நெரிசல்",
-    secondaryCause: "கட்டிட கட்டுமான தூசிகள்",
-    weatherInfluence: "வறண்ட வடமேற்கு காற்று துகள்களின் சிதறலைத் தாமதப்படுத்துகிறது.",
-    forecast: "தடுப்பு நடவடிக்கைகள் எடுக்கப்படாவிட்டால் மாலை 4:00 மணிக்குள் AQI 162 ஆக உயரக்கூடும்.",
-    recommendations: [
-      "முக்கிய அலுவலக சந்திப்புகளுக்கு அருகில் டீசல் வாகனங்களை கட்டுப்படுத்தவும்.",
-      "ரிங் ரோட்டில் தண்ணீர் தெளிக்கும் வாகனங்களை இயக்கவும்.",
-      "கட்டுமானப் பகுதிகளில் தூசுகளை மூடும் உறைகளைப் பயன்படுத்துவதை உறுதி செய்யவும்."
-    ],
-    evidence: [
-      "போக்குவரத்து சென்சார்கள்: 65% கொள்ளளவு",
-      "தூசி சென்சார்கள்: PM10 85 µg/m³",
-      "காற்று டெலிமெட்ரி: 5.5 m/s"
-    ]
-  },
-  kn: {
-    text: "ನಾನು ಮಾಲಿನ್ಯದ ಕಾರಣಗಳ ತುಲನಾತ್ಮಕ ವಿಶ್ಲೇಷಣೆಯನ್ನು ಸಿದ್ಧಪಡಿಸಿದ್ದೇನೆ. ವಾಹನ ದಟ್ಟಣೆ ಮತ್ತು ಒಣ ಗಾಳಿಯ ವಾತಾವರಣವೇ ಇದಕ್ಕೆ ಮುಖ್ಯ ಕಾರಣಗಳು.",
-    primaryCause: "ವಾಹನ ಸಂಚಾರ ದಟ್ಟಣೆ",
-    secondaryCause: "ಕಟ್ಟಡ ಧೂಳು ಮಾಲಿನ್ಯ",
-    weatherInfluence: "ಒಣ ವಾಯುವ್ಯ ಮಾರುತಗಳು ಧೂಳಿನ ಕಣಗಳ ಚದುರುವಿಕೆಯನ್ನು ವಿಳಂಬಗೊಳಿಸುತ್ತಿವೆ.",
-    forecast: "ಯಾವುದೇ ಕ್ರಮ ಕೈಗೊಳ್ಳದಿದ್ದರೆ ಸಂಜೆ 4:00 ರ ವೇಳೆಗೆ AQI 162 ಕ್ಕೆ ಏರಲಿದೆ.",
-    recommendations: [
-      "ಮುಖ್ಯ ಕಚೇರಿ ಜಂಕ್ಷನ್‌ಗಳ ಬಳಿ ಡೀಸೆಲ್ ವಾಹನ ಸಂಚಾರವನ್ನು ನಿರ್ಬಂಧಿಸಿ.",
-      "ರಿಂಗ್ ರಸ್ತೆಯುದ್ದಕ್ಕೂ ನೀರು ಸಿಂಪಡಿಸುವ ವಾಹನಗಳನ್ನು ನಿಯೋಜಿಸಿ.",
-      "ಕಟ್ಟಡ ನಿರ್ಮಾಣ ಸಂಸ್ಥೆಗಳು ಧೂಳು ತಡೆಯುವ ಪರದೆಗಳನ್ನು ಅಳವಡಿಸಲು ಸೂಚಿಸಿ."
-    ],
-    evidence: [
-      "ಸಂಚಾರ ಸೆನ್ಸರ್‌ಗಳು: 65% ದಟ್ಟಣೆ",
-      "ಧೂಳಿನ ಸೆನ್ಸರ್‌ಗಳು: PM10 85 µg/m³",
-      "ಗಾಳಿಯ ಟೆಲಿಮೆಟ್ರಿ: 5.5 m/s"
-    ]
-  }
-};
 
 export const localizedBootSteps: Record<"en" | "hi" | "te" | "ta" | "kn", string[]> = {
   en: [
@@ -670,3 +583,59 @@ export const localizedBootSteps: Record<"en" | "hi" | "te" | "ta" | "kn", string
     "ಮಿಷನ್ ಕಂಟ್ರೋಲ್ ಅಂತಿಮಗೊಳಿಸಲಾಗುತ್ತಿದೆ"
   ]
 };
+
+// Short labels for the navigation rail and dashboard hero.
+// ponytail: machine-assisted translations, have a native speaker review hi/te/ta/kn
+const shellStrings: Record<LanguageCode, Record<string, string>> = {
+  en: {
+    navHome: "Overview", navMap: "City Twin", navForecast: "Forecast", navReports: "Reports",
+    navCopilot: "Copilot", navSettings: "Settings", navAbout: "About", navMore: "More",
+    greetMorning: "Good morning", greetAfternoon: "Good afternoon", greetEvening: "Good evening",
+    aqiNow: "Air quality index", forecastFor: "Forecast", nowLabel: "Now",
+    outlookTitle: "72-hour outlook", sourcesTitle: "What's driving it", citiesTitle: "Cities",
+    healthTitle: "Environmental health", nextActionTitle: "Next best action",
+    askCopilot: "Ask Copilot", openForecast: "Open forecast", openMap: "Open city twin", simulate: "Simulate",
+    mapTitle: "Live city twin", insightsTitle: "Intelligence briefings", searchShort: "Search wards",
+  },
+  hi: {
+    navHome: "अवलोकन", navMap: "सिटी ट्विन", navForecast: "पूर्वानुमान", navReports: "रिपोर्ट",
+    navCopilot: "कोपायलट", navSettings: "सेटिंग्स", navAbout: "परिचय", navMore: "अधिक",
+    greetMorning: "सुप्रभात", greetAfternoon: "नमस्कार", greetEvening: "शुभ संध्या",
+    aqiNow: "वायु गुणवत्ता सूचकांक", forecastFor: "पूर्वानुमान", nowLabel: "अभी",
+    outlookTitle: "72 घंटे का अनुमान", sourcesTitle: "मुख्य कारण", citiesTitle: "शहर",
+    healthTitle: "पर्यावरणीय स्वास्थ्य", nextActionTitle: "अगला सर्वोत्तम कदम",
+    askCopilot: "कोपायलट से पूछें", openForecast: "पूर्वानुमान खोलें", openMap: "सिटी ट्विन खोलें", simulate: "सिमुलेट करें",
+    mapTitle: "लाइव सिटी ट्विन", insightsTitle: "इंटेलिजेंस ब्रीफिंग", searchShort: "वार्ड खोजें",
+  },
+  te: {
+    navHome: "అవలోకనం", navMap: "సిటీ ట్విన్", navForecast: "అంచనా", navReports: "నివేదికలు",
+    navCopilot: "కోపైలట్", navSettings: "సెట్టింగ్‌లు", navAbout: "గురించి", navMore: "మరిన్ని",
+    greetMorning: "శుభోదయం", greetAfternoon: "నమస్కారం", greetEvening: "శుభ సాయంత్రం",
+    aqiNow: "గాలి నాణ్యత సూచిక", forecastFor: "అంచనా", nowLabel: "ఇప్పుడు",
+    outlookTitle: "72 గంటల అంచనా", sourcesTitle: "ప్రధాన కారణాలు", citiesTitle: "నగరాలు",
+    healthTitle: "పర్యావరణ ఆరోగ్యం", nextActionTitle: "తదుపరి ఉత్తమ చర్య",
+    askCopilot: "కోపైలట్‌ను అడగండి", openForecast: "అంచనా తెరవండి", openMap: "సిటీ ట్విన్ తెరవండి", simulate: "సిమ్యులేట్",
+    mapTitle: "లైవ్ సిటీ ట్విన్", insightsTitle: "ఇంటెలిజెన్స్ బ్రీఫింగ్‌లు", searchShort: "వార్డులను వెతకండి",
+  },
+  ta: {
+    navHome: "மேலோட்டம்", navMap: "நகர இரட்டை", navForecast: "முன்னறிவிப்பு", navReports: "அறிக்கைகள்",
+    navCopilot: "கோபைலட்", navSettings: "அமைப்புகள்", navAbout: "பற்றி", navMore: "மேலும்",
+    greetMorning: "காலை வணக்கம்", greetAfternoon: "வணக்கம்", greetEvening: "மாலை வணக்கம்",
+    aqiNow: "காற்று தரக் குறியீடு", forecastFor: "முன்னறிவிப்பு", nowLabel: "இப்போது",
+    outlookTitle: "72 மணிநேர முன்னோக்கு", sourcesTitle: "முக்கிய காரணங்கள்", citiesTitle: "நகரங்கள்",
+    healthTitle: "சுற்றுச்சூழல் ஆரோக்கியம்", nextActionTitle: "அடுத்த சிறந்த நடவடிக்கை",
+    askCopilot: "கோபைலட்டிடம் கேளுங்கள்", openForecast: "முன்னறிவிப்பைத் திற", openMap: "நகர இரட்டையைத் திற", simulate: "உருவகப்படுத்து",
+    mapTitle: "நேரடி நகர இரட்டை", insightsTitle: "நுண்ணறிவு சுருக்கங்கள்", searchShort: "வார்டுகளைத் தேடு",
+  },
+  kn: {
+    navHome: "ಅವಲೋಕನ", navMap: "ಸಿಟಿ ಟ್ವಿನ್", navForecast: "ಮುನ್ಸೂಚನೆ", navReports: "ವರದಿಗಳು",
+    navCopilot: "ಕೋಪೈಲಟ್", navSettings: "ಸೆಟ್ಟಿಂಗ್‌ಗಳು", navAbout: "ಕುರಿತು", navMore: "ಇನ್ನಷ್ಟು",
+    greetMorning: "ಶುಭೋದಯ", greetAfternoon: "ನಮಸ್ಕಾರ", greetEvening: "ಶುಭ ಸಂಜೆ",
+    aqiNow: "ಗಾಳಿ ಗುಣಮಟ್ಟ ಸೂಚ್ಯಂಕ", forecastFor: "ಮುನ್ಸೂಚನೆ", nowLabel: "ಈಗ",
+    outlookTitle: "72 ಗಂಟೆಗಳ ಮುನ್ನೋಟ", sourcesTitle: "ಪ್ರಮುಖ ಕಾರಣಗಳು", citiesTitle: "ನಗರಗಳು",
+    healthTitle: "ಪರಿಸರ ಆರೋಗ್ಯ", nextActionTitle: "ಮುಂದಿನ ಉತ್ತಮ ಕ್ರಮ",
+    askCopilot: "ಕೋಪೈಲಟ್ ಕೇಳಿ", openForecast: "ಮುನ್ಸೂಚನೆ ತೆರೆಯಿರಿ", openMap: "ಸಿಟಿ ಟ್ವಿನ್ ತೆರೆಯಿರಿ", simulate: "ಸಿಮ್ಯುಲೇಟ್",
+    mapTitle: "ಲೈವ್ ಸಿಟಿ ಟ್ವಿನ್", insightsTitle: "ಇಂಟೆಲಿಜೆನ್ಸ್ ಬ್ರೀಫಿಂಗ್‌ಗಳು", searchShort: "ವಾರ್ಡ್‌ಗಳನ್ನು ಹುಡುಕಿ",
+  },
+};
+(Object.keys(shellStrings) as LanguageCode[]).forEach((l) => Object.assign(uiTranslations[l], shellStrings[l]));

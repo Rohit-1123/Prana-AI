@@ -40,7 +40,7 @@ export function PromptInput({ onSend, onClear, isLoading }: PromptInputProps) {
       {/* Multi-line input */}
       <textarea
         rows={1}
-        placeholder="Ask about Hyderabad air quality, traffic spikes, weather indices, or green route recommendations..."
+        placeholder="Ask about air quality, safe outdoor hours, forecasts, or cleaner nearby places..."
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -53,7 +53,7 @@ export function PromptInput({ onSend, onClear, isLoading }: PromptInputProps) {
         <button
           type="submit"
           disabled={!input.trim() || isLoading}
-          className="bg-primary text-white p-2.5 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
+          className="bg-primary text-on-primary p-2.5 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
         >
           <Send className="w-4 h-4" />
         </button>

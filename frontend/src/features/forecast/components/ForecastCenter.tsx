@@ -3,7 +3,8 @@ import { ForecastSummaryCard } from "./ForecastSummaryCard";
 import { FilterPanel } from "./FilterPanel";
 import { QuickActions } from "./QuickActions";
 import { ForecastChart } from "./ForecastChart";
-import { ConfidenceGauge } from "./ConfidenceGauge";
+import { MethodCard } from "./MethodCard";
+import { useSeries } from "../useSeries";
 import { ComparisonChart } from "./ComparisonChart";
 import { ForecastTable } from "./ForecastTable";
 import { AISummaryCard } from "./AISummaryCard";
@@ -43,67 +44,74 @@ export function ForecastCenter({
     }
   };
 
-  // Timeline points data
-  const timelinePoints = [
-    { id: "now", label: "Now", hours: 0, aqiOffset: 0, tempOffset: 0 },
-    { id: "6h", label: "6 Hours", hours: 6, aqiOffset: 4, tempOffset: -2 },
-    { id: "12h", label: "12 Hours", hours: 12, aqiOffset: 8, tempOffset: -4 },
-    { id: "24h", label: "24 Hours", hours: 24, aqiOffset: 12, tempOffset: 1 },
-    { id: "48h", label: "48 Hours", hours: 48, aqiOffset: 18, tempOffset: 2 },
-    { id: "72h", label: "72 Hours", hours: 72, aqiOffset: -8, tempOffset: -1 }
-  ];
+  // Real hourly series (past 24h to next 72h) for the selected place, from the backend
+  const { series, state: seriesState } = useSeries(selectedWard.latitude, selectedWard.longitude);
 
-  const selectedPointId = "24h";
-  const activePt = timelinePoints.find(p => p.id === selectedPointId) || timelinePoints[3];
+  const nowIdx = series.findIndex((r) => r.is_forecast) - 1; // last observed hour
+  const at = (h: number) => series[nowIdx + h];
+  const metricKey = selectedMetric === "PM2.5" ? "pm2_5" : "aqi";
+  const horizon = Number(selectedHorizon);
 
-  // Active base metrics
-  const activeBaseAqi = selectedWard.aqi;
-  const activeBaseTemp = selectedWard.temperature;
-
-  // Visual summary offsets
-  const currentAqi = activeBaseAqi;
-  const forecast24Aqi = activeBaseAqi + 12;
-  const forecast48Aqi = activeBaseAqi + 18;
-  const forecast72Aqi = activeBaseAqi - 8;
+  const currentAqi = selectedWard.aqi;
+  const forecastAqi = (h: number) => at(h)?.aqi ?? "–";
+  const trendOf = (v: unknown) => (typeof v === "number" ? (v > currentAqi ? "up" as const : v < currentAqi ? "down" as const : "stable" as const) : undefined);
   const currentHealthScore = selectedWard.environmental_health_score;
 
-  // Timeline-dependent active values
-  const activeTimelineAqi = activeBaseAqi + activePt.aqiOffset;
-  const activeTimelineTemp = activeBaseTemp + activePt.tempOffset;
+  const fmtHour = (iso: string, withDay = false) => {
+    const d = new Date(iso);
+    const hh = `${String(d.getHours()).padStart(2, "0")}:00`;
+    return withDay ? `${d.toLocaleDateString([], { weekday: "short" })} ${hh}` : hh;
+  };
 
-  // Mock hourly graph data for ForecastChart
-  const mockHourlyData = Array.from({ length: 24 }, (_, hourIdx) => {
-    const hourStr = `${(8 + hourIdx) % 24}:00`;
-    const offset = Math.sin(hourIdx / 3) * 15;
+  // Forecast chart: now .. +horizon
+  const hourlyData = series.slice(Math.max(0, nowIdx), nowIdx + horizon + 1).map((r) => ({
+    time: fmtHour(r.t, horizon > 24),
+    aqi: r[metricKey],
+    temp: r.temperature ?? 0,
+    humidity: r.humidity ?? 0,
+    wind: r.wind_speed ?? 0
+  }));
+
+  // Today vs the same hour yesterday, every 2h over the last 24h
+  const comparisonData = Array.from({ length: 13 }, (_, i) => {
+    const today = series[nowIdx - 24 + 2 * i];
+    const yesterday = series[nowIdx - 48 + 2 * i];
+    return today && { hour: fmtHour(today.t), today: today.aqi, yesterday: yesterday?.aqi ?? today.aqi };
+  }).filter(Boolean);
+  const hasYesterday = nowIdx >= 48;
+
+  // Forecast ledger: now, +6h, +12h, +24h, +48h, +72h
+  const HORIZONS = [0, 6, 12, 24, 48, 72];
+  const tableData = HORIZONS.filter((h) => at(h)).map((h, i) => {
+    const r = at(h);
+    const prev = at(HORIZONS[Math.max(0, i - 1)]);
     return {
-      time: hourStr,
-      aqi: Math.floor(activeTimelineAqi + offset),
-      temp: Number((activeTimelineTemp + Math.sin(hourIdx / 4) * 3).toFixed(1)),
-      humidity: Math.floor(selectedWard.humidity + Math.cos(hourIdx / 5) * 12),
-      wind: Number((selectedWard.wind_speed + Math.sin(hourIdx / 3) * 1.5).toFixed(1))
+      time: h === 0 ? "Now" : `+${h}h`,
+      aqi: r.aqi,
+      pm2_5: r.pm2_5,
+      temp: r.temperature ?? 0,
+      humidity: Math.round(r.humidity ?? 0),
+      wind: r.wind_speed ?? 0,
+      trend: r.aqi > prev.aqi ? "rising" : r.aqi < prev.aqi ? "falling" : "stable"
     };
   });
 
-  // Mock comparison chart data (Yesterday vs Today)
-  const mockComparisonData = Array.from({ length: 12 }, (_, idx) => {
-    const hourStr = `${idx * 2}:00`;
-    const baseOffset = Math.sin(idx / 2) * 20;
-    return {
-      hour: hourStr,
-      yesterday: Math.floor(activeBaseAqi * 0.9 + baseOffset),
-      today: Math.floor(activeBaseAqi * 1.05 + baseOffset)
-    };
-  });
-
-  // Mock Forecast Ledger Table Data
-  const mockTableData = [
-    { time: "Horizon Now", aqi: activeBaseAqi, temp: activeBaseTemp, humidity: selectedWard.humidity, wind: selectedWard.wind_speed, confidence: 98, trend: "stable" },
-    { time: "Horizon +6h", aqi: activeBaseAqi + 4, temp: Number((activeBaseTemp - 2).toFixed(1)), humidity: selectedWard.humidity + 5, wind: selectedWard.wind_speed - 0.5, confidence: 96, trend: "rising" },
-    { time: "Horizon +12h", aqi: activeBaseAqi + 8, temp: Number((activeBaseTemp - 4).toFixed(1)), humidity: selectedWard.humidity + 8, wind: selectedWard.wind_speed + 1.2, confidence: 95, trend: "rising" },
-    { time: "Horizon +24h", aqi: activeBaseAqi + 12, temp: Number((activeBaseTemp + 1).toFixed(1)), humidity: selectedWard.humidity + 2, wind: selectedWard.wind_speed + 0.8, confidence: 93, trend: "rising" },
-    { time: "Horizon +48h", aqi: activeBaseAqi + 18, temp: Number((activeBaseTemp + 2).toFixed(1)), humidity: selectedWard.humidity - 4, wind: selectedWard.wind_speed + 0.2, confidence: 91, trend: "rising" },
-    { time: "Horizon +72h", aqi: activeBaseAqi - 8, temp: Number((activeBaseTemp - 1).toFixed(1)), humidity: selectedWard.humidity - 8, wind: selectedWard.wind_speed - 1.2, confidence: 88, trend: "falling" }
-  ];
+  // Plain-language insights computed from the numbers above
+  const next24 = series.slice(nowIdx + 1, nowIdx + 25);
+  const peak = next24.length ? next24.reduce((a, b) => (b.aqi > a.aqi ? b : a)) : undefined;
+  const lowest = next24.length ? next24.reduce((a, b) => (b.aqi < a.aqi ? b : a)) : undefined;
+  const avgWind = next24.length ? next24.reduce((a, r) => a + (r.wind_speed ?? 0), 0) / next24.length : 0;
+  const keyTrends = peak && lowest ? [
+    `Expected to peak near AQI ${peak.aqi} around ${fmtHour(peak.t, true)}.`,
+    `Cleanest window in the next 24 hours: ${fmtHour(lowest.t, true)} (AQI ${lowest.aqi}).`,
+    `Average wind over the next 24 hours: ${avgWind.toFixed(1)} m/s${avgWind < 2.5 ? " — calm air disperses pollution slowly." : "."}`
+  ] : [];
+  const riskLevel = !peak ? "Medium" as const : peak.aqi > 300 ? "Severe" as const : peak.aqi > 200 ? "High" as const : peak.aqi > 100 ? "Medium" as const : "Low" as const;
+  const attentionAreas = wards
+    .filter((w) => w.name !== selectedWard.name)
+    .sort((a, b) => Number(b.aqi) - Number(a.aqi))
+    .slice(0, 2)
+    .map((w) => `${w.name} (AQI ${w.aqi})`);
 
   const [showCompareModal, setShowCompareModal] = useState(false);
   const [comparedWardsList, setComparedWardsList] = useState<number[]>([selectedWard.id]);
@@ -114,14 +122,15 @@ export function ForecastCenter({
 
   const handleExportData = (format: "csv" | "pdf") => {
     if (format === "csv") {
-      const csvHeader = "Horizon,Predicted AQI,Temperature,Humidity,Confidence\n";
-      const csvRows = mockTableData.map(r => `${r.time},${r.aqi},${r.temp},${r.humidity},${r.confidence}%`).join("\n");
+      const csvHeader = "Horizon,Predicted AQI,PM2.5,Temperature,Humidity,Wind\n";
+      const csvRows = tableData.map(r => `${r.time},${r.aqi},${r.pm2_5},${r.temp},${r.humidity},${r.wind}`).join("\n");
       const blob = new Blob([csvHeader + csvRows], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.download = `prana-forecast-${selectedWard.name}.csv`;
       link.click();
+      URL.revokeObjectURL(url);
     } else {
       const printWindow = window.open("", "_blank");
       if (!printWindow) return;
@@ -141,28 +150,28 @@ export function ForecastCenter({
           </head>
           <body>
             <h1>PranaAI Tabular Forecast Report</h1>
-            <p><strong>Focus Location:</strong> ${selectedWard.name}, Hyderabad IT Corridor</p>
+            <p><strong>Focus Location:</strong> ${selectedWard.name}</p>
             <p><strong>Generated on:</strong> ${new Date().toLocaleString()}</p>
             <table>
               <thead>
                 <tr>
                   <th>Horizon</th>
                   <th>Predicted AQI</th>
+                  <th>PM2.5 (µg/m³)</th>
                   <th>Temperature</th>
                   <th>Humidity</th>
                   <th>Wind Speed</th>
-                  <th>Prediction Confidence</th>
                 </tr>
               </thead>
               <tbody>
-                ${mockTableData.map(r => `
+                ${tableData.map(r => `
                   <tr>
                     <td>${r.time}</td>
                     <td><strong>${r.aqi}</strong></td>
+                    <td>${r.pm2_5}</td>
                     <td>${formatTemp(r.temp)}</td>
                     <td>${r.humidity}%</td>
                     <td>${formatWind(r.wind)}</td>
-                    <td>${r.confidence}%</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -184,13 +193,13 @@ export function ForecastCenter({
   };
 
   return (
-    <div className="flex flex-col gap-8 select-none">
+    <div className="flex flex-col gap-8">
       
       {/* Filters & Actions top row */}
       <div className="flex flex-col gap-4">
         <div className="flex justify-between items-center flex-wrap gap-4">
           <div>
-            <h2 className="text-xl font-black text-foreground">
+            <h2 className="text-3xl sm:text-4xl font-extralight tracking-tight text-foreground">
               {activeLanguage === "hi" ? "पूर्वानुमान नियंत्रण केंद्र" :
                activeLanguage === "te" ? "అంచనాల నియంత్రణ కేంద్రం" :
                activeLanguage === "ta" ? "முன்னறிவிப்பு கட்டுப்பாட்டு மையம்" :
@@ -224,123 +233,44 @@ export function ForecastCenter({
         />
       </div>
 
+      {seriesState === "error" && (
+        <div className="glass-card p-4 text-xs text-warning">Hourly forecast is temporarily unavailable. Showing current readings only; reopen this page to retry.</div>
+      )}
+
       {/* Summary Cards Grid */}
-      {(() => {
-        const factors24h = [
-          { name: "Traffic Congestion", impact: 18, trend: "up" as const, explanation: "Commute hour heavy vehicle gridlock on Outer Ring Road junctions.", confidence: 94 },
-          { name: "Low Wind Speed", impact: 11, trend: "up" as const, explanation: "Weak local winds limit horizontal transport and dispersion.", confidence: 95 },
-          { name: "Construction Activity", impact: 9, trend: "up" as const, explanation: "Unmitigated demolition work in Financial District centroids.", confidence: 91 },
-          { name: "High Temperature", impact: 6, trend: "up" as const, explanation: "Thermal boundary layer compression traps particulate loads.", confidence: 90 },
-          { name: "Industrial Emissions", impact: 4, trend: "stable" as const, explanation: "Nominal factory stack emissions from outer periphery.", confidence: 92 }
-        ];
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
+        <ForecastSummaryCard title="Current AQI" value={currentAqi} badgeText="Live" colorClass="border-success/20 text-success bg-success/5" subtitle="24h-average CPCB index" />
+        <ForecastSummaryCard title="24 Hour Lead" value={forecastAqi(24)} trend={trendOf(forecastAqi(24))} subtitle="Modelled AQI tomorrow, same hour" />
+        <ForecastSummaryCard title="48 Hour Lead" value={forecastAqi(48)} trend={trendOf(forecastAqi(48))} subtitle="Modelled AQI in two days" />
+        <ForecastSummaryCard title="72 Hour Lead" value={forecastAqi(72)} trend={trendOf(forecastAqi(72))} subtitle="Modelled AQI in three days" />
+        <ForecastSummaryCard title="Peak Next 24h" value={peak ? peak.aqi : "–"} subtitle={peak ? `Around ${fmtHour(peak.t, true)}` : undefined} />
+        <ForecastSummaryCard title="Environmental Health" value={currentHealthScore} subtitle="Derived from current AQI" />
+      </div>
 
-        const factors48h = [
-          { name: "Traffic Congestion", impact: 14, trend: "up" as const, explanation: "Commute peaks combined with localized detours.", confidence: 93 },
-          { name: "Low Wind Speed", impact: 15, trend: "up" as const, explanation: "High atmospheric pressure systems create calm air blocks.", confidence: 94 },
-          { name: "Construction Activity", impact: 12, trend: "up" as const, explanation: "Intense concrete mixing operations near Madhapur zones.", confidence: 89 },
-          { name: "High Temperature", impact: 5, trend: "up" as const, explanation: "Moderate solar radiation intensifies secondary aerosol synthesis.", confidence: 88 },
-          { name: "Industrial Emissions", impact: 6, trend: "up" as const, explanation: "Increased kiln emissions from industrial clusters.", confidence: 91 }
-        ];
-
-        const factors72h = [
-          { name: "Traffic Congestion", impact: 9, trend: "down" as const, explanation: "Projected weekend drop in commercial vehicle commute count.", confidence: 91 },
-          { name: "Low Wind Speed", impact: 8, trend: "down" as const, explanation: "Stronger western breeze triggers particulate dispersion relief.", confidence: 92 },
-          { name: "Construction Activity", impact: 10, trend: "up" as const, explanation: "Active digging phases in Hitech City grid areas.", confidence: 88 },
-          { name: "High Temperature", impact: 3, trend: "down" as const, explanation: "Minor temperature dip weakens thermal inversion boundaries.", confidence: 85 },
-          { name: "Industrial Emissions", impact: 5, trend: "stable" as const, explanation: "Steady baseline output from manufacturing nodes.", confidence: 90 }
-        ];
-
-        return (
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-6">
-            <ForecastSummaryCard 
-              title={activeLanguage === "hi" ? "वर्तमान एक्यूआई" : activeLanguage === "te" ? "ప్రస్తుత AQI" : activeLanguage === "ta" ? "தற்போதைய AQI" : activeLanguage === "kn" ? "ಪ್ರಸ್ತುತ AQI" : "Current AQI"} 
-              value={currentAqi} 
-              badgeText="Live" 
-              colorClass="border-success/20 text-success bg-success/5" 
-              subtitle="Live particulate sensor value" 
-            />
-            <ForecastSummaryCard 
-              title={activeLanguage === "hi" ? "24 घंटे का पूर्वानुमान" : activeLanguage === "te" ? "24 గంటల అంచనా" : activeLanguage === "ta" ? "24 மணி நேர முன்னறிವಿப்பு" : activeLanguage === "kn" ? "24 ಗಂಟೆಗಳ ಮುನ್ಸೂಚನೆ" : "24 Hour Lead"} 
-              value={forecast24Aqi} 
-              trend={forecast24Aqi > currentAqi ? "up" : "down"} 
-              subtitle="Predicted tomorrow aqi" 
-              factors={factors24h} 
-            />
-            <ForecastSummaryCard 
-              title={activeLanguage === "hi" ? "48 घंटे का पूर्वानुमान" : activeLanguage === "te" ? "48 గంటల అంచనా" : activeLanguage === "ta" ? "48 மணி நேர முன்னறிವಿப்பு" : activeLanguage === "kn" ? "48 ಗಂಟೆಗಳ ಮುನ್ಸೂಚನೆ" : "48 Hour Lead"} 
-              value={forecast48Aqi} 
-              trend={forecast48Aqi > currentAqi ? "up" : "down"} 
-              subtitle="Mid range forecast trend" 
-              factors={factors48h} 
-            />
-            <ForecastSummaryCard 
-              title={activeLanguage === "hi" ? "72 घंटे का पूर्वानुमान" : activeLanguage === "te" ? "72 గంటల అంచనా" : activeLanguage === "ta" ? "72 மணி நேர முன்னறிவிப்பு" : activeLanguage === "kn" ? "72 ಗಂಟೆಗಳ ಮುನ್ಸೂಚನೆ" : "72 Hour Lead"} 
-              value={forecast72Aqi} 
-              trend={forecast72Aqi > currentAqi ? "up" : "down"} 
-              subtitle="AI regression trend"
-              factors={factors72h} 
-            />
-            <ForecastSummaryCard 
-              title={activeLanguage === "hi" ? "पर्यावरण स्वास्थ्य" : activeLanguage === "te" ? "పర్యావరణ ఆరోగ్యం" : activeLanguage === "ta" ? "சுற்றுச்சூழல் சுகாதாரம்" : activeLanguage === "kn" ? "ಪರಿಸರ ಆರೋಗ್ಯ" : "Environmental Health"} 
-              value={currentHealthScore} 
-              badgeText="Good" 
-              colorClass="border-primary/20 text-primary bg-primary/5" 
-              subtitle="Weighted safety index scale" 
-            />
-                            <ForecastSummaryCard title="Prediction Confidence" value="93.4%" badgeText="High" colorClass="border-secondary/20 text-secondary bg-secondary/5" subtitle="AI validation score" />
-          </div>
-        );
-      })()}
-
-      {/* Main Charts & Gauges Grid */}
+      {/* Main Charts & Method Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Left: Recharts interactive forecast area chart */}
         <div className="lg:col-span-8 flex flex-col gap-8">
-          <ForecastChart 
-            wardName={selectedWard.name}
-            data={mockHourlyData}
-          />
-
-          <ComparisonChart 
-            data={mockComparisonData}
-          />
+          <ForecastChart wardName={selectedWard.name} data={hourlyData} />
+          {hasYesterday && <ComparisonChart data={comparisonData} />}
         </div>
 
-        {/* Right: Confidence progress gauge list */}
         <div className="lg:col-span-4 flex flex-col gap-8">
-          <ConfidenceGauge 
-            overallConfidence={93}
-            qualityScore={88}
-            availability={96}
-            reliability={91}
-          />
-
-          <AISummaryCard 
+          <MethodCard />
+          <AISummaryCard
             overviewText={narrativeExplanation}
-            keyTrends={[
-              "Traffic-associated soot spikes at commute peaks.",
-              "Sprinkling deployments cut construction particulate indices by 18%.",
-              "Light local winds limit soot dispersion."
-            ]}
-            riskLevel={activeTimelineAqi > 150 ? "High" : "Medium"}
-            attentionAreas={[
-              "Gachibowli Ring Road Junctions",
-              "Madhapur IT Corridor Bypass"
-            ]}
+            keyTrends={keyTrends}
+            riskLevel={riskLevel}
+            attentionAreas={attentionAreas}
           />
         </div>
-
       </div>
 
       {/* Details Ledger Table */}
-      <ForecastTable 
-        data={mockTableData}
-      />
+      <ForecastTable data={tableData} />
 
       {/* Compare Locations Modal Workflow */}
       {showCompareModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 select-none animate-in fade-in duration-200">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-card border border-border w-full max-w-4xl rounded-2xl shadow-theme flex flex-col max-h-[90vh] overflow-hidden">
             
             {/* Modal Header */}
@@ -399,7 +329,6 @@ export function ForecastCenter({
                     <tr className="bg-card border-b border-border/85 text-muted font-bold">
                       <th className="px-4 py-2.5 text-left">Ward Name</th>
                       <th className="px-4 py-2.5 text-left">Live AQI</th>
-                      <th className="px-4 py-2.5 text-left">Confidence</th>
                       <th className="px-4 py-2.5 text-left">Temperature</th>
                       <th className="px-4 py-2.5 text-left">Humidity</th>
                       <th className="px-4 py-2.5 text-left">Wind Speed</th>
@@ -413,7 +342,6 @@ export function ForecastCenter({
                         <tr key={w.id} className="border-b border-border/40 last:border-0">
                           <td className="px-4 py-3 font-extrabold text-foreground">{w.name}</td>
                           <td className={`px-4 py-3 font-extrabold ${aqiColor}`}>{displayAqi}</td>
-                          <td className="px-4 py-3 font-semibold text-muted">93%</td>
                           <td className="px-4 py-3 font-semibold">{formatTemp(w.temperature)}</td>
                           <td className="px-4 py-3 font-semibold">{w.humidity}%</td>
                           <td className="px-4 py-3 font-semibold">{formatWind(w.wind_speed)}</td>

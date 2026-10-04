@@ -51,7 +51,7 @@ export function ContextPanel({ selectedWard }: ContextPanelProps) {
           "border rounded-xl p-3 text-center flex flex-col justify-center items-center mt-1",
           getAQIColorClass(displayAqi)
         )}>
-          <span className="text-[9px] uppercase font-bold tracking-wider text-muted block">Live Sensor AQI</span>
+          <span className="text-[9px] uppercase font-bold tracking-wider text-muted block">Current AQI</span>
           <span className="text-2xl font-black block mt-0.5 text-foreground">{displayAqi}</span>
           <span className="text-[8.5px] font-extrabold block mt-0.5 uppercase tracking-wider">{getAQIBadgeText(displayAqi)} status</span>
         </div>
@@ -60,8 +60,8 @@ export function ContextPanel({ selectedWard }: ContextPanelProps) {
         <div className="flex items-start gap-2.5">
           <Thermometer className="w-4.5 h-4.5 text-warning shrink-0 mt-0.5" />
           <div>
-            <span className="text-[9px] text-muted font-bold block">Temperature Index</span>
-            <span className="text-xs font-black text-foreground block mt-0.5">{formatTemp(selectedWard.temperature)} Sunny</span>
+            <span className="text-[9px] text-muted font-bold block">Weather now</span>
+            <span className="text-xs font-black text-foreground block mt-0.5">{formatTemp(selectedWard.temperature)} · {selectedWard.weather_condition}</span>
             <span className="text-[8.5px] text-muted block mt-0.5">Wind speed: {formatWind(selectedWard.wind_speed)}</span>
           </div>
         </div>
@@ -70,14 +70,14 @@ export function ContextPanel({ selectedWard }: ContextPanelProps) {
         <div className="flex items-start gap-2.5 border-t border-border pt-4">
           <Clock className="w-4.5 h-4.5 text-muted shrink-0 mt-0.5" />
           <div>
-            <span className="text-[9px] text-muted font-bold block">Evaluation Timestamp</span>
-            <span className="text-xs font-semibold text-foreground block mt-0.5">June 2026 Shift</span>
+            <span className="text-[9px] text-muted font-bold block">Data updated</span>
+            <span className="text-xs font-semibold text-foreground block mt-0.5">{selectedWard.updated ? new Date(selectedWard.updated).toLocaleString([], { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "Waiting for live data"}</span>
           </div>
         </div>
 
         <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 flex gap-2 items-start mt-2">
           <ShieldAlert className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-          <p className="text-[9px] text-muted leading-relaxed">System coordinates context locks prompt scopes to Gachibowli sector census inputs.</p>
+          <p className="text-[9px] text-muted leading-relaxed">Answers use the live readings for {selectedWard.name} and the other places on PranaAI (Copernicus CAMS model data). They are estimates, not medical advice.</p>
         </div>
 
       </div>

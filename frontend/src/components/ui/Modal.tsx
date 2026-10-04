@@ -24,7 +24,7 @@ export const Modal = ({ isOpen, onClose, title, children, className }: ModalProp
             animate="animate"
             exit="exit"
             onClick={onClose}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#020814]/50 backdrop-blur-sm"
           />
           
           {/* Content layer */}
@@ -34,7 +34,7 @@ export const Modal = ({ isOpen, onClose, title, children, className }: ModalProp
             animate="animate"
             exit="exit"
             className={cn(
-              "bg-[var(--surface)] border border-[var(--border)] rounded-2xl p-6 w-full max-w-md shadow-floating relative z-10",
+              "bg-[var(--surface)] border border-[var(--border)] rounded-[1.75rem] p-6 w-full max-w-md shadow-floating backdrop-blur-2xl relative z-10",
               className
             )}
           >
@@ -42,7 +42,7 @@ export const Modal = ({ isOpen, onClose, title, children, className }: ModalProp
               {title && <h3 className="type-title text-base text-[var(--text-primary)] font-bold">{title}</h3>}
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-650 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-foreground/5 text-muted hover:text-foreground transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -72,7 +72,7 @@ export const Drawer = ({ isOpen, onClose, title, children, side = "right", sizeC
             animate="animate"
             exit="exit"
             onClick={onClose}
-            className="absolute inset-0 bg-black/35 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#020814]/45 backdrop-blur-sm"
           />
           
           {/* Drawer side sheet content */}
@@ -91,7 +91,7 @@ export const Drawer = ({ isOpen, onClose, title, children, side = "right", sizeC
               {title && <h3 className="type-title text-base text-[var(--text-primary)] font-bold">{title}</h3>}
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/5 text-slate-400 hover:text-slate-650 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-foreground/5 text-muted hover:text-foreground transition-colors cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>

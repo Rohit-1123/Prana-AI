@@ -1,3 +1,4 @@
+import { CONTACT_EMAIL } from "../../legal/LegalPage";
 import { HelpCircle, ExternalLink, ShieldCheck, Mail } from "lucide-react";
 import { useSettings } from "../../../contexts/SettingsContext";
 
@@ -69,9 +70,9 @@ export function SupportPanel() {
   const t = supportTranslations[language] || supportTranslations["en"];
   
   const links = [
-    { label: t.docGuides, desc: t.docGuidesDesc, action: () => alert(language === "hi" ? "दस्तावेज़ों पर जा रहे हैं।" : language === "te" ? "డాక్యుమెంటేషన్‌కు మళ్లిస్తోంది." : language === "ta" ? "ஆவணங்களுக்கு திருப்பி விடப்படுகிறது." : language === "kn" ? "ದಸ್ತಾವೇಜಿಗೆ ಮರುನಿರ್ದೇಶಿಸಲಾಗುತ್ತಿದೆ." : "Redirecting to API docs.") },
-    { label: t.reportMal, desc: t.reportMalDesc, action: () => alert(language === "hi" ? "सहायता टिकट बनाया गया।" : language === "te" ? "మద్దతు టికెట్ సృష్టించబడింది." : language === "ta" ? "புகார் பதிவு செய்யப்பட்டது." : language === "kn" ? "ಬೆಂಬಲ ಟಿಕೆಟ್ ರಚಿಸಲಾಗಿದೆ." : "Support ticket created.") },
-    { label: t.privacy, desc: t.privacyDesc, action: () => alert(language === "hi" ? "गोपनीयता समझौता खोल रहे हैं।" : language === "te" ? "గోప్యతా ఒప్పందాన్ని తెరుస్తోంది." : language === "ta" ? "தனியுரிமை ஒப்பந்தம் திறக்கப்படுகிறது." : language === "kn" ? "ಗೌಪ್ಯತೆ ಒಪ್ಪಂದವನ್ನು ತೆರೆಯಲಾಗುತ್ತಿದೆ." : "Opening Privacy Agreement.") }
+    { label: t.docGuides, desc: t.docGuidesDesc, action: () => window.open(`${import.meta.env.VITE_API_URL || "http://localhost:8000"}/docs`, "_blank", "noopener,noreferrer") },
+    { label: t.reportMal, desc: t.reportMalDesc, action: () => { window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent("PranaAI data issue report")}`; } },
+    { label: t.privacy, desc: t.privacyDesc, action: () => { window.location.hash = "/privacy"; } }
   ];
 
   return (

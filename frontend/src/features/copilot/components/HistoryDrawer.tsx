@@ -38,7 +38,7 @@ export function HistoryDrawer({
         onClick={onNewSession}
         className="w-full btn-primary py-2 text-xs flex items-center justify-center gap-1.5 font-bold cursor-pointer"
       >
-        <Plus className="w-4 h-4 text-white" />
+        <Plus className="w-4 h-4" />
         <span>New Conversation</span>
       </button>
 

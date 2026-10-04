@@ -47,15 +47,6 @@ const originalRemoveItem = localStorage.removeItem.bind(localStorage);
   originalRemoveItem(key);
 };
 
-// Unconditionally clear localStorage and sessionStorage
-// on every single load/reload to ensure the app starts with default settings.
-try {
-  localStorage.clear();
-} catch (e) {}
-try {
-  sessionStorage.clear();
-} catch (e) {}
-
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

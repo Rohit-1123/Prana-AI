@@ -18,7 +18,6 @@ import {
   Database
 } from "lucide-react";
 import { 
-  AIConfidenceRing, 
   EvidenceChip
 } from "../../../components/ui/ExplainabilityComponents";
 import { 
@@ -73,8 +72,6 @@ interface ExecutiveBriefCardProps {
   forecastText: string;
   recommendedActions: string[];
   expectedImprovement: number;
-  confidence: number;
-  cityName?: string;
 }
 
 export function ExecutiveBriefCard({
@@ -83,116 +80,12 @@ export function ExecutiveBriefCard({
   primarySources,
   forecastText,
   recommendedActions,
-  expectedImprovement,
-  confidence,
-  cityName
+  expectedImprovement
 }: ExecutiveBriefCardProps) {
   const { language } = useSettings();
   const activeLanguage = language;
   const tExtra = extraTranslations[activeLanguage] || extraTranslations["en"];
   const cat = getAQICategory(currentAqi, activeLanguage);
-
-  const cityMetrics: Record<string, {
-    confidenceText: string;
-    primaryRisk: string;
-    reliability: string;
-    evidenceSources: string;
-    decisionImpact: string;
-  }> = {
-    Hyderabad: {
-      confidenceText: "93% (High)",
-      primaryRisk: "Traffic & Construction",
-      reliability: "95% (Stable)",
-      evidenceSources: "6 Nodes, Radar, GIS",
-      decisionImpact: "Very High Impact"
-    },
-    Bangalore: {
-      confidenceText: "94% (High)",
-      primaryRisk: "Traffic & Dust",
-      reliability: "96% (Stable)",
-      evidenceSources: "5 Wards, Satellite, GIS",
-      decisionImpact: "High Impact"
-    },
-    Chennai: {
-      confidenceText: "92% (High)",
-      primaryRisk: "Coastal Winds & Traffic",
-      reliability: "94% (Stable)",
-      evidenceSources: "4 Nodes, Marine Buoys",
-      decisionImpact: "Moderate Impact"
-    },
-    Delhi: {
-      confidenceText: "89% (Moderate)",
-      primaryRisk: "Industrial & Silt Dust",
-      reliability: "90% (Moderate)",
-      evidenceSources: "7 Nodes, Lidars, GIS",
-      decisionImpact: "Critical Impact"
-    },
-    Mumbai: {
-      confidenceText: "93% (High)",
-      primaryRisk: "Maritime Boundary & Traffic",
-      reliability: "95% (Stable)",
-      evidenceSources: "6 Nodes, Coastal Radar",
-      decisionImpact: "Very High Impact"
-    }
-  };
-
-  const translateConfidenceText = (text: string) => {
-    if (activeLanguage === "en") return text;
-    if (text.includes("High")) {
-      return activeLanguage === "hi" ? "93% (उच्च)" : activeLanguage === "te" ? "93% (ఎక్కువ)" : activeLanguage === "ta" ? "93% (அதிகம்)" : "93% (ತೀವ್ರ)";
-    }
-    if (text.includes("Moderate")) {
-      return activeLanguage === "hi" ? "89% (मध्यम)" : activeLanguage === "te" ? "89% (సాధారణ)" : activeLanguage === "ta" ? "89% (மிதமான)" : "89% (ಸಾಧಾರಣ)";
-    }
-    return text;
-  };
-
-  const getPrimaryRiskTranslated = (risk: string) => {
-    if (activeLanguage === "en") return risk;
-    if (risk.includes("Traffic & Construction")) return tExtra.trafficAndConstruction;
-    if (risk.includes("Traffic & Dust")) return tExtra.trafficAndDust;
-    if (risk.includes("Coastal Winds & Traffic")) return tExtra.coastalWindsTraffic;
-    if (risk.includes("Industrial & Silt Dust")) return tExtra.industrialSiltDust;
-    if (risk.includes("Maritime Boundary & Traffic")) return tExtra.maritimeBoundaryTraffic;
-    return risk;
-  };
-
-  const getReliabilityTranslated = (rel: string) => {
-    if (activeLanguage === "en") return rel;
-    if (rel.includes("Stable")) return activeLanguage === "hi" ? "95% (स्थिर)" : activeLanguage === "te" ? "95% (స్థిరంగా ఉంది)" : activeLanguage === "ta" ? "95% (நிலையானது)" : "95% (ಸ್ಥಿರವಾಗಿದೆ)";
-    if (rel.includes("Moderate")) return activeLanguage === "hi" ? "90% (मध्यम)" : activeLanguage === "te" ? "90% (సాధారణ)" : activeLanguage === "ta" ? "90% (மிதமான)" : "90% (ಸಾಧಾರಣ)";
-    return rel;
-  };
-
-  const getEvidenceSourcesTranslated = (sources: string) => {
-    if (activeLanguage === "en") return sources;
-    if (sources.includes("6 Nodes, Radar, GIS")) return tExtra.nodesRadarGis;
-    if (sources.includes("5 Wards, Satellite, GIS")) return tExtra.wardsSatelliteGis;
-    if (sources.includes("4 Nodes, Marine Buoys")) return tExtra.nodesMarineBuoys;
-    if (sources.includes("7 Nodes, Lidars, GIS")) return tExtra.nodesLidarsGis;
-    if (sources.includes("6 Nodes, Coastal Radar")) return tExtra.nodesCoastalRadar;
-    return sources;
-  };
-
-  const getDecisionImpactTranslated = (impact: string) => {
-    if (activeLanguage === "en") return impact;
-    if (impact.includes("Very High Impact")) return tExtra.veryHighImpact;
-    if (impact.includes("High Impact")) return tExtra.highImpact;
-    if (impact.includes("Moderate Impact")) return tExtra.moderateImpact;
-    if (impact.includes("Critical Impact")) return tExtra.criticalImpact;
-    return impact;
-  };
-
-  const activeCity = cityName || "Hyderabad";
-  const metrics = cityMetrics[activeCity] || cityMetrics.Hyderabad;
-
-  const localizedMetrics = {
-    confidenceText: translateConfidenceText(metrics.confidenceText),
-    primaryRisk: getPrimaryRiskTranslated(metrics.primaryRisk),
-    reliability: getReliabilityTranslated(metrics.reliability),
-    evidenceSources: getEvidenceSourcesTranslated(metrics.evidenceSources),
-    decisionImpact: getDecisionImpactTranslated(metrics.decisionImpact)
-  };
 
   const transActions = recommendedActions.map((actTitle, idx) => translateActionTitle(idx + 1, actTitle, activeLanguage));
   const condLabel = activeLanguage === "hi" ? "स्थिति" : activeLanguage === "te" ? "పరిస్థితులు" : activeLanguage === "ta" ? "நிலைகள்" : activeLanguage === "kn" ? "ಸ್ಥಿತಿಗಳು" : "Conditions";
@@ -219,9 +112,9 @@ export function ExecutiveBriefCard({
               <p className="text-[10px] text-muted leading-none mt-0.5">{tExtra.realtimeBriefSub} {wardName}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <AIConfidenceRing confidence={confidence} size="sm" showLabel={true} />
-          </div>
+          <span className="text-[9px] uppercase tracking-wider font-extrabold text-muted border border-border rounded px-2 py-1">
+            CPCB AQI · CAMS model
+          </span>
         </div>
 
         {/* Content Layout Grid */}
@@ -283,36 +176,6 @@ export function ExecutiveBriefCard({
           </div>
         </div>
 
-        {/* FEATURE 6 — EXECUTIVE METRICS (KPI Cards) */}
-        <div className="border-t border-border/80 pt-4 sm:pt-5 mt-1">
-          <span className="text-[9.5px] uppercase tracking-wider font-extrabold text-primary block mb-3.5">{tExtra.executiveDecisionIndicators}</span>
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-3 sm:gap-4">
-            <div className="bg-muted/5 border border-border/60 p-2.5 sm:p-3 rounded-xl text-center flex flex-col justify-center">
-              <span className="text-[8px] text-muted block font-extrabold uppercase tracking-wide">{tExtra.overallConfidence}</span>
-              <span className="text-[11.5px] font-black text-foreground mt-1.5 block">{localizedMetrics.confidenceText}</span>
-            </div>
-            <div className="bg-muted/5 border border-border/60 p-3 rounded-xl text-center flex flex-col justify-center">
-              <span className="text-[8px] text-muted block font-extrabold uppercase tracking-wide">{tExtra.primaryRisk}</span>
-              <span className="text-[11.5px] font-black text-danger mt-1.5 block truncate">{localizedMetrics.primaryRisk}</span>
-            </div>
-            <div className="bg-muted/5 border border-border/60 p-3 rounded-xl text-center flex flex-col justify-center">
-              <span className="text-[8px] text-muted block font-extrabold uppercase tracking-wide">{tExtra.predictionReliability}</span>
-              <span className="text-[11.5px] font-black text-foreground mt-1.5 block">{localizedMetrics.reliability}</span>
-            </div>
-            <div className="bg-muted/5 border border-border/60 p-3 rounded-xl text-center flex flex-col justify-center">
-              <span className="text-[8px] text-muted block font-extrabold uppercase tracking-wide">{tExtra.expectedImprovementText}</span>
-              <span className="text-[11.5px] font-black text-success mt-1.5 block">-{expectedImprovement} {tExtra.aqiPoints}</span>
-            </div>
-            <div className="bg-muted/5 border border-border/60 p-3 rounded-xl text-center flex flex-col justify-center">
-              <span className="text-[8px] text-muted block font-extrabold uppercase tracking-wide">{tExtra.evidenceSourcesUsed}</span>
-              <span className="text-[11.5px] font-black text-foreground mt-1.5 block truncate">{localizedMetrics.evidenceSources}</span>
-            </div>
-            <div className="bg-muted/5 border border-border/60 p-3 rounded-xl text-center flex flex-col justify-center">
-              <span className="text-[8px] text-muted block font-extrabold uppercase tracking-wide">{tExtra.estimatedDecisionImpact}</span>
-              <span className="text-[11.5px] font-black text-primary mt-1.5 block">{localizedMetrics.decisionImpact}</span>
-            </div>
-          </div>
-        </div>
 
       </div>
     </motion.div>
@@ -325,13 +188,11 @@ export function ExecutiveBriefCard({
 interface SourceAttributionCardProps {
   attributions: { source: string; percentage: number; confidence: number }[];
   explanation: string;
-  overallConfidence: number;
 }
 
 export function SourceAttributionCard({
   attributions,
-  explanation,
-  overallConfidence
+  explanation
 }: SourceAttributionCardProps) {
   const { language } = useSettings();
   const activeLanguage = language;
@@ -372,9 +233,12 @@ export function SourceAttributionCard({
           <span className="text-[10px] text-muted mt-1 block">{tExtra.realtimeSourceSub}</span>
         </div>
         
-        {/* Reusable Confidence Ring */}
-        <AIConfidenceRing confidence={overallConfidence} size="sm" showLabel={true} />
+        <span className="text-[9px] uppercase tracking-wider font-extrabold text-warning border border-warning/30 bg-warning/5 rounded px-2 py-1 shrink-0">
+          Indicative
+        </span>
       </div>
+
+      <p className="text-[10px] text-muted -mt-3">Illustrative split based on typical activity levels in the area. It is not measured emissions data.</p>
 
       {/* Attribution Bars */}
       <div className="flex flex-col gap-3.5">
@@ -435,7 +299,6 @@ interface WhatIfSimulatorProps {
   estimatedTime: string;
   environmentalImpact: string;
   estimatedImprovement: number;
-  confidence: number;
 }
 
 export function WhatIfSimulator({
@@ -455,7 +318,6 @@ export function WhatIfSimulator({
   estimatedTime,
   environmentalImpact,
   estimatedImprovement,
-  confidence
 }: WhatIfSimulatorProps) {
   const { language } = useSettings();
   const activeLanguage = language;
@@ -489,9 +351,6 @@ export function WhatIfSimulator({
           </h4>
           <span className="text-[10px] text-muted mt-1 block">{tExtra.whatIfSub}</span>
         </div>
-        
-        {/* Reusable Confidence Ring */}
-        <AIConfidenceRing confidence={confidence} size="sm" showLabel={true} />
       </div>
 
       {/* Simulator Sliders & Controls Grid */}
@@ -644,7 +503,6 @@ interface RecommendedActionItem {
   desc: string;
   priority: string;
   impact: string;
-  confidence: number;
   duration: string;
   evidence: string;
   executed: boolean;
@@ -846,8 +704,6 @@ export function RecommendedActions({
                     }`}>
                       {transPriorityVal}
                     </span>
-                    <AIConfidenceRing confidence={act.confidence} size="sm" showLabel={false} />
-                    <span className="text-[9.5px] text-primary font-bold">{tExtra.confidence}: {act.confidence}%</span>
                   </div>
                   <h5 className="font-bold text-foreground text-xs mt-2.5 leading-snug">
                     {translateActionTitle(act.id, act.title, activeLanguage)}
@@ -977,7 +833,7 @@ export function RecommendedActions({
                       className={`w-full text-center py-2.5 text-[10.5px] font-bold rounded-xl border mt-2 transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                         act.executed 
                           ? "bg-success/15 border-success/35 text-success cursor-not-allowed" 
-                          : "bg-primary border-primary/40 text-white hover:opacity-90 shadow-md shadow-primary/10"
+                          : "bg-primary border-primary/40 text-on-primary hover:opacity-90 shadow-md shadow-primary/10"
                       }`}
                     >
                       {act.executed ? (
@@ -986,7 +842,7 @@ export function RecommendedActions({
                         </>
                       ) : (
                         <>
-                          <Play className="w-3 h-3 text-white fill-current" /> {tExtra.transmitOperationalDir}
+                          <Play className="w-3 h-3 fill-current" /> {tExtra.transmitOperationalDir}
                         </>
                       )}
                     </button>

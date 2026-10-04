@@ -15,11 +15,11 @@ export function EmptyState({ questions, onClickQuestion }: EmptyStateProps) {
   ];
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center max-w-xl mx-auto py-12 px-6 gap-6 text-center select-none animate-in fade-in duration-300">
+    <div className="flex-1 flex flex-col justify-center items-center max-w-xl mx-auto py-12 px-6 gap-6 text-center animate-in fade-in duration-300">
       
       {/* Icon logo */}
       <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-theme">
-        <Activity className="w-6 h-6 text-white" />
+        <Activity className="w-6 h-6 text-on-primary" />
       </div>
 
       <div>

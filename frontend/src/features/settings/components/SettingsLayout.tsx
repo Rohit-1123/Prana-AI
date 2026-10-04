@@ -53,11 +53,11 @@ export function SettingsLayout() {
   };
 
   return (
-    <div className="flex flex-col gap-6 select-none">
+    <div className="flex flex-col gap-6">
       
       {/* Header */}
       <div>
-        <h2 className="text-xl font-black text-foreground">{t.title}</h2>
+        <h2 className="text-3xl sm:text-4xl font-extralight tracking-tight text-foreground">{t.title}</h2>
         <span className="text-xs text-muted block mt-1">{t.desc}</span>
       </div>
 
