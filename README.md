@@ -26,7 +26,6 @@ Standard environmental dashboards simply show reactive, historical AQI levels. P
 *   **Backend:** FastAPI, Python, SQLAlchemy, JWT Security, Uvicorn, PyTest.
 *   **Database:** PostgreSQL with PostGIS (SQLAlchemy models adapt to local SQLite database automatically).
 *   **Machine Learning:** Scikit-Learn, XGBoost, Pandas, Numpy, Joblib.
-*   **Containerization:** Docker, Docker Compose.
 
 ---
 
@@ -34,8 +33,8 @@ Standard environmental dashboards simply show reactive, historical AQI levels. P
 
 ```
 PranaAI/
-├── datasets/          # Synthetic dataset hourly generator
-├── models/            # Trained XGBoost/Random Forest binaries and training script
+├── datasets/          # Synthetic hourly dataset generator (CSV output is git-ignored)
+├── models/            # Training script (trained .pkl binaries are git-ignored; run Step 2)
 ├── backend/           # FastAPI application
 │   ├── app/
 │   │   ├── core/      # Security, DB session, LLM client
@@ -46,10 +45,6 @@ PranaAI/
 │   │   └── agents/    # The 7 AI Agents & Orchestrator
 │   └── requirements.txt
 ├── frontend/          # React TypeScript dashboard client
-├── docker/            # Docker configurations and Docker-compose
-├── docs/              # 10 comprehensive architectural markdown modules
-├── presentation/      # Presentation slide structure
-├── demo/              # Interactive demo script
 └── README.md          # Project main readme
 ```
 
