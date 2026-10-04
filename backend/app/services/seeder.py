@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.models.models import User, City, Ward, Infrastructure, HistoricalAQI
 from app.core.database import SessionLocal, engine, Base
 from app.core.security import get_password_hash
+from app.core.config.settings import settings, REPO_ROOT
 
 def seed_database(db: Session):
     print("Seeding database for Hyderabad MVP...")
@@ -15,32 +16,33 @@ def seed_database(db: Session):
         print("Database already seeded. Skipping.")
         return
         
-    # 1. Create default users
-    admin_password = get_password_hash("admin123")
-    citizen_password = get_password_hash("citizen123")
+    # 1. Create default demo users (development only - known passwords)
+    if settings.ENVIRONMENT == "development":
+        admin_password = get_password_hash("admin123")
+        citizen_password = get_password_hash("citizen123")
     
-    admin_user = User(
-        email="admin@prana.ai",
-        name="Hyderabad Environment Commissioner",
-        hashed_password=admin_password,
-        role="Municipal Officer"
-    )
-    pcb_user = User(
-        email="pcb@prana.ai",
-        name="PCB Inspector Hyderabad",
-        hashed_password=admin_password,
-        role="Pollution Control Board"
-    )
-    citizen_user = User(
-        email="citizen@prana.ai",
-        name="Citizen Rohit",
-        hashed_password=citizen_password,
-        role="Citizen"
-    )
+        admin_user = User(
+            email="admin@prana.ai",
+            name="Hyderabad Environment Commissioner",
+            hashed_password=admin_password,
+            role="Municipal Officer"
+        )
+        pcb_user = User(
+            email="pcb@prana.ai",
+            name="PCB Inspector Hyderabad",
+            hashed_password=admin_password,
+            role="Pollution Control Board"
+        )
+        citizen_user = User(
+            email="citizen@prana.ai",
+            name="Citizen Rohit",
+            hashed_password=citizen_password,
+            role="Citizen"
+        )
     
-    db.add_all([admin_user, pcb_user, citizen_user])
-    db.commit()
-    print("Users seeded.")
+        db.add_all([admin_user, pcb_user, citizen_user])
+        db.commit()
+        print("Users seeded.")
     
     # 2. Create City (Hyderabad)
     city = City(
@@ -170,7 +172,7 @@ def seed_database(db: Session):
     
     # 5. Load and seed Historical AQI from datasets/aqi_dataset.csv
     # Ingest the last 30 days of hourly data for Hyderabad wards
-    dataset_path = "datasets/aqi_dataset.csv"
+    dataset_path = str(REPO_ROOT / "datasets" / "aqi_dataset.csv")
     if os.path.exists(dataset_path):
         print(f"Reading dataset: {dataset_path}")
         df = pd.read_csv(dataset_path)

@@ -24,7 +24,7 @@ def setup_logging():
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
         level="INFO",
         rotation="10 MB",
-        retention="30 days",
+        retention="180 days",  # CERT-In Directions (2022) require 180-day log retention
         compression="zip",
         enqueue=True
     )
@@ -35,7 +35,7 @@ def setup_logging():
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} - {message}",
         level="ERROR",
         rotation="10 MB",
-        retention="30 days",
+        retention="180 days",  # CERT-In Directions (2022) require 180-day log retention
         compression="zip",
         enqueue=True
     )

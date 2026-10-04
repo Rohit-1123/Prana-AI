@@ -3,6 +3,7 @@ import joblib
 import pandas as pd
 import numpy as np
 from datetime import datetime
+from app.core.config.settings import REPO_ROOT
 
 class PredictionAgent:
     def __init__(self):
@@ -14,7 +15,7 @@ class PredictionAgent:
     def load_models(self):
         """Loads serialized XGBoost forecast models and feature name mappings."""
         try:
-            model_dir = "models"
+            model_dir = str(REPO_ROOT / "models")
             if os.path.exists(os.path.join(model_dir, "feature_names.pkl")):
                 self.feature_names = joblib.load(os.path.join(model_dir, "feature_names.pkl"))
                 

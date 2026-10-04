@@ -2,16 +2,18 @@ import os
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional, Any
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWTError as JWTError
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.config.settings import settings
 from app.models.models import User
 from app.schemas.schemas import TokenData
 
 # Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "prana-ai-super-secret-cryptographic-signing-key-2026")
+SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 360
 

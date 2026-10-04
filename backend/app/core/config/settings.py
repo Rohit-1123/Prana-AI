@@ -1,8 +1,13 @@
 import os
+import secrets
+from pathlib import Path
 from typing import List, Optional
 from pydantic import AnyHttpUrl, PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from dotenv import load_dotenv
+
+# Repo root (holds models/ and datasets/), independent of the working directory
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 # Load .env file searching upwards from current directory
 load_dotenv()
@@ -13,7 +18,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     # CORS configuration
-    BACKEND_CORS_ORIGINS: List[str] = ["*"]
+    BACKEND_CORS_ORIGINS: List[str] = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"]
 
     # PostgreSQL Database configurations
     POSTGRES_SERVER: str = "localhost"
@@ -38,14 +43,14 @@ class Settings(BaseSettings):
     REDIS_PASSWORD: Optional[str] = None
 
     # Security JWT tokens settings
-    SECRET_KEY: str = "prana_super_secret_signing_key_token_parameters_hash"
+    SECRET_KEY: Optional[str] = None
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 days
 
     # External Provider Configs
-    OPENWEATHER_API_KEY: str = "mock_openweather_api_key_credentials_token"
+    OPENWEATHER_API_KEY: Optional[str] = None  # only used by providers/aqi/openweather.py
     NOMINATIM_USER_AGENT: str = "PranaAI-Environmental-Intelligence-Platform"
     GROQ_API_KEY: Optional[str] = None
-    GROQ_MODEL: str = "qwen/qwen3-32b"
+    GROQ_MODEL: str = "openai/gpt-oss-120b"
 
 
     model_config = SettingsConfigDict(
@@ -56,4 +61,10 @@ class Settings(BaseSettings):
     )
 
 settings = Settings()
+
+if not settings.SECRET_KEY:
+    if settings.ENVIRONMENT != "development":
+        raise RuntimeError("SECRET_KEY must be set outside development (generate with `openssl rand -hex 32`).")
+    # Dev only: random per-process key, so tokens are invalidated on restart.
+    settings.SECRET_KEY = secrets.token_hex(32)
 

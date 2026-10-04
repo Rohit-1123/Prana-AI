@@ -1,6 +1,9 @@
 import os
 import joblib
 from app.core.llm import LLMClient
+from app.core.config.settings import REPO_ROOT
+from app.agents.citizen_agent import aqi_band
+from app.services.aqi_service import main_pollutant
 
 class ExplanationAgent:
     def __init__(self):
@@ -11,7 +14,7 @@ class ExplanationAgent:
 
     def load_feature_importances(self):
         try:
-            imp_path = "models/feature_importances.pkl"
+            imp_path = str(REPO_ROOT / "models" / "feature_importances.pkl")
             if os.path.exists(imp_path):
                 self.feature_importances = joblib.load(imp_path)
         except Exception as e:
@@ -72,31 +75,40 @@ class ExplanationAgent:
             "meteorology": "Atmospheric Inversion/Low Wind Dispersion"
         }
         
-        # Draft a prompt for LLM explanation
-        prompt = f"""
-        Explain the air quality state for {ward}.
-        Current AQI: {aqi} (Previous AQI was {previous_aqi}).
-        Local factors:
-        - Traffic Congestion: {traffic}%
-        - Industrial Emissions: {industry}%
-        - Construction Activity: {construction}%
-        - Dust Level: {dust}
-        - Wind Speed: {wind} m/s
-        - Weather Condition: {weather}
-        
-        The mathematical contribution calculation shows:
-        - Traffic: {contributions['traffic']}%
-        - Industrial: {contributions['industrial']}%
-        - Construction: {contributions['construction']}%
-        - Dust: {contributions['dust']}%
-        - Meteorology (Atmospheric dispersion): {contributions['meteorology']}%
-        
-        Provide a concise, professional executive narrative explaining why the AQI is at {aqi}, what the primary driver is ({driver_labels[main_driver]}), and how meteorology is playing a role.
-        """
-        
-        system_instruction = "You are PranaAI's Explanation Agent, specializing in SHAP and feature attribution metrics for smart cities."
-        narrative = self.llm.generate_text(prompt, system_instruction)
-        
+        # Narrative is grounded in measured/modelled readings only (no seed-database activity figures)
+        pm25, pm10 = current_metrics.get("pm2_5"), current_metrics.get("pm10")
+        category = aqi_band(int(aqi))[1]
+        pollutant = main_pollutant(pm25, pm10) if pm25 is not None and pm10 is not None else "PM2.5"
+        humidity = current_metrics.get("humidity")
+        temp = current_metrics.get("temperature")
+        f24 = current_metrics.get("forecast_24h")
+        facts = [
+            f"AQI {aqi} ({category}, India CPCB scale); 24 hours ago it was {previous_aqi}",
+            f"PM2.5 {pm25} µg/m³, PM10 {pm10} µg/m³; the main pollutant is {pollutant}",
+            f"Wind {wind} m/s, humidity {humidity}%, temperature {temp}°C, {weather}",
+        ]
+        if f24 is not None:
+            facts.append(f"Model forecast: AQI around {f24} in 24 hours")
+        system_instruction = (
+            "You are PranaAI's Explanation Agent. Explain air quality to a city resident or official in 3-4 plain-text "
+            "sentences: no markdown, no bullet points, no headings. Use ONLY the facts given. Do not invent numbers, "
+            "and do not name specific local sources such as traffic, construction or factories, because no source "
+            "measurements are available. You may explain in general terms how low wind, high humidity or heat affect dispersion. "
+            "Always use the exact category given for the AQI."
+        )
+        narrative = self.llm.chat([
+            {"role": "system", "content": system_instruction},
+            {"role": "user", "content": f"Explain the air quality state for {ward}.\n" + "\n".join(f"- {f}" for f in facts)},
+        ], max_tokens=500)
+        if not narrative:
+            change = aqi - previous_aqi
+            trend = "about the same as" if abs(change) < 10 else ("higher than" if change > 0 else "lower than")
+            narrative = f"Air quality in {ward} is {category} (AQI {aqi}), {trend} 24 hours ago ({previous_aqi}). The main pollutant is {pollutant}."
+            if wind is not None and wind < 2.5:
+                narrative += f" Calm air ({wind} m/s) is letting pollution build up near the ground."
+            if f24 is not None:
+                narrative += f" The model expects around AQI {f24} in 24 hours."
+
         return {
             "ward": ward,
             "current_aqi": aqi,

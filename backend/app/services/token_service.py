@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
-from jose import jwt, JWTError
+import jwt
+from jwt import PyJWTError as JWTError
 from app.core.config.settings import settings
 from app.core.logging.logger import logger
 from app.cache.redis import cache

@@ -1,3 +1,4 @@
+import json
 from sqlalchemy.orm import Session
 from app.models.models import Ward, HistoricalAQI
 from app.agents.data_agent import DataIntelligenceAgent
@@ -18,6 +19,17 @@ WARD_COORDINATES = {
     "Kondapur": (17.4622, 78.3572),
     "Nanakramguda": (17.4172, 78.3562)
 }
+
+def ward_center(ward) -> tuple:
+    """(lat, lng) of a ward: the known coordinate, else the centre of its boundary polygon."""
+    if ward.name in WARD_COORDINATES:
+        return WARD_COORDINATES[ward.name]
+    try:
+        coords = json.loads(ward.boundary_geojson)["geometry"]["coordinates"][0]
+        return (coords[0][1] + coords[2][1]) / 2, (coords[0][0] + coords[2][0]) / 2
+    except Exception:
+        return 17.4401, 78.3489  # Hyderabad default
+
 
 class AgentOrchestrator:
     def __init__(self):
@@ -45,11 +57,7 @@ class AgentOrchestrator:
             raise ValueError(f"Ward with id {ward_id} not found.")
 
         # Try to retrieve live coordinates readings from OpenAQ/OpenWeather
-        coords = WARD_COORDINATES.get(ward.name)
-        live_data = None
-        if coords:
-            # Query live coordinates
-            live_data = get_live_aqi(coords[0], coords[1])
+        live_data = get_live_aqi(*ward_center(ward))
 
         # Get latest historical AQI reading as 'current state'
         latest_reading = (
@@ -79,6 +87,9 @@ class AgentOrchestrator:
         pm2_5_val = live_data["pm2_5"] if (live_data and "pm2_5" in live_data) else latest_reading.pm2_5
         pm10_val = live_data["pm10"] if (live_data and "pm10" in live_data) else latest_reading.pm10
         data_source = live_data["source"] if (live_data and "source" in live_data) else "Database Fallback"
+        live_wx = live_data if (live_data and "temperature" in live_data) else None
+        if live_data and live_data.get("series"):
+            prev_aqi = live_data["series"][0]["aqi"]  # same place, 24 hours earlier
         
         # Assemble metrics dictionary for agents
         metrics = {
@@ -86,12 +97,13 @@ class AgentOrchestrator:
             "aqi": aqi_val,
             "pm2_5": pm2_5_val,
             "pm10": pm10_val,
-            "temperature": latest_reading.temperature,
-            "humidity": latest_reading.humidity,
-            "wind_speed": latest_reading.wind_speed,
+            "temperature": live_wx["temperature"] if live_wx else latest_reading.temperature,
+            "humidity": live_wx["humidity"] if live_wx else latest_reading.humidity,
+            "wind_speed": live_wx["wind_speed"] if live_wx else latest_reading.wind_speed,
+            "forecast_24h": live_data["forecast"][0]["predicted_aqi"] if (live_data and live_data.get("forecast")) else None,
             "wind_direction": latest_reading.wind_direction,
             "uv_index": latest_reading.uv_index,
-            "weather_condition": latest_reading.weather_condition,
+            "weather_condition": live_wx["weather_condition"] if live_wx else latest_reading.weather_condition,
             "traffic_congestion": latest_reading.traffic_congestion,
             "construction_activity": latest_reading.construction_activity,
             "industrial_emissions": latest_reading.industrial_emissions,
@@ -109,10 +121,6 @@ class AgentOrchestrator:
         
         # 4. Narrative Explanation
         explanation = self.explanation_agent.explain_aqi_state(validated_metrics, prev_aqi)
-        
-        # Inject the live data source description into the explanation
-        if live_data:
-            explanation["narrative_explanation"] = f"(Live metrics fetched via {data_source}) " + explanation["narrative_explanation"]
         
         # 5. Interventions & estimated AQI drops
         recommendations = self.recommendation_agent.generate_recommendations(validated_metrics)

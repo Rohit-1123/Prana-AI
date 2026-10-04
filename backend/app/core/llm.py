@@ -1,6 +1,7 @@
 import os
-import json
+import re
 import requests
+from typing import Optional
 from app.core.config.settings import settings
 
 class LLMClient:
@@ -9,41 +10,34 @@ class LLMClient:
         self.model = os.getenv("GROQ_MODEL", settings.GROQ_MODEL)
         self.url = "https://api.groq.com/openai/v1/chat/completions"
 
-    def generate_text(self, prompt: str, system_instruction: str = None) -> str:
-        """
-        Generates text using Groq if API key is provided, 
-        otherwise falls back to a highly realistic, context-aware rule-based mock engine.
-        """
-        if self.api_key:
-            try:
-                headers = {
-                    "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
-                }
-                messages = []
-                if system_instruction:
-                    messages.append({"role": "system", "content": system_instruction})
-                messages.append({"role": "user", "content": prompt})
-                
-                payload = {
-                    "model": self.model,
-                    "messages": messages,
-                    "temperature": 0.3,
-                    "max_tokens": 1000
-                }
-                response = requests.post(self.url, headers=headers, json=payload, timeout=10)
-                if response.status_code == 200:
-                    content = response.json()["choices"][0]["message"]["content"]
-                    import re
-                    content = re.sub(r"<think>.*?(?:</think>|$)", "", content, flags=re.DOTALL).strip()
-                    return content
-                else:
-                    print(f"Groq API Error: {response.text}. Falling back to Offline Agent Engine.")
-            except Exception as e:
-                print(f"LLM Connection failed: {e}. Falling back to Offline Agent Engine.")
+    def chat(self, messages: list, max_tokens: int = 700) -> Optional[str]:
+        """One Groq chat completion; None when no key is configured or the call fails."""
+        if not self.api_key:
+            return None
+        payload = {"model": self.model, "messages": messages, "temperature": 0.3, "max_tokens": max_tokens}
+        if self.model.startswith("openai/gpt-oss"):
+            payload["reasoning_effort"] = "low"  # reasoning tokens count against max_tokens
+        try:
+            response = requests.post(
+                self.url,
+                headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=20,
+            )
+            if response.status_code != 200:
+                print(f"Groq API Error {response.status_code}: {response.text[:300]}")
+                return None
+            content = response.json()["choices"][0]["message"].get("content") or ""
+            content = re.sub(r"<think>.*?(?:</think>|$)", "", content, flags=re.DOTALL).strip()
+            return content or None
+        except Exception as e:
+            print(f"LLM connection failed: {e}")
+            return None
 
-        # Offline Fallback Engine (highly detailed, responsive, and specific to PranaAI)
-        return self._generate_offline_mock(prompt, system_instruction)
+    def generate_text(self, prompt: str, system_instruction: str = None) -> str:
+        """Groq completion, falling back to the rule-based offline engine."""
+        messages = ([{"role": "system", "content": system_instruction}] if system_instruction else []) + [{"role": "user", "content": prompt}]
+        return self.chat(messages, max_tokens=1000) or self._generate_offline_mock(prompt, system_instruction)
 
     def _generate_offline_mock(self, prompt: str, system_instruction: str) -> str:
         prompt_lower = prompt.lower()

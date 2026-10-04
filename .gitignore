@@ -29,6 +29,7 @@ lerna-debug.log*
 *.local
 .env
 .env.*
+!.env.example
 
 # Editor files
 .vscode/
@@ -44,8 +45,11 @@ lerna-debug.log*
 # Project Specific Exclusions
 /docs/
 /presentation/
-/models/
-/datasets/
+# Generated data/model binaries stay local; the scripts that build them are tracked
+/models/*
+!/models/train_models.py
+/datasets/*
+!/datasets/generate_dataset.py
 /.pytest_cache/
 /.github/workflows/
 /prana.db

@@ -39,7 +39,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
     logger.error(f"Validation Error handling request {request.url.path}: {errors}")
     return JSONResponse(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=422,
         content={
             "success": False,
             "message": "Validation schema checks failed.",

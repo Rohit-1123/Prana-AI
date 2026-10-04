@@ -8,8 +8,6 @@ This is the production-grade, asynchronous backend foundation for **PranaAI**, a
 
 ```text
 backend/
-├── Dockerfile                  # Application runtime container setup
-├── docker-compose.yml          # Multi-service linkage configurations
 ├── app/
 │   ├── api/
 │   │   └── v1/                 # API Version 1 Namespace
@@ -53,11 +51,6 @@ Duplicate `.env.example` to `.env` and fill the variables:
 ---
 
 ## 🚀 Running Local Deployments
-
-### Using Docker Compose:
-```bash
-docker compose up --build
-```
 
 ### Manual development environment:
 1. Initialize virtual environment:

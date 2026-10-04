@@ -16,53 +16,55 @@ from app.database.models.models import (
     SystemConfiguration
 )
 from app.security.security import get_password_hash
+from app.core.config.settings import settings
 
 async def seed_postgres():
     print("Seeding PostgreSQL PostGIS Database...")
     async with AsyncSessionLocal() as session:
         # Check if already seeded
-        result = await session.execute(text("SELECT COUNT(*) FROM users"))
+        result = await session.execute(text("SELECT COUNT(*) FROM cities"))
         count = result.scalar()
         if count > 0:
             print("PostgreSQL Database already seeded. Skipping.")
             return
 
-        # 1. Create Default Users (Admin & Developer)
-        admin_id = uuid.uuid4()
-        admin_user = User(
-            id=admin_id,
-            email="admin@prana.ai",
-            hashed_password=get_password_hash("admin123"),
-            full_name="Municipal Commissioner",
-            role="Administrator",
-            organization="GHMC",
-            status="active"
-        )
+        # 1. Create Default Users (Admin & Developer) - development only, known passwords
+        if settings.ENVIRONMENT == "development":
+            admin_id = uuid.uuid4()
+            admin_user = User(
+                id=admin_id,
+                email="admin@prana.ai",
+                hashed_password=get_password_hash("admin123"),
+                full_name="Municipal Commissioner",
+                role="Administrator",
+                organization="GHMC",
+                status="active"
+            )
         
-        dev_user = User(
-            id=uuid.uuid4(),
-            email="developer@prana.ai",
-            hashed_password=get_password_hash("developer123"),
-            full_name="Software Developer",
-            role="Researcher",
-            organization="PranaAI Tech",
-            status="active"
-        )
+            dev_user = User(
+                id=uuid.uuid4(),
+                email="developer@prana.ai",
+                hashed_password=get_password_hash("developer123"),
+                full_name="Software Developer",
+                role="Researcher",
+                organization="PranaAI Tech",
+                status="active"
+            )
 
-        session.add_all([admin_user, dev_user])
-        await session.flush()
+            session.add_all([admin_user, dev_user])
+            await session.flush()
 
-        # Seed Settings
-        admin_settings = UserSettings(
-            user_id=admin_id,
-            theme="dark",
-            default_location="Gachibowli",
-            timezone="IST",
-            measurement_units="metric",
-            notification_preferences="all",
-            map_preferences="{}"
-        )
-        session.add(admin_settings)
+            # Seed Settings
+            admin_settings = UserSettings(
+                user_id=admin_id,
+                theme="dark",
+                default_location="Gachibowli",
+                timezone="IST",
+                measurement_units="metric",
+                notification_preferences="all",
+                map_preferences="{}"
+            )
+            session.add(admin_settings)
 
         # 2. Create City (Hyderabad) with PostGIS boundary polygon
         city_id = uuid.uuid4()

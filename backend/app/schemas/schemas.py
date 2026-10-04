@@ -109,9 +109,30 @@ class SimulationResponse(BaseModel):
     timestamp: datetime
 
 # --- CITIZEN AI SCHEMAS ---
+class LocationContext(BaseModel):
+    """Live readings for a place, supplied by the client (used only as context for its own answer)."""
+    name: str = Field(min_length=1, max_length=80)
+    city: Optional[str] = Field(None, max_length=40)
+    aqi: int = Field(ge=0, le=999)
+    pm2_5: Optional[float] = Field(None, ge=0, le=2000)
+    pm10: Optional[float] = Field(None, ge=0, le=3000)
+    temperature: Optional[float] = Field(None, ge=-60, le=60)
+    humidity: Optional[float] = Field(None, ge=0, le=100)
+    wind_speed: Optional[float] = Field(None, ge=0, le=100)
+    weather_condition: Optional[str] = Field(None, max_length=30)
+    forecast_24h: Optional[int] = Field(None, ge=0, le=999)
+
+class ChatTurn(BaseModel):
+    role: str = Field(pattern="^(user|assistant)$")
+    text: str = Field(max_length=2000)
+
 class CitizenQueryRequest(BaseModel):
-    ward_id: int
-    query: str
+    query: str = Field(min_length=1, max_length=1000)
+    ward_id: Optional[int] = None  # legacy: backend ward; ignored when `ward` is given
+    ward: Optional[LocationContext] = None
+    locations: List[LocationContext] = Field(default_factory=list, max_length=200)
+    history: List[ChatTurn] = Field(default_factory=list, max_length=10)
+    language: str = Field("en", pattern="^(en|hi|te|ta|kn)$")
 
 class RouteSuggestion(BaseModel):
     name: str
