@@ -118,3 +118,40 @@ def test_cors_allows_dev_origin_and_blocks_others():
     bad = client.options("/api/dashboard/live", headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "POST"})
     assert ok.headers.get("access-control-allow-origin") == "http://localhost:5199"
     assert "access-control-allow-origin" not in bad.headers
+
+
+BODY = {
+    "language": "en",
+    "ward": {"name": "Anand Vihar", "city": "Delhi", "aqi": 254},
+    "locations": [
+        {"name": "Saket", "city": "Delhi", "aqi": 250},
+        {"name": "Bandra", "city": "Mumbai", "aqi": 60, "pm2_5": 21.5},
+    ],
+}
+
+
+def _context_for(query):
+    r = client.post("/api/chat/query", json={**BODY, "query": query})
+    assert r.status_code == 200
+    return r, next(m["content"] for m in FakeLLM.last if m["content"].startswith("Focus location"))
+
+
+def test_copilot_gives_full_readings_for_a_named_other_city():
+    _, ctx = _context_for("how is mumbai today?")
+    assert "Bandra" in ctx.split("Places the user asked about")[1] and "PM2.5 21.5" in ctx
+
+
+def test_copilot_tolerates_typos_and_case():
+    for q in ("how is MUMBAY today", "is bandra safe?"):
+        _, ctx = _context_for(q)
+        assert "PM2.5 21.5" in ctx, q
+
+
+def test_copilot_does_not_add_unasked_cities():
+    _, ctx = _context_for("Can I jog?")
+    assert ctx.split("Places the user asked about")[1].split("Other cities")[0].strip().endswith("- none")
+
+
+def test_copilot_ignores_trivially_cleaner_places():
+    r, _ = _context_for("Can I jog?")
+    assert r.json()["recommended_clean_routes"] == []  # Saket is only 4 points cleaner

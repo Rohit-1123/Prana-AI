@@ -92,6 +92,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+// oxlint-disable-next-line react-refresh/only-export-components -- hook lives beside its provider; 20+ importers
 export function useSettings() {
   const context = useContext(SettingsContext);
   if (!context) {

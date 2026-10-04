@@ -33,12 +33,6 @@ export function LiveClock({ timezone }: { timezone: "IST" | "UTC" }) {
   );
 }
 
-export function greetingKey(timezone: "IST" | "UTC") {
-  const hour = Number(
-    new Date().toLocaleString("en-GB", { hour: "2-digit", hour12: false, timeZone: timezone === "UTC" ? "UTC" : "Asia/Kolkata" })
-  );
-  return hour < 12 ? "greetMorning" : hour < 17 ? "greetAfternoon" : "greetEvening";
-}
 
 interface WardOption {
   id: number;
@@ -384,7 +378,7 @@ export function AppShell({
             )}
           </AnimatePresence>
 
-          <main ref={scrollRef} data-scroll-root className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 pt-2 pb-28 lg:pb-10">
+          <main ref={scrollRef} data-scroll-root className="flex-1 overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 pt-2 pb-28">
             <motion.div
               key={active}
               initial={{ opacity: 0, y: 12 }}

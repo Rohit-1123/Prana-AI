@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from "react";
+import React, { createContext, useEffect } from "react";
 
 export type WeatherMode = "Sunny" | "Cloudy" | "Rain" | "Windy";
 export type AQILevel = "Good" | "Moderate" | "Poor" | "VeryPoor" | "Severe";
@@ -16,8 +16,6 @@ const EnvironmentalContext = createContext<EnvironmentalContextType>({
   windSpeed: 5.0,
   aqi: 100,
 });
-
-export const useEnvironmentalTheme = () => useContext(EnvironmentalContext);
 
 interface EnvironmentalThemeProviderProps {
   children: React.ReactNode;
