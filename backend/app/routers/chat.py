@@ -4,7 +4,9 @@ from app.core.database import get_db
 from app.core.rate_limit import rate_limit
 from app.schemas.schemas import CitizenQueryRequest, CitizenQueryResponse
 from app.models.models import Ward, HistoricalAQI
-from app.agents.citizen_agent import CitizenAdvisoryAgent
+from app.agents.citizen_agent import CitizenAdvisoryAgent, mentions
+from app.services import geocode
+from app.services.aqi_service import get_live_aqi
 
 router = APIRouter(prefix="/api/chat", tags=["Citizen AI Chat"])
 citizen_agent = CitizenAdvisoryAgent()
@@ -30,6 +32,24 @@ def _db_location(ward: Ward, db: Session) -> dict:
     }
 
 
+def _lookup_unknown_place(query: str, focus: dict, locations: list) -> None:
+    """If the question names a place we have no reading for, geocode it and add its live reading (marked `asked`)."""
+    known = [focus, *locations]
+    if any(mentions(query, loc["name"]) or (loc.get("city") and mentions(query, loc["city"])) for loc in known):
+        return
+    for name in geocode.candidates(query):
+        place = geocode.find_place(name)
+        live = place and get_live_aqi(place["lat"], place["lng"])
+        if live:
+            locations.append({
+                "name": place["name"], "city": place["city"], "aqi": live["aqi"], "pm2_5": live["pm2_5"], "pm10": live["pm10"],
+                "temperature": live.get("temperature"), "humidity": live.get("humidity"), "wind_speed": live.get("wind_speed"),
+                "weather_condition": live.get("weather_condition"),
+                "forecast_24h": live["forecast"][0]["predicted_aqi"] if live.get("forecast") else None, "asked": True,
+            })
+            return
+
+
 @router.post("/query", response_model=CitizenQueryResponse, dependencies=[Depends(rate_limit(20, 60))])
 def citizen_query(payload: CitizenQueryRequest, db: Session = Depends(get_db)):
     """
@@ -49,6 +69,8 @@ def citizen_query(payload: CitizenQueryRequest, db: Session = Depends(get_db)):
             raise HTTPException(status_code=503, detail="No readings available for this ward yet.")
         locations = [_db_location(w, db) for w in db.query(Ward).all()]
         locations = [loc for loc in locations if loc["aqi"] is not None]
+
+    _lookup_unknown_place(payload.query, focus, locations)
 
     advisory = citizen_agent.get_health_advisory(
         focus, payload.query, locations,

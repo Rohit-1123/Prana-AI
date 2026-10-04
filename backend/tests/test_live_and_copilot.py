@@ -25,7 +25,14 @@ class FakeResp:
         return self._p
 
 
+GEOCODE_CALLS = []
+
+
 def fake_get(url, params=None, timeout=None):
+    if "geocoding" in url:
+        GEOCODE_CALLS.append(params["name"])
+        pune = {"name": "Pune", "latitude": 18.5, "longitude": 73.9, "country_code": "IN", "admin2": "Pune"}
+        return FakeResp({"results": [pune]} if params["name"].lower() == "pune" else {})
     n = len(str(params["latitude"]).split(","))
     times = _hours()
     if "air-quality" in url:
@@ -43,6 +50,9 @@ def fresh(monkeypatch):
     aqi_service._cache.clear()
     from app.core import rate_limit
     rate_limit._hits.clear()
+    from app.services import geocode
+    geocode.find_place.cache_clear()
+    GEOCODE_CALLS.clear()
     monkeypatch.setattr(aqi_service.requests, "get", fake_get)
     monkeypatch.setattr(citizen_module.CitizenAdvisoryAgent, "__init__", lambda self: (setattr(self, "llm", FakeLLM()), setattr(self, "name", "t"))[0])
     import app.routers.chat as chat_router
@@ -155,3 +165,20 @@ def test_copilot_does_not_add_unasked_cities():
 def test_copilot_ignores_trivially_cleaner_places():
     r, _ = _context_for("Can I jog?")
     assert r.json()["recommended_clean_routes"] == []  # Saket is only 4 points cleaner
+
+
+def test_copilot_looks_up_a_place_it_has_no_reading_for():
+    r, ctx = _context_for("how is the air in Pune right now?")
+    assert GEOCODE_CALLS == ["Pune"]
+    assert "Pune (Pune), AQI 100" in ctx.split("Places the user asked about")[1]
+
+
+def test_copilot_does_not_geocode_known_places_or_non_places():
+    _context_for("how is Mumbai?")
+    _context_for("can I jog in the morning?")
+    assert GEOCODE_CALLS == []
+
+
+def test_copilot_survives_an_unknown_place():
+    r, ctx = _context_for("how is the air in Atlantis?")
+    assert r.status_code == 200 and ctx.split("Places the user asked about")[1].split("Other cities")[0].strip().endswith("- none")

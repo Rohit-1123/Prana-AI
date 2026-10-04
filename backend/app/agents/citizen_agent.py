@@ -86,7 +86,7 @@ class CitizenAdvisoryAgent:
         nearby = same_city[:30] if focus.get("city") else locations[:30]
         # Places/cities the user names in the question get full readings, even in another city
         asked = [l for l in locations if l["name"] != focus["name"] and l not in nearby
-                 and (mentions(citizen_query, l["name"]) or (l.get("city") and mentions(citizen_query, l["city"])))]
+                 and (l.get("asked") or mentions(citizen_query, l["name"]) or (l.get("city") and mentions(citizen_query, l["city"])))]
         context = (
             f"Focus location: {_describe(focus)}\n"
             f"Health guidance for this band: {advice}\n"
